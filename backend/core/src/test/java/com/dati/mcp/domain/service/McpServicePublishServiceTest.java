@@ -474,6 +474,62 @@ class McpServicePublishServiceTest {
         assertThat(diff.isHasChanges()).isFalse();
     }
 
+
+    @Test
+    @DisplayName("Imported table membership change - diff reports DATA_SCOPE")
+    void getDiff_ResolvedTablesChanged_ReportsChange() {
+        testServicePO.setStatus(McpServiceStatus.PUBLISHED);
+        testServicePO.setActiveVersionId("snap-001");
+        testServicePO.setActiveVersionNumber(1);
+
+        McpServiceSnapshot.SnapshotContent content = new McpServiceSnapshot.SnapshotContent();
+        McpServiceSnapshot.ServiceInfo sInfo = new McpServiceSnapshot.ServiceInfo();
+        sInfo.setId(TestFixtures.TEST_MCP_SERVICE_ID);
+        sInfo.setName("Test MCP Service");
+        sInfo.setDescription("Test MCP service for unit tests");
+        sInfo.setCode("test-mcp-service");
+        content.setServiceInfo(sInfo);
+
+        McpServiceDataScope activeScope = new McpServiceDataScope();
+        activeScope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        activeScope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        activeScope.setReferenceId("ds-001");
+        content.setDataScopes(List.of(McpServiceSnapshotMapper.toDataScopeDraft(activeScope)
+            .withResolvedTables(List.of(new McpResolvedTable("ds-001", "public", "orders")))));
+        content.setPrebuiltTools(Collections.emptyList());
+        content.setCustomTools(Collections.emptyList());
+        content.setPrompts(Collections.emptyList());
+
+        McpServiceSnapshotPO snapshotPO = new McpServiceSnapshotPO();
+        snapshotPO.setId("snap-001");
+        snapshotPO.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        snapshotPO.setVersionNumber(1);
+        snapshotPO.setSnapshotContent(com.dati.common.JsonUtils.toJson(content));
+
+        McpServiceDataScope currentScope = new McpServiceDataScope();
+        currentScope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        currentScope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        currentScope.setReferenceId("ds-001");
+
+        TableInfoPO currentTable = new TableInfoPO();
+        currentTable.setDataSourceId("ds-001");
+        currentTable.setSchema("public");
+        currentTable.setName("customers");
+
+        when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
+        when(snapshotDAO.findById("snap-001")).thenReturn(Optional.of(snapshotPO));
+        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(currentScope));
+        when(tableInfoDAO.findByDataSourceId("ds-001")).thenReturn(List.of(currentTable));
+        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID))
+                .thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
+        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
+
+        McpServiceDiffVO diff = publishService.getDiff(TestFixtures.TEST_MCP_SERVICE_ID);
+
+        assertThat(diff.isDataScopeChanged()).isTrue();
+        assertThat(diff.getModifiedComponents()).contains("DATA_SCOPE");
+    }
+
     @Test
     @DisplayName("Data scope access mode change - diff reports DATA_SCOPE")
     void getDiff_DataScopeAccessModeChanged_ReportsChange() {
