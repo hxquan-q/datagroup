@@ -245,9 +245,9 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-4 p-5 md:p-6 overflow-hidden">
+  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-5 px-5 py-6 md:px-8 md:py-7 overflow-hidden">
     <!-- Top Navigation Breadcrumbs & Action Bar -->
-    <div class="detail-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] px-4 py-3.5 shadow-sm">
+    <div class="detail-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-2xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] px-5 py-4 detail-hero">
       <div class="flex items-center gap-3 flex-wrap">
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/mcp-services' }">
@@ -375,7 +375,7 @@ const handleSave = async () => {
       <!-- Full-Width Responsive Dual-Card Grid Layout (1:1 Equal Split) -->
       <div v-if="activeTab === 'basic'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
         <!-- Left Card: Basic Settings Form -->
-        <section class="panel p-6 flex flex-col justify-between shadow-sm border border-[var(--ep-border-color-lighter)] rounded-xl bg-[var(--ep-bg-color)]">
+        <section class="panel p-6 flex flex-col justify-between border border-[var(--ep-border-color-lighter)] rounded-2xl bg-[var(--ep-bg-color)]">
           <el-form label-position="top" class="detail-form flex flex-col gap-4">
             <!-- 只读元数据：服务标识 / 服务 ID -->
             <el-form-item :label="t('mcpService.serviceCodeWithFormat')" class="!mb-0">
@@ -503,11 +503,26 @@ const handleSave = async () => {
 </template>
 
 <style scoped>
+.detail-hero {
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.07), transparent 42%),
+    var(--ep-bg-color);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
+}
+
+:global(html.dark) .detail-hero {
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.14), transparent 46%),
+    var(--ep-bg-color);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+}
+
 .panel,
 .scope-panel {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 12px;
-  background: var(--ep-bg-color);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
 }
 
 .panel-heading h2 {

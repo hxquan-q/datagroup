@@ -4,6 +4,10 @@ export default {
     heroDesc: "将数据库转为安全、语义增强的 MCP 服务，让 Agent 灵活分析与维护数据。",
     brandTagline: "小爱智能问数平台",
     docLink: "查看帮助文档",
+    consoleLabel: "数据语义控制台",
+    primaryAction: "接入数据源",
+    openModule: "进入模块",
+    workflowSubtitle: "把数据库、业务语义和 MCP 发布流程串成一条清晰路径",
     workflow: {
       title: "如何开始",
       step1Title: "接入数据源",
@@ -154,6 +158,8 @@ export default {
       help: "帮助",
     },
     side: {
+      overview: "概览",
+      workspace: "工作区",
       expand: "展开",
       collapse: "收起",
       mcpServices: "MCP 服务",
