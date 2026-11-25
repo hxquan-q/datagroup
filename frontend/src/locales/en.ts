@@ -10,6 +10,8 @@ export default {
     modulesLabel: "XIAOAI modules",
     workflowKicker: "Workflow",
     workflowSubtitle: "A clear path from database connections to governed MCP services",
+    noServiceTitle: "No MCP service yet",
+    noServiceHint: "Connect a data source to create one",
     workflow: {
       title: "Get Started",
       step1Title: "Connect Data Sources",

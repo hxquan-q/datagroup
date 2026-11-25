@@ -129,13 +129,20 @@ onMounted(fetchOverview);
           <div class="signal-card-header">
             <span></span><span></span><span></span>
           </div>
-          <div class="signal-service">
+          <div v-if="featuredService" class="signal-service">
             <div class="service-icon"><Zap :size="17" /></div>
-            <div>
-              <strong>{{ featuredService?.name || 'XIAOAI MCP' }}</strong>
-              <small>{{ featuredService?.endpoint_path || '/your-service/mcp' }}</small>
+            <div class="signal-service-copy">
+              <strong>{{ featuredService.name }}</strong>
+              <small>{{ featuredService.endpoint_path }}</small>
             </div>
-            <em>{{ featuredService?.status || 'READY' }}</em>
+            <em>{{ featuredService.status }}</em>
+          </div>
+          <div v-else class="signal-service signal-empty">
+            <div class="service-icon"><Zap :size="17" /></div>
+            <div class="signal-service-copy">
+              <strong>{{ t("home.noServiceTitle") }}</strong>
+              <small>{{ t("home.noServiceHint") }}</small>
+            </div>
           </div>
           <div class="signal-grid">
             <div><b>{{ datasourceCount }}</b><span>{{ t("home.stats.dataSources") }}</span></div>
@@ -360,7 +367,7 @@ onMounted(fetchOverview);
 
 .signal-service {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 14px;
@@ -379,14 +386,23 @@ onMounted(fetchOverview);
   color: white;
 }
 
+.signal-service-copy {
+  min-width: 0;
+}
+
 .signal-service strong,
 .signal-service small {
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .signal-service strong { font-size: 14px; }
-.signal-service small { margin-top: 3px; color: var(--xiaoai-ink-muted); font-family: ui-monospace, monospace; font-size: 11px; }
-.signal-service em { padding: 4px 7px; border-radius: 999px; background: rgba(16, 185, 129, 0.13); color: var(--xiaoai-success-soft); font-size: 10px; font-style: normal; font-weight: 800; }
+.signal-service small { margin-top: 3px; color: var(--xiaoai-ink-muted); font-family: ui-monospace, monospace; font-size: 11px; overflow-wrap: anywhere; word-break: break-word; }
+.signal-service em { padding: 4px 7px; border-radius: 999px; background: rgba(16, 185, 129, 0.13); color: var(--xiaoai-success-soft); font-size: 10px; font-style: normal; font-weight: 800; white-space: nowrap; }
+
+.signal-empty {
+  grid-template-columns: auto minmax(0, 1fr);
+}
 
 .signal-grid {
   display: grid;

@@ -10,6 +10,8 @@ export default {
     modulesLabel: "XIAOAI 模块",
     workflowKicker: "工作流",
     workflowSubtitle: "把数据库、业务语义和 MCP 发布流程串成一条清晰路径",
+    noServiceTitle: "尚未发布 MCP 服务",
+    noServiceHint: "接入数据源后可生成服务",
     workflow: {
       title: "如何开始",
       step1Title: "接入数据源",
