@@ -10,9 +10,9 @@
 
 Docker Compose 由两个容器服务组成，默认硬件预算适配 2C4G 规格（峰值约 2.5GB 内存）：
 
-1. **`xiaoai-app`（业务应用容器）**
+1. **`dati-app`（业务应用容器）**
    - **前后端一体化镜像**：基于官方多阶段 `Dockerfile` 构建并发布至 GHCR（`ghcr.io/hxquan-q/datagroup`），将前端（Vue 3 控制台）与帮助中心（VitePress）编译后的静态资源直接打入后端 Spring Boot Fat JAR，单容器运行并监听 `8085` 端口。
-   - **数据持久化**：默认使用嵌入式 H2 数据库，数据持久化于 `xiaoai_data` 卷（亦可在 `.env` 中指定外接 MySQL/PostgreSQL）。
+   - **数据持久化**：默认使用嵌入式 H2 数据库，数据持久化于 `dati_data` 卷（亦可在 `.env` 中指定外接 MySQL/PostgreSQL）。
    - **资源预算**：内存上限默认 1.5GB（JVM 堆内存自适应约 75%）。
 
 2. **`elasticsearch`（语义检索容器）**
@@ -61,7 +61,7 @@ docker compose up -d --build
      （语义索引可通过系统内元数据重新同步生成，存储在 H2/MySQL 中的业务配置不受影响）。
 
 2. **外接数据库配置**
-   - 默认使用内置 H2 数据库（持久化于 `xiaoai_data` 卷）。
+   - 默认使用内置 H2 数据库（持久化于 `dati_data` 卷）。
    - 若连接外部 MySQL / RDS，在 `.env` 中配置：
      ```env
      SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/xiaoai?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
@@ -80,7 +80,7 @@ docker compose up -d --build
 | 操作 | 命令 | 说明 |
 |------|------|------|
 | 更新升级 | `git pull && docker compose up -d --build` | 拉取最新镜像并重启，已有数据卷保留 |
-| 查看应用日志 | `docker compose logs -f xiaoai-app` | 查看业务与接口调用日志 |
+| 查看应用日志 | `docker compose logs -f dati-app` | 查看业务与接口调用日志 |
 | 查看 ES 日志 | `docker compose logs -f elasticsearch` | 查看 ES 运行与索引日志 |
 | 重启服务 | `docker compose restart` | 容器重启，数据保持不变 |
 | 彻底重置 | `docker compose down -v` | 销毁容器与数据卷（清空全部数据，慎用） |
@@ -93,5 +93,5 @@ docker compose up -d --build
 |------|----------|
 | 启动报 `must be set in .env` | 检查 `.env` 文件是否存在，且 `JWT_SECRET`、`SPRING_ELASTICSEARCH_PASSWORD` 均已填入有效值。 |
 | 应用日志报 ES 401 | 检查是否曾改动过 ES 密码；若在已有卷上改过密码，需按前文说明重建 `datagroup_es_data` 卷。 |
-| `/actuator/health` 报 DOWN | 执行 `docker compose logs xiaoai-app` 查看具体是 `db` 还是 `elasticsearch` 组件连接异常。 |
+| `/actuator/health` 报 DOWN | 执行 `docker compose logs dati-app` 查看具体是 `db` 还是 `elasticsearch` 组件连接异常。 |
 | 容器发生 OOM 异常退出 | 宿主机可用内存须保持 2.5GB 以上；低配主机建议配置 1~2GB Swap 交换空间。 |

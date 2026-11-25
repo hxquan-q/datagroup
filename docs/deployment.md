@@ -10,9 +10,9 @@ This document describes the single-node containerized deployment and operational
 
 XIAOAI runs as two container services via Docker Compose, configured by default for a 2-core 4GB RAM host (peak usage ~2.5GB):
 
-1. **`xiaoai-app` (Application Container)**
+1. **`dati-app` (Application Container)**
    - **All-in-One Image**: Prebuilt lightweight image published to GHCR (`ghcr.io/hxquan-q/datagroup`), built from the official multi-stage `Dockerfile`. Packages the frontend (Vue 3 console) and Help Center (VitePress) static assets directly into the backend Spring Boot Fat JAR. Runs as a single container listening on port `8085`.
-   - **Data Persistence**: Uses an embedded H2 database by default, persisted in the `xiaoai_data` volume (can be pointed to external MySQL / PostgreSQL in `.env`).
+   - **Data Persistence**: Uses an embedded H2 database by default, persisted in the `dati_data` volume (can be pointed to external MySQL / PostgreSQL in `.env`).
    - **Resource Budget**: Memory limit capped at 1.5GB (JVM heap auto-allocates ~75%).
 
 2. **`elasticsearch` (Semantic Search Container)**
@@ -62,7 +62,7 @@ docker compose up -d --build
      (Semantic indices can be rebuilt by re-syncing metadata in the platform; business data in H2/MySQL remains intact).
 
 2. **External Database Configuration**
-   - Uses embedded H2 by default (persisted in `xiaoai_data` volume).
+   - Uses embedded H2 by default (persisted in `dati_data` volume).
    - To connect external MySQL / RDS, configure `.env`:
      ```env
      SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/xiaoai?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
@@ -81,7 +81,7 @@ docker compose up -d --build
 | Operation | Command | Description |
 |-----------|---------|-------------|
 | Upgrade | `git pull && docker compose up -d --build` | Pull latest images and restart containers; volumes preserved |
-| View App Logs | `docker compose logs -f xiaoai-app` | Tail application and API access logs |
+| View App Logs | `docker compose logs -f dati-app` | Tail application and API access logs |
 | View ES Logs | `docker compose logs -f elasticsearch` | Tail Elasticsearch runtime and indexing logs |
 | Restart Services | `docker compose restart` | Restart containers without modifying data |
 | Complete Reset | `docker compose down -v` | Destroy all containers and volumes (purges all data, use with caution) |
@@ -94,5 +94,5 @@ docker compose up -d --build
 |---------|------------|
 | `must be set in .env` error on startup | Ensure `.env` exists and that required variables (`JWT_SECRET`, `SPRING_ELASTICSEARCH_PASSWORD`) are populated. |
 | App log reports `ES 401 Unauthorized` | Check if ES password was modified after volume creation. Recreate `datagroup_es_data` volume as described above. |
-| `/actuator/health` reports `DOWN` | Run `docker compose logs xiaoai-app` to check whether the `db` or `elasticsearch` component failed. |
+| `/actuator/health` reports `DOWN` | Run `docker compose logs dati-app` to check whether the `db` or `elasticsearch` component failed. |
 | Container exits due to OOM | Ensure host has at least 2.5GB available memory. Configure 1–2GB swap on smaller instances. |
