@@ -300,6 +300,8 @@ export default {
     basicRequired: "Please fill in metric code and name",
     sqlRequired: "Please provide the metric SQL template",
     parametersInvalid: "Parameters must be a valid JSON array",
+    parameterTypeRequired: "Each parameter requires a non-empty name and type",
+    parameterDuplicate: "Duplicate parameter name: {name}",
     createSuccess: "Metric created successfully",
     updateSuccess: "Metric updated successfully",
     deleteSuccess: "Metric deleted successfully",

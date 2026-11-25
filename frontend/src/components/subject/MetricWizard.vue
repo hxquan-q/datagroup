@@ -88,6 +88,18 @@ function parseParameters(): MetricParameter[] | null {
   try {
     const parsed = JSON.parse(parametersJson.value || "[]");
     if (!Array.isArray(parsed)) throw new Error("not-array");
+    const names = new Set<string>();
+    for (const item of parsed) {
+      if (!item || typeof item !== "object" || !item.name?.trim() || !item.type?.trim()) {
+        ElMessage.error(t("metric.parameterTypeRequired"));
+        return null;
+      }
+      if (names.has(item.name)) {
+        ElMessage.error(t("metric.parameterDuplicate", { name: item.name }));
+        return null;
+      }
+      names.add(item.name);
+    }
     return parsed;
   } catch {
     ElMessage.error(t("metric.parametersInvalid"));

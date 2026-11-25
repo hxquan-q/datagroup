@@ -300,6 +300,8 @@ export default {
     basicRequired: "请填写指标编码和名称",
     sqlRequired: "请填写指标 SQL 模板",
     parametersInvalid: "参数定义必须是合法的 JSON 数组",
+    parameterTypeRequired: "每个参数都必须填写非空名称和类型",
+    parameterDuplicate: "参数名称重复：{name}",
     createSuccess: "指标创建成功",
     updateSuccess: "指标更新成功",
     deleteSuccess: "指标删除成功",
