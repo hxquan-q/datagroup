@@ -2,7 +2,7 @@ export default {
   home: {
     heroTitle: "Bring Databases to AI Agents",
     heroDesc: "Turn databases into secure, semantically enriched MCP servers — enabling agents to flexibly analyze and maintain data.",
-    brandTagline: "Data Intelligence",
+    brandTagline: "Intelligent Data Q&A Platform",
     docLink: "View Documentation",
     workflow: {
       title: "Get Started",
@@ -149,7 +149,7 @@ export default {
 
   layout: {
     header: {
-      brand: "DatI",
+      brand: "XIAOAI",
       theme: "Theme",
       help: "Help",
     },

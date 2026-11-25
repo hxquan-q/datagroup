@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Update DatI project version across all modules and configuration files.
+Update XIAOAI project version across all modules and configuration files.
 
 Usage:
     ./scripts/set-version.sh <new_version>
@@ -60,7 +60,7 @@ def main():
         print(f"Version is already {curr_version}. No changes made.")
         sys.exit(0)
 
-    print(f"Updating DatI version: {curr_version} -> {new_version}\n")
+    print(f"Updating XIAOAI version: {curr_version} -> {new_version}\n")
 
     # 1. Root pom.xml
     update_file(

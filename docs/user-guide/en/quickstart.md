@@ -1,6 +1,6 @@
 # Quick Start
 
-You can get started with DatI in two ways:
+You can get started with XIAOAI in two ways:
 - **Option 1: Automated Operations via Agent** — Use the `dati-ops` skill to let an AI assistant configure data sources and publish services via conversation;
 - **Option 2: Visual Configuration via Web Console** — Step through data source onboarding, subject scoping, and MCP service publishing in the browser console.
 
@@ -8,17 +8,17 @@ You can get started with DatI in two ways:
 
 ## Option 1: Automated Operations via dati-ops Skill
 
-DatI natively provides the official **`dati-ops`** operational skill compliant with the [Agent Skills Open Standard](https://agentskills.io). You can mount this skill into AI coding assistants (such as OpenCode, Claude Code, Antigravity, etc.) to let agents manage data sources, semantic modeling, and MCP service publishing automatically via natural language instructions.
+XIAOAI natively provides the official **`dati-ops`** operational skill compliant with the [Agent Skills Open Standard](https://agentskills.io). You can mount this skill into AI coding assistants (such as OpenCode, Claude Code, Antigravity, etc.) to let agents manage data sources, semantic modeling, and MCP service publishing automatically via natural language instructions.
 
 ### 1. Prerequisites & API Key Configuration
 
 Before using `dati-ops`, obtain an API Key and ideally export it as an environment variable:
 
-1. **Generate API Key**: Log in to DatI, click **User Avatar -> API Key Management** in the top right, and click "New API Key";
+1. **Generate API Key**: Log in to XIAOAI, click **User Avatar -> API Key Management** in the top right, and click "New API Key";
 2. **Configure Connection (Recommended)**: Export the environment variables in your terminal or shell profile (`~/.zshrc`, `~/.bashrc`, or workspace `.env`):
    ```bash
-   export DATI_BASE_URL="http://localhost:8085"  # DatI backend URL (default: http://localhost:8085)
-   export DATI_API_KEY="sk_your_api_key_here"    # Your generated API Key
+   export XIAOAI_BASE_URL="http://localhost:8085"  # XIAOAI backend URL (default: http://localhost:8085)
+   export XIAOAI_API_KEY="sk_your_api_key_here"    # Your generated API Key
    ```
    When environment variables are set, the Agent will automatically read them without needing you to pass credentials in every conversation.
 
@@ -53,7 +53,7 @@ Go to the **Data Sources** page and click **Create Data Source**:
 
 ::: tip Core Concept: Why extract enum values?
 LLMs cannot reliably guess business enums from raw column names (like `status`, `pay_type`).
-Clicking **Extract Values** on enum columns enables DatI to inspect distinct values and record business mappings (e.g., `1 -> Pending`, `2 -> Completed`), drastically improving NL2SQL accuracy during semantic retrieval.
+Clicking **Extract Values** on enum columns enables XIAOAI to inspect distinct values and record business mappings (e.g., `1 -> Pending`, `2 -> Completed`), drastically improving NL2SQL accuracy during semantic retrieval.
 :::
 
 ### 2. Model Business Subjects & Terms
@@ -87,7 +87,7 @@ Go to the **MCP Services** page and click **New Service**:
 
 ### 4. Connect from Agent Clients
 
-DatI exposes endpoints using the standard **Model Context Protocol (Streamable HTTP)**. Once published, you can copy the client JSON config directly from the **Access Configuration Card** on the service detail page.
+XIAOAI exposes endpoints using the standard **Model Context Protocol (Streamable HTTP)**. Once published, you can copy the client JSON config directly from the **Access Configuration Card** on the service detail page.
 
 #### Client Configuration Example
 

@@ -1,6 +1,6 @@
 # E2E 测试用例编写规范
 
-本目录包含 DatI 后端的端到端测试用例。测试由 AI Agent 自动执行——Agent 读取用例、理解意图、自主调用 API、生成报告。
+本目录包含 XIAOAI 后端的端到端测试用例。测试由 AI Agent 自动执行——Agent 读取用例、理解意图、自主调用 API、生成报告。
 
 ## 总宗旨
 
@@ -113,7 +113,7 @@ Agent 加载 e2e-tester skill → 选择目标模块 → Agent 自主执行并�
 ### 服务启动
 - 启动命令必须指定 workingDirectory；多模块结构下需先 install 全部模块（core/扩展模块），再直接从 app pom 启动：
   ```bash
-  mvn -f pom.xml -q -DskipTests install && mvn -f backend/app/pom.xml spring-boot:run -Dspring-boot.run.workingDirectory=/Users/zhangyimin/IdeaProjects/dati
+  mvn -f pom.xml -q -DskipTests install && mvn -f backend/app/pom.xml spring-boot:run -Dspring-boot.run.workingDirectory=.
   ```
   （必须在仓库根 pom 上 install，否则 `dati-parent` 不会进本地仓库，`spring-boot:run` 会报找不到父 POM）
 - 以 H2 file 模式运行，数据库文件在 `./db/dati`（H2 file 模式单进程独占，启动前需确保无其他实例占用）

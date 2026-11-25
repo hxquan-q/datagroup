@@ -10,7 +10,7 @@
     </parent>
     <artifactId>dati-auth-apikey</artifactId>
     <name>dati-auth-apikey</name>
-    <description>DatI API Key Authentication Extension</description>
+    <description>XIAOAI API Key Authentication Extension</description>
 
     <dependencies>
         <dependency>

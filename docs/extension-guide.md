@@ -1,12 +1,12 @@
-# DatI 扩展模块开发指南（Extension Development Guide）
+# XIAOAI 扩展模块开发指南（Extension Development Guide）
 
-本文档指导开发者如何为 DatI 平台开发和集成扩展模块（如认证方式扩展、搜索引擎适配器、外部授权等）。
+本文档指导开发者如何为 XIAOAI 平台开发和集成扩展模块（如认证方式扩展、搜索引擎适配器、外部授权等）。
 
 ---
 
 ## 1. 架构理念
 
-DatI 采用 **微核心 + 插件化（Microkernel & Plugins）** 架构：
+XIAOAI 采用 **微核心 + 插件化（Microkernel & Plugins）** 架构：
 - **`dati-core`**：核心业务领域模型、基础接口与 SPI 扩展点契约，零第三方具体凭据/引擎依赖；
 - **`dati-ext-*`**：可插拔的扩展实现，依赖 `dati-core` 并实现相应的 SPI 接口；
 - **`dati-app`**：最终运行与部署单元，按需组装所需的 core 与扩展模块，打包为 Spring Boot Fat JAR。

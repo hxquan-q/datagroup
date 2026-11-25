@@ -103,9 +103,9 @@ onMounted(() => {
       <div
         class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] text-xs lg:text-sm text-[var(--ep-text-color-secondary)]"
       >
-        <img src="/dati.svg" alt="DatI" class="w-4 h-4 object-contain" />
+        <img src="/xiaoai.svg" alt="XIAOAI" class="w-4 h-4 object-contain" />
         <span class="font-semibold text-[var(--ep-text-color-primary)]"
-          >DatI</span
+          >XIAOAI</span
         >
         <span
           class="w-1.5 h-1.5 rounded-full bg-[var(--ep-color-primary)]"

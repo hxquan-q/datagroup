@@ -2,7 +2,7 @@
 
 [English](development.md) | [简体中文](development_zh.md)
 
-This guide walks you through setting up and running DatI locally for development and debugging.
+This guide walks you through setting up and running XIAOAI locally for development and debugging.
 
 ---
 
@@ -15,7 +15,7 @@ This guide walks you through setting up and running DatI locally for development
 
 ### External Dependency: Elasticsearch 8.x
 - **Version Requirement**: The semantic search module is natively built on the Elasticsearch 8.x Java Client.
-- **Analyzers (configurable, IK optional)**: The semantic index analyzers are configured via `DATI_ELASTICSEARCH_INDEX_ANALYZER` / `DATI_ELASTICSEARCH_SEARCH_ANALYZER`, defaulting to `standard` (built into Elasticsearch, works on any instance). For Chinese word-level segmentation use `ik_max_word` / `ik_smart` (requires the IK plugin).
+- **Analyzers (configurable, IK optional)**: The semantic index analyzers are configured via `XIAOAI_ELASTICSEARCH_INDEX_ANALYZER` / `XIAOAI_ELASTICSEARCH_SEARCH_ANALYZER`, defaulting to `standard` (built into Elasticsearch, works on any instance). For Chinese word-level segmentation use `ik_max_word` / `ik_smart` (requires the IK plugin).
   - Analyzers only apply when the `semantic_search` index is **first created**; after changing the configuration, delete that index and restart the application — data is rebuilt on the next sync.
 - **Quick Local Setup**:
   - Default (no Chinese segmentation needed, vanilla image):
@@ -34,8 +34,8 @@ This guide walks you through setting up and running DatI locally for development
       -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
       davyinsa/elasticsearch-ik:8.18.7
     
-    DATI_ELASTICSEARCH_INDEX_ANALYZER=ik_max_word \
-      DATI_ELASTICSEARCH_SEARCH_ANALYZER=ik_smart \
+    XIAOAI_ELASTICSEARCH_INDEX_ANALYZER=ik_max_word \
+      XIAOAI_ELASTICSEARCH_SEARCH_ANALYZER=ik_smart \
       mvn -pl app spring-boot:run
     ```
 

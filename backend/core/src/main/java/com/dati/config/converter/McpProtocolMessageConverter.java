@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Serializes MCP protocol messages ({@link McpSchema.JSONRPCMessage} subtypes) with the
- * SDK camelCase ObjectMapper. The global DatI ObjectMapper is configured with
+ * SDK camelCase ObjectMapper. The global XIAOAI ObjectMapper is configured with
  * SNAKE_CASE for the REST API ({@code spring.jackson.property-naming-strategy}), which
  * would corrupt protocol field names like {@code protocolVersion}/{@code inputSchema}.
  *

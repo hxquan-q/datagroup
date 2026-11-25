@@ -1,102 +1,30 @@
-# DatI - Connect AI Agents to Your Databases
+# XIAOAI - Intelligent Data Q&A Platform
 
 [English](README.md) | [简体中文](README_zh.md)
 
-DatI (Data Intelligence) publishes databases as semantically enhanced, access-controlled MCP services. Connect them to your agents or any MCP host, and query, analyze, or modify data within the authorized scope.
+XIAOAI is an intelligent data Q&A and MCP service platform for enterprise business databases. It publishes databases as semantically enhanced, access-controlled MCP services so agents and MCP hosts can query, analyze, and maintain data within the authorized scope.
 
-```text
-┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐
-│  User A: OpenCode  │  │  User B: WorkBuddy │  │  User N: DataAgent │
-└──────────┬─────────┘  └──────────┬─────────┘  └──────────┬─────────┘
-           └───────────────────────┼───────────────────────┘
-                                   ▼ MCP (Streamable HTTP)
-┌─────────────────────────────── DatI ───────────────────────────────┐
-│       Semantic       │       Security       │        Tools         │
-└──────────────────────────────────┬─────────────────────────────────┘
-                                   ▼
-┌────────────────────────────────────────────────────────────────────┐
-│     MySQL      │   PostgreSQL    │   ClickHouse   │     Doris      │
-└────────────────────────────────────────────────────────────────────┘
-```
+This repository is an independent downstream derivative of the open-source [DatI](https://github.com/yimindev/dati) project. Upstream copyright and license attribution are documented in [NOTICE](NOTICE) and [LICENSE](LICENSE).
 
-## Why DatI?
+## Core Capabilities
 
-1. **Multi-Database Support**: Supports MySQL, PostgreSQL, ClickHouse, Doris, and other relational and analytical databases
-2. **Semantic Enhancement**: Supports business terms, column aliases, and automatic enum dictionary extraction. Combined with semantic search, it helps models understand business jargon and find the right tables
-3. **Flexible Integration**: Based on standard [MCP](https://modelcontextprotocol.io/) (Streamable HTTP), easily integrates into your existing agents or workflows
-4. **Effortless MCP Publishing**: Ready-to-use built-in tools (schema inspection, SQL execution) and parameterized SQL tools to publish MCP services with zero extra deployment
-5. **Security & Governance**: Centrally managed database credentials with user-level permission and data scope isolation
-
-## Use Cases
-
-- **Conversational Data Analysis (NL2SQL)**: Connect business databases and support NL2SQL analysis workflows with semantic metadata and built-in tools
-- **Lightweight App Development**: Wrap databases as MCP services so agents can query and update data through conversation to build lightweight applications
-
-## Try It Online
-
-Demo URL: https://dati-demo.zhangyimin.me
-
-The demo instance is preloaded with sample data and reset periodically.
-
-### Demo
-
-Data and configuration reference the [AdventureWorks sample](examples/adventureworks-dw) and can be automated via the [dati-ops skill](skills/dati-ops).
-
-#### 1. Data Source Metadata Configuration (configurable tables, columns, and values)
-
-<details>
-<summary><b>View Demo</b></summary>
-
-![Data Source Metadata Configuration](docs/images/data-ops-en.webp)
-
-</details>
-
-#### 2. Business Subject Configuration (select relevant tables, define business terms)
-
-<details>
-<summary><b>View Demo</b></summary>
-
-![Subject Configuration](docs/images/subject-ops-en.webp)
-
-</details>
-
-#### 3. MCP Service Configuration (choose business subjects, enable built-in tools, add parameterized SQL tools)
-
-<details open>
-<summary><b>View Demo</b></summary>
-
-![MCP Service Configuration](docs/images/mcp-ops-en.webp)
-
-</details>
-
-#### 4. Configure MCP in Agent (e.g., Antigravity)
-
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Configure MCP in Agent](docs/images/antigravity-mcp-config.jpg)
-
-</details>
-
-#### 5. Query Data in Agent
-
-<details open>
-<summary><b>View Demo</b></summary>
-
-![Query Data in Agent](docs/images/agy-ana-en.webp)
-
-</details>
-
+1. **Intelligent Data Q&A**: Improves NL2SQL with business terms, field aliases, enum values, and metric definitions
+2. **Multi-Database Support**: Supports MySQL, PostgreSQL, ClickHouse, Doris, and other relational or analytical databases
+3. **Semantic Governance**: Organizes tables by business subject and maintains business semantics
+4. **MCP Publishing**: Publishes data services through standard [MCP](https://modelcontextprotocol.io/) Streamable HTTP
+5. **Security & Governance**: Centrally managed credentials with user-level permission and data scope isolation
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/yimindev/dati.git && cd dati
-cp .env.example .env                # Configure JWT_SECRET and ES password
-docker compose up -d
+git clone https://github.com/hxquan-q/datagroup.git
+cd datagroup
+cp .env.example .env
+# Edit .env and configure at least JWT_SECRET and SPRING_ELASTICSEARCH_PASSWORD
+docker compose up -d --build
 ```
 
-Open `http://localhost:8085`. Register with username `admin` to get super admin role. For production tuning and external DB setup, see [Deployment Guide](docs/deployment.md).
+Open `http://localhost:8085`. Register the first user with username `admin` to receive the super admin role. For production configuration, see the [Deployment Guide](docs/deployment.md).
 
 ## Tech Stack
 
@@ -108,23 +36,29 @@ Open `http://localhost:8085`. Register with username `admin` to get super admin 
 ## Documentation
 
 - [Local Development Guide](docs/development.md): Environment setup, backend/frontend startup, and project conventions
-- [Server Deployment Guide](docs/deployment.md): Architecture overview, Docker Compose deployment, and operational maintenance
-- [Architecture Overview](docs/architecture/overview.md): High-level architecture, module index, and key design conventions
-- **Examples**:
-  - [Enterprise BI & Retail Analytics (AdventureWorks DW)](examples/adventureworks-dw/README.md): Star schema Text-to-SQL, metric governance, multi-table joins, and parameterized acceleration
-  - [Family Finance Assistant](examples/family-finance/README.md): Multi-user collaborative bookkeeping, parameterized permission control, transparent SQL queries, and self-healing agent workflows
-- **Agent Skills** ([Agent Skills Open Standard](https://agentskills.io), auto-discovered by repository agents):
-  - [dati-ops](skills/dati-ops/SKILL.md): **User Skill** — Configure and operate the platform via HTTP APIs (data sources, subjects & terms, MCP services); self-contained with built-in openapi.json and query tools, independently distributable; connected in-repo via `.agents/skills/dati-ops/`
-  - [e2e-tester](.agents/skills/e2e-tester/SKILL.md): **Developer Skill** — E2E HTTP integration tests and API behavior validation (see test cases in [e2e-tests/test-cases/](e2e-tests/test-cases))
-- **User Guide**: [docs/user-guide](docs/user-guide/index.md) (VitePress site, bilingual)
-- **API Specification**: [docs/api/openapi.json](docs/api/openapi.json) (Used by E2E test toolchains)
-- **AI Coding Assistant Guidelines**: [AGENTS.md](AGENTS.md) and [.agents/rules/](.agents/rules) (Backend, frontend, and design system rules)
+- [Server Deployment Guide](docs/deployment.md): Architecture overview, Docker Compose deployment, and operations
+- [Architecture Overview](docs/architecture/overview.md): System architecture, core modules, and interface conventions
+- [User Guide](docs/user-guide/en/index.md): VitePress site, bilingual
+- [API Specification](docs/api/openapi.json): Used by E2E test toolchains
+- [AI Coding Assistant Guidelines](AGENTS.md): Backend, frontend, and design-system rules
 
-## Community
+## Examples
 
-- **Articles**: [DEV.to Series (DatI Devlog)](https://dev.to/yimindev/series/45213)
-- **Discussions**: [LINUX DO](https://linux.do/t/topic/2929301)
-- **WeChat Official Account**:
+- [Enterprise BI & Retail Analytics (AdventureWorks DW)](examples/adventureworks-dw/README.md)
+- [Family Finance Assistant](examples/family-finance/README.md)
 
-  <img src="docs/images/qrcode_for_dati_niffler.jpg" width="140" alt="WeChat Official Account" />
+## Agent Skills
 
+- [dati-ops](skills/dati-ops/SKILL.md): Configure and operate the platform through HTTP APIs
+- [e2e-tester](.agents/skills/e2e-tester/SKILL.md): E2E HTTP integration tests and API behavior validation
+
+## Copyright and License
+
+XIAOAI is a downstream derivative of DatI.
+
+- Upstream project: [yimindev/dati](https://github.com/yimindev/dati)
+- Upstream copyright: `Copyright 2026 DatI Contributors`
+- Downstream modifications: `Copyright 2026 XIAOAI Contributors`
+- License: [Apache License 2.0](LICENSE)
+
+See [NOTICE](NOTICE) for the complete attribution statement. Use of the XIAOAI name or logo does not imply endorsement by or affiliation with the upstream DatI project or its contributors.

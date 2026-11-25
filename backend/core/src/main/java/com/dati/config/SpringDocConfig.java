@@ -20,7 +20,7 @@ public class SpringDocConfig {
     public OpenAPI datiOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("DatI API")
+                        .title("XIAOAI API")
                         .version("0.10.1"));
     }
 

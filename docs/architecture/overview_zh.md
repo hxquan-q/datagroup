@@ -2,11 +2,11 @@
 
 [English](overview.md) | [简体中文](overview_zh.md)
 
-本目录收录 DatI 各模块的架构文档，与代码保持同步维护。建议按以下顺序阅读。
+本目录收录 XIAOAI 各模块的架构文档，与代码保持同步维护。建议按以下顺序阅读。
 
 ## 高层架构
 
-![DatI 架构示意图](../images/dati-visual-positioning.svg)
+![XIAOAI 架构示意图](../images/xiaoai-visual-positioning.svg)
 
 - **前端**（`frontend/`）：Vue 3 + Vite + TypeScript，组件库 Element Plus，样式 TailwindCSS 4，单元测试 Vitest。
 - **后端**（`backend/`）：Spring Boot 3.5.x（Java 21），按 DDD 分层（`domain` / `repository` / `server`），暴露 REST API，JPA 访问元数据库。

@@ -46,7 +46,7 @@ class SpaWebConfigTest {
 
         mockMvc.perform(get("/index.html"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI SPA Root")));
+                .andExpect(content().string(containsString("XIAOAI SPA Root")));
     }
 
     @Test
@@ -54,7 +54,7 @@ class SpaWebConfigTest {
     void shouldFallbackSpaRouteToIndexHtml() throws Exception {
         MvcResult result = mockMvc.perform(get("/data-sources"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI SPA Root")))
+                .andExpect(content().string(containsString("XIAOAI SPA Root")))
                 .andReturn();
         assertNull(result.getResponse().getForwardedUrl());
     }
@@ -64,7 +64,7 @@ class SpaWebConfigTest {
     void shouldFallbackDeepSpaRouteToIndexHtml() throws Exception {
         mockMvc.perform(get("/a/b/c/d/e"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI SPA Root")));
+                .andExpect(content().string(containsString("XIAOAI SPA Root")));
     }
 
     @Test
@@ -72,7 +72,7 @@ class SpaWebConfigTest {
     void shouldServeStaticAssetDirectly() throws Exception {
         mockMvc.perform(get("/assets/app.js"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI Static App JS")));
+                .andExpect(content().string(containsString("XIAOAI Static App JS")));
     }
 
     // --- Docs ---
@@ -96,7 +96,7 @@ class SpaWebConfigTest {
 
         mockMvc.perform(get("/docs/index.html"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI Documentation Root")));
+                .andExpect(content().string(containsString("XIAOAI Documentation Root")));
     }
 
     @Test
@@ -104,7 +104,7 @@ class SpaWebConfigTest {
     void shouldServeLocaleDirectoryIndex() throws Exception {
         mockMvc.perform(get("/docs/en/"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI Documentation EN Root")));
+                .andExpect(content().string(containsString("XIAOAI Documentation EN Root")));
     }
 
     @Test
@@ -112,13 +112,13 @@ class SpaWebConfigTest {
     void shouldServeDocsCleanUrl() throws Exception {
         MvcResult result = mockMvc.perform(get("/docs/faq"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI FAQ Page")))
+                .andExpect(content().string(containsString("XIAOAI FAQ Page")))
                 .andReturn();
         assertNull(result.getResponse().getForwardedUrl());
 
         mockMvc.perform(get("/docs/faq.html"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("DatI FAQ Page")));
+                .andExpect(content().string(containsString("XIAOAI FAQ Page")));
     }
 
     @Test
@@ -126,7 +126,7 @@ class SpaWebConfigTest {
     void shouldReturn404ForUnknownDocsPage() throws Exception {
         mockMvc.perform(get("/docs/nonexistent"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(not(containsString("DatI SPA Root"))));
+                .andExpect(content().string(not(containsString("XIAOAI SPA Root"))));
     }
 
     // --- API and exclusions ---
@@ -136,7 +136,7 @@ class SpaWebConfigTest {
     void shouldKeepApiRoutesIntact() throws Exception {
         mockMvc.perform(get("/v1/auth/me"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string(not(containsString("DatI SPA Root"))));
+                .andExpect(content().string(not(containsString("XIAOAI SPA Root"))));
     }
 
     @Test
@@ -144,7 +144,7 @@ class SpaWebConfigTest {
     void shouldReturn404ForUnknownPublicApiPath() throws Exception {
         mockMvc.perform(get("/v1/public/nonexistent"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(not(containsString("DatI SPA Root"))));
+                .andExpect(content().string(not(containsString("XIAOAI SPA Root"))));
     }
 
     @Test
@@ -152,10 +152,10 @@ class SpaWebConfigTest {
     void shouldReturn404ForActuatorPath() throws Exception {
         mockMvc.perform(get("/actuator"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(not(containsString("DatI SPA Root"))));
+                .andExpect(content().string(not(containsString("XIAOAI SPA Root"))));
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(not(containsString("DatI SPA Root"))));
+                .andExpect(content().string(not(containsString("XIAOAI SPA Root"))));
     }
 
     @Test

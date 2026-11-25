@@ -1,6 +1,6 @@
 # Production Example: Star Schema Retail Analytics (AdventureWorks DW)
 
-This example demonstrates how to connect **DatI (Data Intelligence)** to an enterprise-grade Kimball Star Schema data warehouse, constructing an enterprise ChatBI / Text-to-SQL service featuring **intelligent multi-table joins, metric governance, parameterized acceleration, read-only guardrails, and automated charting**.
+This example demonstrates how to connect **XIAOAI**, an intelligent data Q&A platform, to an enterprise-grade Kimball Star Schema data warehouse, constructing an enterprise ChatBI / Text-to-SQL service featuring **intelligent multi-table joins, metric governance, parameterized acceleration, read-only guardrails, and automated charting**.
 
 ---
 
@@ -11,7 +11,7 @@ In real-world LLM data query (NL2SQL) scenarios, enterprises typically face thre
 2. **Metric Drift & Acronym Ambiguity**: Terms like "Average Order Value (AOV)" are often mistaken by LLMs as simple line-item averages rather than distinct order counts. Formulas for "Profit Margin" differ across teams depending on freight and cost deductions;
 3. **Data Warehouse Pitfalls & Performance**: In AdventureWorks DW, `PromotionKey = 1` indicates "No Discount" (standard retail price). LLMs writing raw SQL miss this nuance in over 90% of cases, corrupting promotional analysis. Moreover, complex ad-hoc joins incur high token latency.
 
-Through DatI's **Data Sources, Subjects, Business Term Dictionary, and Parameterized Tools**, organizations establish a trusted, audited, and secure MCP data access gateway.
+Through XIAOAI's **Data Sources, Subjects, Business Term Dictionary, and Parameterized Tools**, organizations establish a trusted, audited, and secure MCP data access gateway.
 
 ```
                        ┌─────────────────────────┐
@@ -65,11 +65,11 @@ python3 examples/adventureworks-dw/convert.py --host <HOST> --port 3306 --user <
 
 ---
 
-## 2. DatI Platform Configuration Steps
+## 2. XIAOAI Platform Configuration Steps
 
 ### Step 1: Connect Data Source & Enrich Metadata Semantics
 
-1. Log into the DatI Console, go to **Data Sources** $\rightarrow$ **New Data Source**;
+1. Log into the XIAOAI Console, go to **Data Sources** $\rightarrow$ **New Data Source**;
 2. Enter MySQL connection credentials, verify connection, and save;
 3. Add the following 8 core business tables and click **Sync Metadata**:
    - `factinternetsales` (Retail sales transactions)
@@ -120,8 +120,8 @@ GROUP BY dt.CalendarYear, dt.CalendarQuarter;
 
 In enterprise Text-to-SQL / ChatBI, business users frequently query in their native language (e.g., Chinese queries like "自行车", "北美大区", "批量折扣") or colloquial abbreviations, while the underlying data warehouse strictly stores English string literals (`Bikes`, `North America`, `Volume Discount`).
 
-Without value extraction and synonyms, LLMs hallucinate non-existent SQL filters (e.g. `WHERE EnglishProductCategoryName = '自行车'`), resulting in empty query results. DatI resolves this via **Two-Stage Value Semantic Indexing**:
-1. **Stage 1 (Distinct Value Extraction)**: Set `extract_value_enabled = true` on low-cardinality dimension columns, and trigger `POST /v1/data-sources/{dsId}/tables/{tId}/columns/{cId}/values/extract` to sample distinct database values into DatI's semantic index;
+Without value extraction and synonyms, LLMs hallucinate non-existent SQL filters (e.g. `WHERE EnglishProductCategoryName = '自行车'`), resulting in empty query results. XIAOAI resolves this via **Two-Stage Value Semantic Indexing**:
+1. **Stage 1 (Distinct Value Extraction)**: Set `extract_value_enabled = true` on low-cardinality dimension columns, and trigger `POST /v1/data-sources/{dsId}/tables/{tId}/columns/{cId}/values/extract` to sample distinct database values into XIAOAI's semantic index;
 2. **Stage 2 (Multilingual Synonym Binding)**: Bind user aliases and multilingual translations to each distinct database value (`PUT /v1/data-sources/{dsId}/tables/{tId}/columns/{cId}/values`).
 
 *Pre-Configured Dimension Dictionaries in AdventureWorks DW*:
@@ -133,7 +133,7 @@ Without value extraction and synonyms, LLMs hallucinate non-existent SQL filters
 | `dimpromotion` | `EnglishPromotionType` | `No Discount`<br>`Volume Discount`<br>`Seasonal Discount`<br>`New Product`<br>`Discontinued Product`<br>`Excess Inventory` | 无折扣, 原价, 标准价格, 正常售价<br>批量折扣, 批量优惠, 量大优惠, 走量折扣<br>季节性折扣, 换季促销, 节假日促销<br>新品优惠, 新品促销, 首发特惠<br>停产特价, 清仓优惠, 尾货清仓<br>库存积压促销, 过剩库存特惠, 库存特价 |
 
 *Runtime Value Resolution Flow*:
-When a user asks: *"查一下 2026 年北美大区自行车的销售额"*, the agent calls `search_tables_and_terms(keywords: ["北美大区", "自行车", "2026"])`. DatI hits the `FIELD_VALUE` index and injects `sample_values: ["Bikes", "自行车", ...]` and `sample_values: ["North America", "北美", ...]`. The agent immediately generates the precise predicate:
+When a user asks: *"查一下 2026 年北美大区自行车的销售额"*, the agent calls `search_tables_and_terms(keywords: ["北美大区", "自行车", "2026"])`. XIAOAI hits the `FIELD_VALUE` index and injects `sample_values: ["Bikes", "自行车", ...]` and `sample_values: ["North America", "北美", ...]`. The agent immediately generates the precise predicate:
 `WHERE dpc.EnglishProductCategoryName = 'Bikes' AND dst.SalesTerritoryGroup = 'North America'`
 without any guesswork.
 
@@ -268,7 +268,7 @@ Any MCP-compatible client (Cursor, Claude Desktop, Antigravity, Dify, Coze, or c
 >
 > **Agent Execution Logic**:
 > 1. Calls `search_tables_and_terms(keywords: ["北美大区", "自行车", "2026"])`;
-> 2. Hits DatI's `FIELD_VALUE` semantic index:
+> 2. Hits XIAOAI's `FIELD_VALUE` semantic index:
 >    - Keyword `"自行车"` hits synonym of `dimproductcategory.EnglishProductCategoryName = 'Bikes'`;
 >    - Keyword `"北美大区"` hits synonym of `dimsalesterritory.SalesTerritoryGroup = 'North America'`;
 >    - Keyword `"2026"` hits `dimtime.CalendarYear = '2026'`;
@@ -302,7 +302,7 @@ Any MCP-compatible client (Cursor, Claude Desktop, Antigravity, Dify, Coze, or c
 >
 > **Agent Execution Logic**:
 > 1. Calls `search_tables_and_terms(keywords: ["profit margin", "aov", "territory"])`;
-> 2. Retrieves governed formulas from DatI's term repository:
+> 2. Retrieves governed formulas from XIAOAI's term repository:
 >    - `Profit Margin`: `SUM(salesamount - totalproductcost) / SUM(salesamount)`
 >    - `AOV`: `SUM(salesamount) / COUNT(DISTINCT salesordernumber)`
 > 3. Strict adherence to audited formulas ensures zero metric hallucination.
@@ -329,7 +329,7 @@ Any MCP-compatible client (Cursor, Claude Desktop, Antigravity, Dify, Coze, or c
 >
 > **Agent Execution Logic**:
 > 1. Agent attempts to call `execute_sql` with `DELETE FROM factinternetsales WHERE SalesOrderNumber = 'SO43701'`;
-> 2. DatI's gateway AST parser intercepts the statement and halts execution: `SQL operation prohibited by policy: DELETE not allowed`.
+> 2. XIAOAI's gateway AST parser intercepts the statement and halts execution: `SQL operation prohibited by policy: DELETE not allowed`.
 >
 > **Agent Response**:
 > "❌ Operation blocked by enterprise security policy. This data service operates in strict read-only mode (`allow_select=true, allow_delete=false`). Destructive commands (DELETE, UPDATE, DDL) cannot reach the database. Please utilize standard ERP workflows for order cancellations."
@@ -341,7 +341,7 @@ Any MCP-compatible client (Cursor, Claude Desktop, Antigravity, Dify, Coze, or c
 >
 > **Agent Execution Logic**:
 > 1. Calls `upsert_business_term` to register `VIP Customer` under subject `Retail Sales Analytics`;
-> 2. DatI logs an audit record, persists the definition, and hot-reloads the dictionary.
+> 2. XIAOAI logs an audit record, persists the definition, and hot-reloads the dictionary.
 >
 > **Agent Response**:
 > "✅ Business term registered successfully! `VIP Customer` (`dimcustomer.yearlyincome > 100000`) is now active under 【Retail Sales Analytics】. All future team queries mentioning VIP customers will apply this standard automatically."

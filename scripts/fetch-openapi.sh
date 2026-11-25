@@ -7,11 +7,11 @@
 #   3. 分发副本 -> skills/dati-ops/openapi.json(技能自包含快照,保证两份一致)
 #
 # 前置: 后端服务运行中(mvn -f backend/pom.xml -pl app spring-boot:run)
-# 覆盖: DATI_API_DOCS_URL 环境变量可指定其他环境的 api-docs 地址
+# 覆盖: XIAOAI_API_DOCS_URL 环境变量可指定其他环境的 api-docs 地址
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-API_DOCS_URL="${DATI_API_DOCS_URL:-http://localhost:8085/v3/api-docs}"
+API_DOCS_URL="${XIAOAI_API_DOCS_URL:-http://localhost:8085/v3/api-docs}"
 DST_REPO="$ROOT/docs/api/openapi.json"
 DST_SKILL="$ROOT/skills/dati-ops/openapi.json"
 

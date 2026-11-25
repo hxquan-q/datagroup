@@ -10,7 +10,7 @@
     </parent>
     <artifactId>dati-core</artifactId>
     <name>dati-core</name>
-    <description>DatI Core Library</description>
+    <description>XIAOAI Core Library</description>
 
     <dependencies>
         <dependency>

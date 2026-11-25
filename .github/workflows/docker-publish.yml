@@ -1,4 +1,4 @@
-name: Build and Push Docker Image to ACR and GHCR
+name: Build and Push Docker Image
 
 on:
   push:
@@ -12,47 +12,30 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      version: ${{ steps.meta.outputs.version }}
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Docker Buildx (support advanced caching and build optimizations)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 3. Log in to Aliyun Container Registry (ACR)
-      - name: Log in to Aliyun ACR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ vars.ACR_REGISTRY }}
-          username: ${{ vars.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-
-      # 4. Log in to GitHub Packages (GHCR)
-      - name: Log in to GitHub Container Registry (GHCR)
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5. Extract Git Tag metadata for image tags (generate semver and latest tags for both ACR and GHCR)
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ vars.ACR_REGISTRY }}/${{ vars.ACR_NAMESPACE }}/${{ vars.ACR_REPOSITORY || github.event.repository.name }}
-            ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest,enable=${{ !contains(github.ref, 'alpha') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc') }}
 
-      # 6. Build and push image to ACR and GHCR (with GitHub Actions cache enabled)
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -67,112 +50,3 @@ jobs:
           sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  # 6. Automated deployment to Aliyun ECS
-  deploy-aliyun:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to Aliyun ECS via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          ACR_REGISTRY: ${{ vars.ACR_VPC_REGISTRY || 'crpi-baupqnroh79r2fj9-vpc.cn-hangzhou.personal.cr.aliyuncs.com' }}
-          ACR_USERNAME: ${{ vars.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-        with:
-          host: ${{ vars.ECS_HOST || secrets.ECS_HOST }}
-          username: ${{ vars.ECS_USER || secrets.ECS_USER || 'root' }}
-          key: ${{ secrets.ECS_SSH_KEY }}
-          port: ${{ vars.ECS_PORT || 22 }}
-          envs: ACR_REGISTRY,ACR_USERNAME,ACR_PASSWORD
-          script: |
-            set -e
-            echo "$ACR_PASSWORD" | docker login --username "$ACR_USERNAME" --password-stdin "$ACR_REGISTRY"
-            docker network create dati-net 2>/dev/null || true
-
-            VERSION="${{ needs.build-and-push.outputs.version }}"
-            IMAGE="${ACR_REGISTRY}/${{ vars.ACR_NAMESPACE }}/${{ vars.ACR_REPOSITORY || 'dati' }}:${VERSION}"
-
-            echo "🚀 Deploying DatI version ${VERSION} to Aliyun ECS..."
-            echo "📥 Pulling image via VPC registry: ${IMAGE}..."
-            docker pull "${IMAGE}"
-
-            echo "🛑 Stopping and removing previous container..."
-            docker stop dati-app 2>/dev/null || true
-            docker rm dati-app 2>/dev/null || true
-
-            echo "▶️ Starting new container..."
-            docker run -d --name dati-app \
-              --network dati-net \
-              --restart unless-stopped \
-              --memory 1536m \
-              -p 18085:8085 \
-              --env-file /opt/dati/app.env \
-              --env-file /opt/dati/secrets.env \
-              "${IMAGE}"
-
-            echo "⏳ Waiting for application health check..."
-            for i in $(seq 1 30); do
-              STATUS=$(docker inspect --format='{{json .State.Health.Status}}' dati-app 2>/dev/null || echo '"unknown"')
-              if [ "$STATUS" = '"healthy"' ]; then
-                echo "🎉 Application health check passed!"
-                break
-              fi
-              echo "Current health status: ${STATUS}, waiting ($i/30)..."
-              sleep 2
-            done
-
-            echo "🧹 Pruning unused images..."
-            docker image prune -f
-
-            echo "✅ Aliyun ECS deployment finished! Container status:"
-            docker ps --filter "name=dati-app"
-
-  # 7. Automated deployment to UCloud server
-  deploy-ucloud:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to UCloud via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.UCLOUD_HOST || secrets.UCLOUD_HOST || '165.154.45.217' }}
-          username: ${{ vars.UCLOUD_USER || secrets.UCLOUD_USER || 'ubuntu' }}
-          key: ${{ secrets.UCLOUD_SSH_KEY }}
-          password: ${{ secrets.UCLOUD_PASSWORD }}
-          port: ${{ vars.UCLOUD_PORT || 22 }}
-          script: |
-            set -e
-            VERSION="${{ needs.build-and-push.outputs.version }}"
-            IMAGE="ghcr.io/${{ github.repository }}:${VERSION}"
-            IMAGE=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')
-            LATEST_IMAGE="ghcr.io/${{ github.repository }}:latest"
-            LATEST_IMAGE=$(echo "${LATEST_IMAGE}" | tr '[:upper:]' '[:lower:]')
-
-            echo "🚀 Deploying DatI version ${VERSION} to UCloud..."
-            echo "📥 Pulling new image from GHCR: ${IMAGE}..."
-            docker pull "${IMAGE}"
-            docker tag "${IMAGE}" "${LATEST_IMAGE}"
-
-            echo "▶️ Restarting application container..."
-            cd /home/ubuntu/dati
-            docker compose up -d --no-deps --force-recreate dati-app
-
-            echo "⏳ Waiting for application health check..."
-            for i in $(seq 1 30); do
-              STATUS=$(docker inspect --format='{{json .State.Health.Status}}' dati-app 2>/dev/null || echo '"unknown"')
-              if [ "$STATUS" = '"healthy"' ]; then
-                echo "🎉 Application health check passed!"
-                break
-              fi
-              echo "Current health status: ${STATUS}, waiting ($i/30)..."
-              sleep 2
-            done
-
-            echo "🧹 Pruning unused images..."
-            docker image prune -f
-
-            echo "✅ UCloud deployment finished! Service status:"
-            docker compose ps
-
-
