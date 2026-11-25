@@ -56,6 +56,7 @@ function isActive(path: string, exact = false) {
           class="sidebar-link"
           :class="{ 'is-active': isActive(item.path, item.exact) }"
           :title="collapsed ? item.label : undefined"
+          :aria-label="item.label"
         >
           <span class="sidebar-icon">
             <component :is="item.icon" :size="18" />
@@ -226,7 +227,7 @@ function isActive(path: string, exact = false) {
 
   .sidebar-label,
   .sidebar-caption,
-  .sidebar-collapse span {
+  .sidebar-collapse {
     display: none;
   }
 
