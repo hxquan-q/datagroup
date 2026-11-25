@@ -380,6 +380,8 @@ export default {
       manageApiKeys: "获取 API Key",
       configTitle: "JSON 配置",
       copySuccess: "接入配置已复制到剪贴板",
+      copyEndpoint: "复制服务端点",
+      copyConfig: "复制 MCP 配置",
       configGuide: "不同客户端对配置格式的支持存在差异，可参考此示例按需调整。",
     },
     toolCount: "工具数",

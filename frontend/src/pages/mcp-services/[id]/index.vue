@@ -8,11 +8,8 @@ import { onMounted, ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
-import {
-  InfoFilled,
-  SwitchButton,
-  VideoPlay,
-} from "@element-plus/icons-vue";
+import { InfoFilled } from "@element-plus/icons-vue";
+import { Power, PowerOff, Rocket } from "@lucide/vue";
 import type { McpServiceDiffVO, McpServiceVO } from "~/api/mcp-service";
 import {
   disableMcpService,
@@ -248,9 +245,9 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-5 p-6 overflow-hidden">
+  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-4 p-5 md:p-6 overflow-hidden">
     <!-- Top Navigation Breadcrumbs & Action Bar -->
-    <div class="detail-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+    <div class="detail-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] px-4 py-3.5 shadow-sm">
       <div class="flex items-center gap-3 flex-wrap">
         <el-breadcrumb separator="/">
           <el-breadcrumb-item :to="{ path: '/mcp-services' }">
@@ -284,12 +281,12 @@ const handleSave = async () => {
         </span>
       </div>
 
-      <div class="detail-actions flex items-center gap-3">
+      <div class="detail-actions flex items-center justify-end gap-2 flex-wrap">
         <!-- DRAFT：首次发布 -->
         <el-button
           v-if="service?.status === 'DRAFT'"
           type="primary"
-          :icon="VideoPlay"
+          :icon="Rocket"
           :loading="publishing"
           @click="openPublishDialog"
         >
@@ -305,7 +302,7 @@ const handleSave = async () => {
             trigger="hover"
           >
             <template #reference>
-              <el-button type="primary" :icon="VideoPlay" :loading="publishing" @click="openPublishDialog">
+              <el-button type="primary" :icon="Rocket" :loading="publishing" @click="openPublishDialog">
                 {{ t("mcpService.publishChanges") }}
               </el-button>
             </template>
@@ -314,7 +311,7 @@ const handleSave = async () => {
           <el-button
             type="warning"
             plain
-            :icon="SwitchButton"
+            :icon="PowerOff"
             :loading="statusChanging"
             @click="handleDisable"
           >
@@ -326,7 +323,7 @@ const handleSave = async () => {
         <template v-if="service?.status === 'DISABLED'">
           <el-button
             type="success"
-            :icon="VideoPlay"
+            :icon="Power"
             :loading="statusChanging"
             @click="handleEnable"
           >
@@ -336,7 +333,7 @@ const handleSave = async () => {
             v-if="diff?.has_changes"
             type="primary"
             plain
-            :icon="VideoPlay"
+            :icon="Rocket"
             :loading="publishing"
             @click="openPublishDialog"
           >
@@ -431,13 +428,13 @@ const handleSave = async () => {
         <McpAccessConfigCard :service="service" />
       </div>
 
-      <div v-else-if="activeTab === 'scope'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'scope'" class="scope-panel p-5 shadow-sm">
         <DataScopeTab :service-id="serviceId" @refresh="refreshAll" />
       </div>
-      <div v-else-if="activeTab === 'tools'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'tools'" class="scope-panel p-5 shadow-sm">
         <ToolsTab :service-id="serviceId" @refresh="refreshAll" />
       </div>
-      <div v-else-if="activeTab === 'prompts'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'prompts'" class="scope-panel p-5 shadow-sm">
         <PromptsTab :service-id="serviceId" @refresh="refreshAll" />
       </div>
       <div v-else-if="activeTab === 'version'" class="scope-panel p-[20px] shadow-sm">
@@ -447,7 +444,7 @@ const handleSave = async () => {
           @refresh="refreshAll"
         />
       </div>
-      <div v-else-if="activeTab === 'stats'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'stats'" class="scope-panel p-5 shadow-sm">
         <UsageStatsTab :service-id="serviceId" />
       </div>
     </main>
@@ -509,7 +506,7 @@ const handleSave = async () => {
 .panel,
 .scope-panel {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--ep-bg-color);
 }
 
@@ -523,5 +520,10 @@ const handleSave = async () => {
 .panel-heading span {
   color: var(--ep-text-color-secondary);
   font-size: 12px;
+}
+
+.detail-actions :deep(.el-button .el-icon svg) {
+  width: 16px;
+  height: 16px;
 }
 </style>

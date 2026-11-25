@@ -380,6 +380,8 @@ export default {
       manageApiKeys: "Manage API Keys",
       configTitle: "JSON Config",
       copySuccess: "Access config copied to clipboard",
+      copyEndpoint: "Copy service endpoint",
+      copyConfig: "Copy MCP config",
       configGuide: "Client support for config formats varies — use this example as a reference and adjust as needed.",
     },
     toolCount: "Tool Count",

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { ElMessage } from "element-plus";
-import { Setting, CaretRight } from "@element-plus/icons-vue";
+import { Play, Settings } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import type { McpToolVO } from "~/api/mcp-tool";
 import { notifyError } from "~/api/http";
@@ -86,24 +86,32 @@ const toolTypeLabel = (status: string) => {
         </div>
       </div>
 
-      <div class="flex items-center gap-3.5 shrink-0">
-        <el-tooltip v-if="tool.tool_type === 'EXECUTE_SQL'" :content="t('common.config')" placement="top">
-          <el-icon
-            class="config-icon"
+      <div class="tool-actions flex items-center gap-2 shrink-0">
+        <el-tooltip v-if="tool.tool_type === 'EXECUTE_SQL'" :trigger-keys="[]" :content="t('common.config')" placement="top">
+          <el-button
+            link
+            class="tool-action-button"
             :aria-label="t('common.config')"
             @click="sqlConfigVisible = true"
-          ><Setting /></el-icon>
+          >
+            <Settings :size="16" />
+          </el-button>
         </el-tooltip>
         <el-tooltip
+          :trigger-keys="[]"
           :content="tool.enabled ? t('common.test') : t('mcpService.tool.disabledTestHint')"
           placement="top"
         >
-          <el-icon
-            class="config-icon"
+          <el-button
+            link
+            class="tool-action-button"
             :class="{ 'icon-disabled': !tool.enabled }"
+            :disabled="!tool.enabled"
             :aria-label="t('common.test')"
-            @click="tool.enabled ? openTest(tool) : undefined"
-          ><CaretRight /></el-icon>
+            @click="openTest(tool)"
+          >
+            <Play :size="16" />
+          </el-button>
         </el-tooltip>
         <el-switch
           :model-value="tool.enabled"
@@ -132,7 +140,7 @@ const toolTypeLabel = (status: string) => {
 <style scoped>
 .prebuilt-section {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--ep-bg-color);
   overflow: hidden;
 }
@@ -158,19 +166,50 @@ const toolTypeLabel = (status: string) => {
   --ep-tag-text-color: var(--ep-color-purple);
   --ep-tag-border-color: var(--ep-color-purple-light-7);
 }
-.config-icon {
-  cursor: pointer;
+.tool-action-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
   color: var(--ep-text-color-secondary);
-  font-size: 18px;
-  transition: color 0.15s;
+  transition: color 0.15s, background-color 0.15s;
 }
-.config-icon:hover { color: var(--ep-color-primary); }
-.config-icon.icon-disabled {
+
+.tool-action-button :deep(svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.tool-action-button:hover {
+  color: var(--ep-color-primary);
+  background: var(--ep-color-primary-light-9);
+}
+
+.tool-action-button:focus-visible {
+  outline: 2px solid var(--ep-color-primary);
+  outline-offset: 2px;
+}
+
+.tool-action-button.icon-disabled,
+.tool-action-button.icon-disabled:hover {
   cursor: not-allowed;
   color: var(--ep-text-color-placeholder);
+  background: transparent;
   opacity: 0.45;
 }
-.config-icon.icon-disabled:hover {
-  color: var(--ep-text-color-placeholder);
+
+@media (max-width: 640px) {
+  .prebuilt-card {
+    flex-direction: column;
+  }
+
+  .prebuilt-card > div:first-child {
+    width: 100%;
+  }
+
+  .prebuilt-card .tool-actions {
+    align-self: flex-end;
+    flex-wrap: wrap;
+  }
 }
 </style>

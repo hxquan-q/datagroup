@@ -3,7 +3,8 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
-import { DocumentCopy, InfoFilled, Right } from "@element-plus/icons-vue";
+import { InfoFilled } from "@element-plus/icons-vue";
+import { ArrowRight, Copy } from "@lucide/vue";
 import { copyToClipboard } from "~/utils/clipboard";
 import type { McpServiceVO } from "~/api/mcp-service";
 
@@ -104,12 +105,12 @@ const goToApiKeys = () => {
           >
             {{ endpointUrl || t("mcpService.notPublished") }}
           </span>
-          <el-tooltip :content="t('common.copy')" placement="top">
+          <el-tooltip v-if="endpointUrl" :trigger-keys="[]" :content="t('mcpService.accessConfig.copyEndpoint')" placement="top">
             <el-button
-              v-if="endpointUrl"
               link
-              :icon="DocumentCopy"
-              class="!p-1 text-[var(--ep-color-primary)] hover:opacity-80 shrink-0"
+              :icon="Copy"
+              :aria-label="t('mcpService.accessConfig.copyEndpoint')"
+              class="copy-icon-button !p-1 text-[var(--ep-color-primary)] hover:opacity-80 shrink-0"
               @click="handleCopy(endpointUrl)"
             />
           </el-tooltip>
@@ -123,6 +124,7 @@ const goToApiKeys = () => {
             {{ t("mcpService.accessConfig.configTitle") }}
           </span>
           <el-tooltip
+            :trigger-keys="[]"
             :content="t('mcpService.accessConfig.configGuide')"
             placement="top"
           >
@@ -140,11 +142,12 @@ const goToApiKeys = () => {
             class="m-0 font-mono text-xs text-[var(--ep-text-color-primary)] whitespace-pre-wrap break-all leading-relaxed select-text rounded-lg bg-[var(--ep-fill-color-light)] border border-[var(--ep-border-color-lighter)] p-3.5 pr-10"
             >{{ jsonConfigSnippet }}</pre
           >
-          <el-tooltip :content="t('common.copy')" placement="top">
+          <el-tooltip :trigger-keys="[]" :content="t('mcpService.accessConfig.copyConfig')" placement="top">
             <el-button
               link
-              :icon="DocumentCopy"
-              class="!absolute top-2 right-2 !p-1.5 !h-auto text-[var(--ep-text-color-placeholder)] hover:text-[var(--ep-color-primary)] hover:bg-[var(--ep-bg-color)] rounded transition-all"
+              :icon="Copy"
+              :aria-label="t('mcpService.accessConfig.copyConfig')"
+              class="copy-icon-button !absolute top-2 right-2 !p-1.5 !h-auto text-[var(--ep-text-color-placeholder)] hover:text-[var(--ep-color-primary)] hover:bg-[var(--ep-bg-color)] rounded transition-all"
               @click="
                 handleCopy(
                   jsonConfigSnippet,
@@ -164,7 +167,7 @@ const goToApiKeys = () => {
       <el-button
         type="primary"
         link
-        :icon="Right"
+        :icon="ArrowRight"
         class="!p-0 !h-auto text-xs"
         @click="goToApiKeys"
       >
@@ -177,7 +180,12 @@ const goToApiKeys = () => {
 <style scoped>
 .mcp-access-card {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--ep-bg-color);
+}
+
+.mcp-access-card :deep(.el-button .el-icon svg) {
+  width: 16px;
+  height: 16px;
 }
 </style>

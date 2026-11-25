@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import {
-  Menu as IconMenu,
   ArrowRight,
   ArrowLeft,
 } from "@element-plus/icons-vue";
+import { Database, Layers } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -26,20 +26,20 @@ const activeMenu = computed(() => {
       :class="collapsed ? 'w-16' : 'w-50'"
     >
       <el-menu-item index="/mcp-services">
-        <el-icon>
-          <span class="icon-[codicon--mcp]"></span>
+        <el-icon :size="18">
+          <span class="icon-[codicon--mcp] text-[18px]"></span>
         </el-icon>
         <template #title> {{ t("layout.side.mcpServices") }} </template>
       </el-menu-item>
       <el-menu-item index="/subjects">
-        <el-icon>
-          <IconMenu />
+        <el-icon :size="18">
+          <Layers :size="18" />
         </el-icon>
         <template #title> {{ t("layout.side.subjects") }} </template>
       </el-menu-item>
       <el-menu-item index="/datasources">
-        <el-icon>
-          <span class="icon-[codicon--database]"></span>
+        <el-icon :size="18">
+          <Database :size="18" />
         </el-icon>
         <template #title> {{ t("layout.side.dataSources") }} </template>
       </el-menu-item>
@@ -47,6 +47,7 @@ const activeMenu = computed(() => {
 
     <!-- 展开/收起按钮 -->
     <el-tooltip
+      :trigger-keys="[]"
       :content="collapsed ? t('layout.side.expand') : t('layout.side.collapse')"
       placement="right"
     >
@@ -63,3 +64,28 @@ const activeMenu = computed(() => {
     </el-tooltip>
   </div>
 </template>
+
+<style scoped>
+:deep(.el-menu) {
+  padding: 8px;
+  background: transparent;
+}
+
+:deep(.el-menu-item) {
+  height: 42px;
+  margin: 2px 0;
+  border-radius: 10px;
+  color: var(--ep-text-color-regular);
+}
+
+:deep(.el-menu-item:hover) {
+  color: var(--ep-text-color-primary);
+  background: var(--ep-menu-hover-bg-color);
+}
+
+:deep(.el-menu-item.is-active) {
+  color: var(--ep-color-primary);
+  background: var(--ep-color-primary-light-9);
+  font-weight: 600;
+}
+</style>
