@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useMediaQuery } from "@vueuse/core";
 import { Close, Refresh, Warning } from "@element-plus/icons-vue";
 import type { McpUsageStatsVO, McpInvocationLogVO } from "~/api/mcp-usage";
 import { getMcpUsageStats, listMcpInvocationLogs } from "~/api/mcp-usage";
@@ -17,6 +18,8 @@ const stats = ref<McpUsageStatsVO | null>(null);
 const logs = ref<McpInvocationLogVO[]>([]);
 const selectedLog = ref<McpInvocationLogVO | null>(null);
 const logDetailVisible = ref(false);
+const isPhoneDrawer = useMediaQuery("(max-width: 440px)");
+const logDetailDrawerSize = computed(() => (isPhoneDrawer.value ? "100%" : "440px"));
 const totalLogs = ref(0);
 
 const page = ref(1);
@@ -378,7 +381,7 @@ onMounted(handleRefresh);
 
     <el-drawer
       v-model="logDetailVisible"
-      size="440px"
+      :size="logDetailDrawerSize"
       class="log-detail-drawer"
       :with-header="false"
     >
