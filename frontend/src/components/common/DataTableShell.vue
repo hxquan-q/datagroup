@@ -66,8 +66,9 @@ const emit = defineEmits<{
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 8px;
-  background: var(--ep-bg-color);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
 }
 
 .data-table-body {

@@ -33,6 +33,65 @@
   }
 }
 
+
+:root {
+  --xiaoai-canvas: #f5f7fb;
+  --xiaoai-blue: #2563eb;
+  --xiaoai-cyan: #06b6d4;
+  --xiaoai-cyan-bright: #22d3ee;
+  --xiaoai-cyan-soft: #67e8f9;
+  --xiaoai-success-soft: #34d399;
+  --xiaoai-sidebar-start: #101a33;
+  --xiaoai-sidebar-end: #0b1224;
+  --xiaoai-ink-strong: #f8fafc;
+  --xiaoai-ink: #e2e8f0;
+  --xiaoai-ink-muted: #94a3b8;
+  --xiaoai-header-bg: #ffffff;
+  --xiaoai-header-border: rgba(15, 23, 42, 0.08);
+  --ep-color-primary: #2563eb;
+  --ep-color-primary-light-3: #60a5fa;
+  --ep-color-primary-light-5: #93c5fd;
+  --ep-color-primary-light-7: #bfdbfe;
+  --ep-color-primary-light-8: #dbeafe;
+  --ep-color-primary-light-9: #eff6ff;
+  --ep-color-primary-dark-2: #1d4ed8;
+  --ep-border-radius-base: 9px;
+}
+
+html.dark {
+  --xiaoai-canvas: #070b16;
+  --xiaoai-header-bg: #0b1224;
+  --xiaoai-header-border: rgba(148, 163, 184, 0.12);
+  --ep-color-primary: #60a5fa;
+  --ep-color-primary-dark-2: #3b82f6;
+}
+
+body {
+  background: var(--xiaoai-canvas);
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.ep-button,
+.el-button {
+  border-radius: 9px;
+  font-weight: 580;
+}
+
+.ep-button--primary,
+.el-button--primary {
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.16);
+}
+
+.ep-input__wrapper,
+.el-input__wrapper,
+.ep-select__wrapper,
+.el-select__wrapper {
+  border-radius: 9px;
+}
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
@@ -109,8 +168,8 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 .list-page {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
+  gap: 20px;
+  padding: 28px 32px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -127,8 +186,8 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 .page-heading h1 {
   margin: 0;
   color: var(--ep-text-color-primary);
-  font-size: 20px;
-  font-weight: 650;
+  font-size: 24px;
+  font-weight: 720;
   letter-spacing: 0;
   line-height: 28px;
 }
@@ -160,9 +219,10 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 /* ============ Toolbar ============ */
 .toolbar {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 8px;
-  background: var(--ep-bg-color);
-  padding: 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ep-bg-color) 92%, transparent);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.04);
+  padding: 16px;
 }
 
 .toolbar--compact {
@@ -180,6 +240,19 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 
 .toolbar-search {
   width: min(420px, 100%) !important;
+}
+
+/* ============ Tables ============ */
+.ep-table th.ep-table__cell,
+.el-table th.el-table__cell {
+  background: var(--ep-fill-color-light);
+  color: var(--ep-text-color-secondary);
+  font-weight: 650;
+}
+
+.ep-table .ep-table__cell,
+.el-table .el-table__cell {
+  border-bottom-color: var(--ep-border-color-lighter);
 }
 
 /* ============ Responsive ============ */

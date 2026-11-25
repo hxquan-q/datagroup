@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { isDark, toggleDark } from "~/composables";
-import { CircleClose, Key, Moon, Sunny } from "@element-plus/icons-vue";
+import { CircleClose, Key } from "@element-plus/icons-vue";
+import { BookOpen, Moon, Sun } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -36,47 +37,34 @@ function goToDocs() {
 </script>
 
 <template>
-  <el-menu
-    class="el-menu-demo"
-    mode="horizontal"
-    :ellipsis="false"
-    :default-active="''"
-  >
-    <el-menu-item index="/" @click="router.push('/')">
-      <div class="flex items-center justify-center gap-2">
-        <img src="/xiaoai.svg" alt="XIAOAI" class="size-7 object-contain" />
-        <span class="text-base font-semibold leading-none">
-          {{ t("layout.header.brand") }}
-        </span>
-        <span
-          class="text-[11px] font-mono leading-none text-[var(--ep-text-color-secondary)] bg-[var(--ep-fill-color-light)] px-1.5 py-0.5 rounded border border-[var(--ep-border-color-lighter)] select-none"
-        >
-          v{{ appVersion }}
-        </span>
-      </div>
-    </el-menu-item>
+  <header class="app-header">
+    <RouterLink to="/" class="brand-lockup" aria-label="XIAOAI">
+      <span class="brand-mark">
+        <img src="/xiaoai.svg" alt="" class="size-7 object-contain" />
+      </span>
+      <span class="brand-copy">
+        <span class="brand-name">{{ t("layout.header.brand") }}</span>
+        <span class="brand-tagline">{{ t("home.brandTagline") }}</span>
+      </span>
+      <span class="version-badge">v{{ appVersion }}</span>
+    </RouterLink>
 
-    <el-menu-item index="header-theme" class="h-full" @click="toggleDark()">
+    <div class="header-actions">
       <button
-        class="w-full cursor-pointer border-0 bg-transparent"
-        style="height: var(--ep-menu-item-height)"
+        type="button"
+        class="header-icon-button"
         :title="t('layout.header.theme')"
         :aria-label="t('layout.header.theme')"
+        @click="toggleDark()"
       >
-        <el-icon class="inline-flex">
-          <component :is="isDark ? Moon : Sunny" />
-        </el-icon>
+        <Sun v-if="isDark" :size="17" />
+        <Moon v-else :size="17" />
       </button>
-    </el-menu-item>
 
-    <el-menu-item index="header-locale" class="h-full">
-      <el-dropdown
-        trigger="click"
-        @command="(cmd: AppLang) => changeLocale(cmd)"
-      >
-        <span class="el-dropdown-link select-none">
+      <el-dropdown trigger="click" @command="(cmd: AppLang) => changeLocale(cmd)">
+        <button type="button" class="header-text-button" :aria-label="localeLabel">
           {{ localeLabel }}
-        </span>
+        </button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="en">English</el-dropdown-item>
@@ -84,38 +72,27 @@ function goToDocs() {
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-    </el-menu-item>
 
-    <el-menu-item index="header-docs" class="h-full" @click="goToDocs">
-      <el-tooltip :content="t('layout.header.help')" placement="bottom">
-        <el-icon class="inline-flex">
-          <span class="icon-[codicon--question]"></span>
-        </el-icon>
-      </el-tooltip>
-    </el-menu-item>
+      <button
+        type="button"
+        class="header-icon-button"
+        :title="t('layout.header.help')"
+        :aria-label="t('layout.header.help')"
+        @click="goToDocs"
+      >
+        <BookOpen :size="17" />
+      </button>
 
-    <el-menu-item
-      index="header-user"
-      class="h-full"
-      v-if="authStore.isLoggedIn"
-    >
-      <el-dropdown trigger="click" @command="handleCommand">
-        <div
-          class="size-full flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <el-avatar :size="24">{{
-            userDisplayName.charAt(0).toUpperCase()
-          }}</el-avatar>
-          <span class="text-sm">{{ userDisplayName }}</span>
-          <el-tag
-            v-if="authStore.isGuest"
-            size="small"
-            type="info"
-            class="select-none"
-          >
+      <el-dropdown v-if="authStore.isLoggedIn" trigger="click" @command="handleCommand">
+        <button type="button" class="user-trigger">
+          <el-avatar :size="28" class="user-avatar">
+            {{ userDisplayName.charAt(0).toUpperCase() }}
+          </el-avatar>
+          <span class="user-name">{{ userDisplayName }}</span>
+          <el-tag v-if="authStore.isGuest" size="small" type="info" class="select-none">
             {{ t("auth.guestBadge") }}
           </el-tag>
-        </div>
+        </button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="api-keys">
@@ -129,43 +106,169 @@ function goToDocs() {
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-    </el-menu-item>
-    <el-menu-item index="header-login" class="h-full" v-else>
-      <RouterLink to="/login">
+      <RouterLink v-else to="/login" class="login-link">
         <el-button type="primary" size="small">{{ t("auth.login") }}</el-button>
       </RouterLink>
-    </el-menu-item>
-  </el-menu>
+    </div>
+  </header>
 </template>
 
-<style lang="scss">
-.el-menu-demo {
-  &.ep-menu--horizontal,
-  &.el-menu--horizontal {
-    > .ep-menu-item:nth-child(1),
-    > .el-menu-item:nth-child(1) {
-      margin-right: auto;
-    }
+<style scoped>
+.app-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 20px 0 18px;
+  border-bottom: 1px solid var(--xiaoai-header-border);
+  background: color-mix(in srgb, var(--xiaoai-header-bg) 88%, transparent);
+  backdrop-filter: blur(18px);
+  position: relative;
+  z-index: 20;
+}
 
-    /* Make Header menu completely stateless: remove active bottom underline and active text highlight */
-    > .ep-menu-item,
-    > .el-menu-item,
-    > .ep-sub-menu > .ep-sub-menu__title,
-    > .el-sub-menu > .el-sub-menu__title {
-      border-bottom: none !important;
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--ep-text-color-primary);
+  text-decoration: none;
+}
 
-      &.is-active {
-        border-bottom: none !important;
-        color: var(--ep-menu-text-color, var(--el-menu-text-color)) !important;
-      }
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.1), rgba(6, 182, 212, 0.08));
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+}
 
-      &:hover,
-      &:focus,
-      &:focus-visible {
-        border-bottom: none !important;
-        outline: none !important;
-      }
-    }
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 760;
+  letter-spacing: 0.02em;
+}
+
+.brand-tagline {
+  margin-top: 3px;
+  max-width: 160px;
+  overflow: hidden;
+  color: var(--ep-text-color-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.version-badge {
+  margin-left: 2px;
+  padding: 3px 6px;
+  border: 1px solid var(--ep-border-color-lighter);
+  border-radius: 999px;
+  background: var(--ep-fill-color-light);
+  color: var(--ep-text-color-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon-button,
+.header-text-button,
+.user-trigger {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ep-text-color-regular);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.header-icon-button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+}
+
+.header-text-button {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.header-icon-button:hover,
+.header-text-button:hover,
+.user-trigger:hover {
+  border-color: var(--ep-border-color-lighter);
+  background: var(--ep-fill-color-light);
+  color: var(--ep-text-color-primary);
+}
+
+.header-icon-button:focus-visible,
+.header-text-button:focus-visible,
+.user-trigger:focus-visible,
+.brand-lockup:focus-visible {
+  outline: 2px solid var(--ep-color-primary);
+  outline-offset: 2px;
+}
+
+.user-trigger {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 5px;
+  border-radius: 999px;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, var(--xiaoai-blue), var(--xiaoai-cyan));
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-name {
+  max-width: 120px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-link {
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .brand-tagline,
+  .version-badge,
+  .user-name {
+    display: none;
   }
 }
 </style>

@@ -4,6 +4,14 @@ export default {
     heroDesc: "Turn databases into secure, semantically enriched MCP servers — enabling agents to flexibly analyze and maintain data.",
     brandTagline: "Intelligent Data Q&A Platform",
     docLink: "View Documentation",
+    consoleLabel: "Semantic Data Console",
+    primaryAction: "Connect Data Source",
+    openModule: "Open module",
+    modulesLabel: "XIAOAI modules",
+    workflowKicker: "Workflow",
+    workflowSubtitle: "A clear path from database connections to governed MCP services",
+    noServiceTitle: "No MCP service yet",
+    noServiceHint: "Connect a data source to create one",
     workflow: {
       title: "Get Started",
       step1Title: "Connect Data Sources",
@@ -154,6 +162,8 @@ export default {
       help: "Help",
     },
     side: {
+      overview: "Overview",
+      workspace: "Workspace",
       expand: "Expand",
       collapse: "Collapse",
       mcpServices: "MCP Services",
