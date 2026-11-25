@@ -7,6 +7,8 @@ export default {
     consoleLabel: "数据语义控制台",
     primaryAction: "接入数据源",
     openModule: "进入模块",
+    modulesLabel: "XIAOAI 模块",
+    workflowKicker: "工作流",
     workflowSubtitle: "把数据库、业务语义和 MCP 发布流程串成一条清晰路径",
     workflow: {
       title: "如何开始",

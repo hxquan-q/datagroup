@@ -7,6 +7,8 @@ export default {
     consoleLabel: "Semantic Data Console",
     primaryAction: "Connect Data Source",
     openModule: "Open module",
+    modulesLabel: "XIAOAI modules",
+    workflowKicker: "Workflow",
     workflowSubtitle: "A clear path from database connections to governed MCP services",
     workflow: {
       title: "Get Started",

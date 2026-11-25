@@ -116,13 +116,13 @@ onMounted(fetchOverview);
           <el-button type="primary" size="large" @click="go('/datasources')">
             {{ t("home.primaryAction") }}
           </el-button>
-          <el-button size="large" plain :icon="BookOpen" tag="a" :href="docLink" target="_blank">
+          <el-button size="large" plain :icon="BookOpen" tag="a" :href="docLink" target="_blank" rel="noopener">
             {{ t("home.docLink") }}
           </el-button>
         </div>
       </div>
 
-      <div class="hero-visual" aria-hidden="true">
+      <div class="hero-visual">
         <div class="visual-glow visual-glow-a"></div>
         <div class="visual-glow visual-glow-b"></div>
         <div class="signal-card">
@@ -151,7 +151,7 @@ onMounted(fetchOverview);
       </div>
     </section>
 
-    <section class="module-grid" aria-label="XIAOAI modules">
+    <section class="module-grid" :aria-label="t('home.modulesLabel')">
       <article
         v-for="module in modules"
         :key="module.id"
@@ -178,7 +178,7 @@ onMounted(fetchOverview);
     <section class="workflow-panel">
       <div class="section-heading">
         <div>
-          <span class="section-kicker">Workflow</span>
+          <span class="section-kicker">{{ t("home.workflowKicker") }}</span>
           <h2>{{ t("home.workflow.title") }}</h2>
           <p>{{ t("home.workflowSubtitle") }}</p>
         </div>
