@@ -17,6 +17,11 @@ const firstResult = computed(() => selectResults.value[0]);
 const failedResults = computed(() =>
   props.data.execution.results.filter((result) => !result.success),
 );
+const errorMessages = computed(() =>
+  failedResults.value
+    .map((result) => (result as { error_message?: string }).error_message)
+    .filter((message): message is string => Boolean(message)),
+);
 const totalRows = computed(() =>
   selectResults.value.reduce((sum, result) => sum + result.returned_rows, 0),
 );
@@ -86,7 +91,10 @@ const statusText = computed(() => {
               {{ t("mcpService.toolTest.returnedRows", { total: firstResult.returned_rows }) }}
             </div>
           </template>
-          <el-empty v-else :description="t('mcpService.toolTest.emptyResult')" :image-size="72" />
+          <div v-if="errorMessages.length" class="mt-3 rounded-lg border border-[var(--ep-color-danger-light-7)] bg-[var(--ep-color-danger-light-9)] p-3 text-xs leading-5 text-[var(--ep-color-danger)]">
+            <div v-for="message in errorMessages" :key="message" class="font-mono">{{ message }}</div>
+          </div>
+          <el-empty v-if="!firstResult" :description="t('mcpService.toolTest.emptyResult')" :image-size="72" />
         </div>
       </el-tab-pane>
 
@@ -112,6 +120,9 @@ const statusText = computed(() => {
           </el-descriptions-item>
           <el-descriptions-item :label="t('mcpService.toolTest.metricDimensionsLabel')" :span="2">
             {{ data.dimensions.join(", ") || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="errorMessages.length" label="error" :span="2">
+            <div v-for="message in errorMessages" :key="message" class="font-mono text-[var(--ep-color-danger)]">{{ message }}</div>
           </el-descriptions-item>
         </el-descriptions>
       </el-tab-pane>
