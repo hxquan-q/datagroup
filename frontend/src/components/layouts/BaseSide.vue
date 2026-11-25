@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
+  PlugZap,
 } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 
@@ -23,7 +24,7 @@ const navItems = computed(() => [
   {
     path: "/mcp-services",
     label: t("layout.side.mcpServices"),
-    icon: "mcp",
+    icon: PlugZap,
   },
   {
     path: "/subjects",
@@ -57,8 +58,7 @@ function isActive(path: string, exact = false) {
           :title="collapsed ? item.label : undefined"
         >
           <span class="sidebar-icon">
-            <span v-if="item.icon === 'mcp'" class="icon-[codicon--mcp] text-[18px]"></span>
-            <component v-else :is="item.icon" :size="18" />
+            <component :is="item.icon" :size="18" />
           </span>
           <span class="sidebar-label">{{ item.label }}</span>
         </RouterLink>
