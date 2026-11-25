@@ -20,12 +20,9 @@ import java.util.Set;
 @Component
 public class SearchMetadataExecutor implements ToolExecutor {
 
-    private final McpServiceDataScopeService dataScopeService;
     private final SemanticSearchService semanticSearchService;
 
-    public SearchMetadataExecutor(McpServiceDataScopeService dataScopeService,
-                                   SemanticSearchService semanticSearchService) {
-        this.dataScopeService = dataScopeService;
+    public SearchMetadataExecutor(SemanticSearchService semanticSearchService) {
         this.semanticSearchService = semanticSearchService;
     }
 
@@ -42,7 +39,7 @@ public class SearchMetadataExecutor implements ToolExecutor {
         if (ctx.scopeItems().isEmpty())
             return new SearchHit(keywords, List.of(), List.of());
 
-        Set<String> dsIds = dataScopeService.getResolvedDataSourceIds(ctx.serviceId());
+        Set<String> dsIds = McpScopeResolution.resolvedDataSourceIds(ctx.scopeItems());
         List<String> subjectIds = ctx.scopeItems().stream()
                 .filter(s -> s.getScopeType() == McpDataScopeType.SUBJECT)
                 .map(McpServiceDataScope::getReferenceId)

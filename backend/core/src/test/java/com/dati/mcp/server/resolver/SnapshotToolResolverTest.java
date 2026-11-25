@@ -4,6 +4,7 @@ import com.dati.TestFixtures;
 import com.dati.mcp.domain.model.McpDataScopeAccessMode;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpServiceDataScope;
+import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
@@ -91,4 +92,20 @@ class SnapshotToolResolverTest {
         assertTrue(resolver.resolve(content, "anything").isEmpty());
         assertTrue(resolver.buildScopeItems("svc", content).isEmpty());
     }
+
+    @Test
+    @DisplayName("builds scope items with frozen resolved tables")
+    void buildsScopeItemsWithResolvedTables() {
+        var content = new McpServiceSnapshot.SnapshotContent();
+        content.setDataScopes(List.of(new McpServiceSnapshot.DataScopeDraft(
+                TestFixtures.TEST_MCP_SERVICE_ID, McpDataScopeType.SUBJECT, "sub-1",
+                McpDataScopeAccessMode.IMPORTED_TABLES, List.of(),
+                List.of(new McpResolvedTable("ds-1", "public", "orders")))));
+
+        List<McpServiceDataScope> items = resolver.buildScopeItems(TestFixtures.TEST_MCP_SERVICE_ID, content);
+
+        assertEquals(1, items.getFirst().getResolvedTables().size());
+        assertEquals("orders", items.getFirst().getResolvedTables().getFirst().tableName());
+    }
+
 }

@@ -31,16 +31,13 @@ import static org.mockito.Mockito.when;
 class SearchMetadataExecutorTest {
 
     @Mock
-    private McpServiceDataScopeService dataScopeService;
-
-    @Mock
     private SemanticSearchService semanticSearchService;
 
     private SearchMetadataExecutor executor;
 
     @BeforeEach
     void setUp() {
-        executor = new SearchMetadataExecutor(dataScopeService, semanticSearchService);
+        executor = new SearchMetadataExecutor(semanticSearchService);
     }
 
     private ToolExecutionContext ctx(SearchMetadataArgs args, List<McpServiceDataScope> scopes) {
@@ -54,7 +51,6 @@ class SearchMetadataExecutorTest {
         McpServiceDataScope scope = new McpServiceDataScope();
         scope.setScopeType(McpDataScopeType.DATA_SOURCE);
         scope.setReferenceId("ds-1");
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
         when(semanticSearchService.search(List.of("orders"), new ArrayList<>(Set.of("ds-1")), List.of()))
             .thenReturn(new SearchResult(List.of(), List.of()));
 

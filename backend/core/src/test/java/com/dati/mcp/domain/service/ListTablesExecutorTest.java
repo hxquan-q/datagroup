@@ -10,6 +10,7 @@ import com.dati.db.DbType;
 import com.dati.db.Table;
 import com.dati.mcp.domain.model.McpDataScopeAccessMode;
 import com.dati.mcp.domain.model.McpDataScopeType;
+import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
@@ -55,7 +56,7 @@ class ListTablesExecutorTest {
 
     @BeforeEach
     void setUp() {
-        executor = new ListTablesExecutor(dataScopeService, tableInfoDAO, dataSourceService,
+        executor = new ListTablesExecutor(tableInfoDAO, dataSourceService,
             termService, jdbcMetaService, 1000);
     }
 
@@ -100,7 +101,9 @@ class ListTablesExecutorTest {
         McpServiceDataScope scope = new McpServiceDataScope();
         scope.setScopeType(McpDataScopeType.DATA_SOURCE);
         scope.setReferenceId("ds-1");
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
+        scope.setResolvedTables(List.of(
+            new McpResolvedTable("ds-1", "public", "genre"),
+            new McpResolvedTable("ds-1", "public", "artist")));
 
         TableInfoPO genre = new TableInfoPO();
         genre.setId("t-1");
@@ -152,7 +155,6 @@ class ListTablesExecutorTest {
     @Test
     @DisplayName("schema scope adds physical tables that are not imported")
     void schemaScopeAddsPhysicalTables() throws SQLException {
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
         when(tableInfoDAO.findByDataSourceId("ds-1")).thenReturn(List.of());
         when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
             .thenReturn(Map.of("ds-1", new DataSourceService.DsBrief("音乐库", DbType.POSTGRESQL, "sandbox", "音乐数据")));
@@ -175,7 +177,6 @@ class ListTablesExecutorTest {
     @Test
     @DisplayName("imported metadata wins and physical duplicates are removed")
     void importedMetadataWinsOverPhysicalDuplicate() throws SQLException {
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
         when(tableInfoDAO.findByDataSourceId("ds-1"))
             .thenReturn(List.of(importedTable("sandbox", "orders", "imported description", List.of("订单"))));
         when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
@@ -195,7 +196,6 @@ class ListTablesExecutorTest {
     @Test
     @DisplayName("physical tables from multiple schemas are merged")
     void multipleSchemaScopesAreMerged() throws SQLException {
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
         when(tableInfoDAO.findByDataSourceId("ds-1")).thenReturn(List.of());
         when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
             .thenReturn(Map.of("ds-1", new DataSourceService.DsBrief("音乐库", DbType.POSTGRESQL, "sandbox", null)));
@@ -217,7 +217,6 @@ class ListTablesExecutorTest {
     @Test
     @DisplayName("caps physical tables per data source while keeping imported tables")
     void capsPhysicalTablesPerDataSource() throws SQLException {
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
         when(tableInfoDAO.findByDataSourceId("ds-1"))
             .thenReturn(List.of(importedTable("sandbox", "imported", "imported table", List.of())));
         when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
@@ -228,7 +227,7 @@ class ListTablesExecutorTest {
                 new Table("physical2", null),
                 new Table("physical3", null)));
 
-        ListTablesExecutor capped = new ListTablesExecutor(dataScopeService, tableInfoDAO,
+        ListTablesExecutor capped = new ListTablesExecutor(tableInfoDAO,
             dataSourceService, termService, jdbcMetaService, 2);
         TableListData data = (TableListData) capped.execute(ctx(List.of(schemaScope("sandbox"))));
 
@@ -240,7 +239,6 @@ class ListTablesExecutorTest {
     @Test
     @DisplayName("zero physical limit keeps imported tables only")
     void zeroPhysicalLimitKeepsImportedTablesOnly() throws SQLException {
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
         when(tableInfoDAO.findByDataSourceId("ds-1"))
             .thenReturn(List.of(importedTable("sandbox", "imported", null, null)));
         when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
@@ -248,7 +246,7 @@ class ListTablesExecutorTest {
         when(jdbcMetaService.getTables("ds-1", "sandbox"))
             .thenReturn(List.of(new Table("physical1", null)));
 
-        ListTablesExecutor capped = new ListTablesExecutor(dataScopeService, tableInfoDAO,
+        ListTablesExecutor capped = new ListTablesExecutor(tableInfoDAO,
             dataSourceService, termService, jdbcMetaService, 0);
         TableListData data = (TableListData) capped.execute(ctx(List.of(schemaScope("sandbox"))));
 
@@ -260,9 +258,8 @@ class ListTablesExecutorTest {
     @Test
     @DisplayName("physical metadata failure keeps imported tables and does not fail")
     void physicalMetadataFailureKeepsImportedTables() throws SQLException {
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
         when(tableInfoDAO.findByDataSourceId("ds-1"))
-            .thenReturn(List.of(importedTable("public", "users", "users table", List.of())));
+            .thenReturn(List.of(importedTable("sandbox", "users", "users table", List.of())));
         when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
             .thenReturn(Map.of("ds-1", new DataSourceService.DsBrief("音乐库", DbType.POSTGRESQL, "public", null)));
         when(jdbcMetaService.getTables("ds-1", "sandbox"))
@@ -283,7 +280,7 @@ class ListTablesExecutorTest {
         McpServiceDataScope scope = new McpServiceDataScope();
         scope.setScopeType(McpDataScopeType.DATA_SOURCE);
         scope.setReferenceId("ds-1");
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of("ds-1"));
+        scope.setResolvedTables(List.of(new McpResolvedTable("ds-1", "public", "users")));
         when(tableInfoDAO.findByDataSourceId("ds-1"))
             .thenReturn(List.of(importedTable("public", "users", null, null)));
         when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
@@ -303,7 +300,6 @@ class ListTablesExecutorTest {
 
         when(termService.getTermsBySubjectIds(List.of("sub-1")))
             .thenReturn(List.of(new com.dati.semantic.domain.service.TermService.TermInfo("GMV", "成交总额", "电商主题")));
-        when(dataScopeService.getResolvedDataSourceIds("svc-1")).thenReturn(Set.of());
 
         TableListData data = (TableListData) executor.execute(ctx(List.of(subjectScope)));
 

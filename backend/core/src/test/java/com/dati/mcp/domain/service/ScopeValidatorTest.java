@@ -1,14 +1,12 @@
 package com.dati.mcp.domain.service;
 
-import com.dati.datasource.repository.dao.TableInfoDAO;
-import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.db.analysis.TableRef;
 import com.dati.mcp.domain.model.McpDataScopeAccessMode;
 import com.dati.mcp.domain.model.McpDataScopeType;
+import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.ToolError;
 import com.dati.semantic.repository.dao.SubjectDAO;
-import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.semantic.repository.po.SubjectPO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,9 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,19 +22,11 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ScopeValidator unit tests")
 class ScopeValidatorTest {
-
-    @Mock
-    private TableInfoDAO tableInfoDAO;
-
-    @Mock
-    private SubjectTableDAO subjectTableDAO;
 
     @Mock
     private SubjectDAO subjectDAO;
@@ -70,13 +57,6 @@ class ScopeValidatorTest {
         return s;
     }
 
-    private static TableInfoPO table() {
-        TableInfoPO po = new TableInfoPO();
-        po.setDataSourceId(ScopeValidatorTest.DS_ID);
-        po.setSchema("public");
-        po.setName("users");
-        return po;
-    }
 
     /** Calls the production entry point with the given default schema. */
     private void validate(List<McpServiceDataScope> scopeItems, String dsId,
@@ -124,18 +104,17 @@ class ScopeValidatorTest {
     @Test
     @DisplayName("SUBJECT covers dsId → passes (no table-level check)")
     void shouldPassWhenSubjectScopeCovers() {
-        Page<TableInfoPO> page = new PageImpl<>(List.of(table()));
-        when(subjectTableDAO.findTablesBySubjectId(anyString(), any(Pageable.class))).thenReturn(page);
+        McpServiceDataScope scope = subjectScope();
+        scope.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "public", "users")));
 
         assertThatCode(() ->
-            validate(List.of(subjectScope()), DS_ID, Set.of(), Set.of(), null))
+            validate(List.of(scope), DS_ID, Set.of(), Set.of(), null))
             .doesNotThrowAnyException();
     }
 
     @Test
     @DisplayName("Table outside scope → concise table-level message")
     void shouldRejectTableNotInScopeWithConciseMessage() {
-        when(tableInfoDAO.findByDataSourceId(DS_ID)).thenReturn(List.of());
 
         assertThatThrownBy(() -> validator.validate(
             List.of(dataSourceScope(DS_ID)), DS_ID,
@@ -149,12 +128,12 @@ class ScopeValidatorTest {
     @Test
     @DisplayName("SQL without schema + defaultSchema set → resolved and matched against allowed tables")
     void shouldResolveSchemaUsingDefaultSchema() {
-        when(tableInfoDAO.findByDataSourceId(DS_ID))
-            .thenReturn(List.of(table()));
+        McpServiceDataScope scope = dataSourceScope(DS_ID);
+        scope.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "public", "users")));
 
         assertThatCode(() ->
             validate(
-                List.of(dataSourceScope(DS_ID)), DS_ID,
+                List.of(scope), DS_ID,
                 Set.of(new TableRef(null, "users")), Set.of(), "public"))
             .doesNotThrowAnyException();
     }
@@ -162,12 +141,12 @@ class ScopeValidatorTest {
     @Test
     @DisplayName("SQL without schema + null defaultSchema → unresolvable, throws SCOPE_VIOLATION")
     void shouldRejectUnqualifiedTableWhenDefaultSchemaNull() {
-        when(tableInfoDAO.findByDataSourceId(DS_ID))
-            .thenReturn(List.of(table()));
+        McpServiceDataScope scope = dataSourceScope(DS_ID);
+        scope.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "public", "users")));
 
         assertThatThrownBy(() ->
             validate(
-                List.of(dataSourceScope(DS_ID)), DS_ID,
+                List.of(scope), DS_ID,
                 Set.of(new TableRef(null, "users")), Set.of(), null))
             .isInstanceOf(ToolExecuteException.class)
             .extracting(e -> ((ToolExecuteException) e).getToolError())
@@ -184,10 +163,10 @@ class ScopeValidatorTest {
     @Test
     @DisplayName("validateDataSource passes when ds covered via SUBJECT scope tables")
     void validateDataSourcePassesViaSubjectTables() {
-        when(subjectTableDAO.findTablesBySubjectId("sub-1", Pageable.unpaged()))
-            .thenReturn(new PageImpl<>(List.of(table())));
+        McpServiceDataScope scope = subjectScope();
+        scope.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "public", "users")));
 
-        assertThatCode(() -> validator.validateDataSource(List.of(subjectScope()), DS_ID))
+        assertThatCode(() -> validator.validateDataSource(List.of(scope), DS_ID))
             .doesNotThrowAnyException();
     }
 
@@ -260,7 +239,6 @@ class ScopeValidatorTest {
     @Test
     @DisplayName("SCHEMA_SCOPE rejects referenced table outside authorized schema")
     void schemaScopeReferencedTableOutsideSchema_shouldReject() {
-        when(tableInfoDAO.findByDataSourceId(DS_ID)).thenReturn(List.of());
 
         assertThatThrownBy(() -> validate(
             List.of(dataSourceScopeWithSchemas(DS_ID, "sandbox")), DS_ID,
@@ -272,12 +250,13 @@ class ScopeValidatorTest {
     }
 
     @Test
-    @DisplayName("SCHEMA_SCOPE keeps imported tables outside authorized schemas accessible")
-    void schemaScopeKeepsImportedTablesOutsideSchema() {
-        when(tableInfoDAO.findByDataSourceId(DS_ID)).thenReturn(List.of(table()));
+    @DisplayName("SCHEMA_SCOPE combines with frozen subject tables outside authorized schemas")
+    void schemaScopeCombinesWithFrozenSubjectTables() {
+        McpServiceDataScope subject = subjectScope();
+        subject.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "public", "users")));
 
         assertThatCode(() -> validate(
-            List.of(dataSourceScopeWithSchemas(DS_ID, "sandbox")), DS_ID,
+            List.of(dataSourceScopeWithSchemas(DS_ID, "sandbox"), subject), DS_ID,
             Set.of(new TableRef(null, "users")), Set.of(),
             "public"))
             .doesNotThrowAnyException();
@@ -364,14 +343,11 @@ class ScopeValidatorTest {
     @Test
     @DisplayName("IMPORTED_TABLES allows imported system schema tables")
     void importedSystemSchemaTable_shouldPass() {
-        TableInfoPO systemTable = new TableInfoPO();
-        systemTable.setDataSourceId(DS_ID);
-        systemTable.setSchema("information_schema");
-        systemTable.setName("tables");
-        when(tableInfoDAO.findByDataSourceId(DS_ID)).thenReturn(List.of(systemTable));
+        McpServiceDataScope scope = dataSourceScope(DS_ID);
+        scope.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "information_schema", "tables")));
 
         assertThatCode(() -> validate(
-            List.of(dataSourceScope(DS_ID)), DS_ID,
+            List.of(scope), DS_ID,
             Set.of(new TableRef("information_schema", "tables")), Set.of(), null))
             .doesNotThrowAnyException();
     }
@@ -401,7 +377,6 @@ class ScopeValidatorTest {
     @Test
     @DisplayName("SCHEMA_SCOPE still rejects references outside authorized schema in same call")
     void schemaScopeSameCallOutsideReference_shouldReject() {
-        when(tableInfoDAO.findByDataSourceId(DS_ID)).thenReturn(List.of());
 
         assertThatThrownBy(() -> validate(
             List.of(dataSourceScopeWithSchemas(DS_ID, "sandbox")), DS_ID,
@@ -422,4 +397,36 @@ class ScopeValidatorTest {
             "public"))
             .doesNotThrowAnyException();
     }
+
+    @Test
+    @DisplayName("subject scope uses frozen resolved tables instead of live subject membership")
+    void subjectScopeUsesFrozenResolvedTables() {
+        McpServiceDataScope scope = subjectScope();
+        scope.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "public", "frozen_table")));
+
+        assertThatCode(() -> validator.validate(List.of(scope), DS_ID,
+            Set.of(new TableRef("public", "frozen_table")), Set.of(), "public"))
+            .doesNotThrowAnyException();
+
+        assertThatThrownBy(() -> validator.validate(List.of(scope), DS_ID,
+            Set.of(new TableRef("public", "new_live_table")), Set.of(), "public"))
+            .isInstanceOf(ToolExecuteException.class)
+            .hasMessageContaining("not in service scope");
+    }
+
+    @Test
+    @DisplayName("imported data source scope uses frozen resolved tables")
+    void importedDataSourceScopeUsesFrozenResolvedTables() {
+        McpServiceDataScope scope = dataSourceScope(DS_ID);
+        scope.setResolvedTables(List.of(new McpResolvedTable(DS_ID, "public", "orders")));
+
+        assertThatCode(() -> validator.validate(List.of(scope), DS_ID,
+            Set.of(new TableRef("public", "orders")), Set.of(), "public"))
+            .doesNotThrowAnyException();
+
+        assertThatThrownBy(() -> validator.validate(List.of(scope), DS_ID,
+            Set.of(new TableRef("public", "customers")), Set.of(), "public"))
+            .isInstanceOf(ToolExecuteException.class);
+    }
+
 }

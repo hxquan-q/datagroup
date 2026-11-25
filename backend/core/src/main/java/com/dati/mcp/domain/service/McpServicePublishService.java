@@ -3,7 +3,12 @@ package com.dati.mcp.domain.service;
 import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
 import com.dati.common.JsonUtils;
+import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.datasource.repository.po.TableInfoPO;
+import com.dati.mcp.domain.model.McpDataScopeAccessMode;
+import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpPrebuiltToolConfig;
+import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpServiceStatus;
 import com.dati.mcp.repository.dao.McpServiceDAO;
@@ -15,6 +20,8 @@ import com.dati.mcp.server.pojo.McpServiceDiffVO;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.model.ResourceType;
 import com.dati.permission.domain.service.PermissionService;
+import com.dati.semantic.repository.dao.SubjectTableDAO;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,19 +41,25 @@ public class McpServicePublishService {
     private final McpToolService toolService;
     private final McpPromptService promptService;
     private final PermissionService permissionService;
+    private final TableInfoDAO tableInfoDAO;
+    private final SubjectTableDAO subjectTableDAO;
 
     public McpServicePublishService(McpServiceDAO mcpServiceDAO,
                                      McpServiceSnapshotDAO snapshotDAO,
                                      McpServiceDataScopeService dataScopeService,
                                      McpToolService toolService,
                                      McpPromptService promptService,
-                                     PermissionService permissionService) {
+                                     PermissionService permissionService,
+                                     TableInfoDAO tableInfoDAO,
+                                     SubjectTableDAO subjectTableDAO) {
         this.mcpServiceDAO = mcpServiceDAO;
         this.snapshotDAO = snapshotDAO;
         this.dataScopeService = dataScopeService;
         this.toolService = toolService;
         this.promptService = promptService;
         this.permissionService = permissionService;
+        this.tableInfoDAO = tableInfoDAO;
+        this.subjectTableDAO = subjectTableDAO;
     }
 
     @Transactional
@@ -69,8 +82,12 @@ public class McpServicePublishService {
      * 回滚内部发布目标快照可能是 MS018 规则前的空范围历史版本，恢复该状态是合法操作。
      */
     private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote) {
+        return doPublish(servicePO, releaseNote, buildCurrentSnapshotContent(servicePO));
+    }
+
+    private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote,
+                                         McpServiceSnapshot.SnapshotContent content) {
         String serviceId = servicePO.getId();
-        McpServiceSnapshot.SnapshotContent content = buildCurrentSnapshotContent(servicePO);
 
         Integer maxVersion = snapshotDAO.findMaxVersionNumberByServiceId(serviceId);
         int nextVersion = (maxVersion == null ? 0 : maxVersion) + 1;
@@ -310,7 +327,7 @@ public class McpServicePublishService {
         // 不走 publish()：目标快照可能是空数据范围的历史版本，恢复该状态是合法操作（MS019 仅约束主动发布）
         String note = "Rollback to v" + targetVersionNumber
                 + (releaseNote != null && !releaseNote.isBlank() ? ": " + releaseNote : "");
-        return doPublish(servicePO, note);
+        return doPublish(servicePO, note, content);
     }
 
     /**
@@ -378,6 +395,7 @@ public class McpServicePublishService {
 
         List<McpServiceSnapshot.DataScopeDraft> dataScopes = dataScopeService.getDataScope(serviceId).stream()
                 .map(McpServiceSnapshotMapper::toDataScopeDraft)
+                .map(this::withResolvedTables)
                 .toList();
 
         ToolsResult toolsResult = toolService.listTools(serviceId);
@@ -399,6 +417,35 @@ public class McpServicePublishService {
         content.setCustomTools(customTools);
         content.setPrompts(prompts);
         return content;
+    }
+
+
+    private McpServiceSnapshot.DataScopeDraft withResolvedTables(McpServiceSnapshot.DataScopeDraft draft) {
+        if (draft.accessMode() == McpDataScopeAccessMode.SCHEMA_SCOPE) {
+            return draft.withResolvedTables(List.of());
+        }
+
+        List<TableInfoPO> tables;
+        if (draft.scopeType() == McpDataScopeType.DATA_SOURCE) {
+            tables = tableInfoDAO.findByDataSourceId(draft.referenceId());
+        } else if (draft.scopeType() == McpDataScopeType.SUBJECT) {
+            tables = subjectTableDAO.findTablesBySubjectId(draft.referenceId(), Pageable.unpaged()).getContent();
+        } else {
+            tables = List.of();
+        }
+
+        List<McpResolvedTable> resolved = tables.stream()
+                .map(t -> new McpResolvedTable(t.getDataSourceId(), t.getSchema(), t.getName()))
+                .distinct()
+                .sorted((a, b) -> {
+                    int byDataSource = a.dataSourceId().compareTo(b.dataSourceId());
+                    if (byDataSource != 0) return byDataSource;
+                    int bySchema = String.valueOf(a.schema()).compareTo(String.valueOf(b.schema()));
+                    if (bySchema != 0) return bySchema;
+                    return a.tableName().compareTo(b.tableName());
+                })
+                .toList();
+        return draft.withResolvedTables(resolved);
     }
 
 }

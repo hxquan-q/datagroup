@@ -1,32 +1,23 @@
 package com.dati.mcp.domain.service;
 
-import com.dati.datasource.repository.dao.TableInfoDAO;
-import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.db.analysis.TableRef;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.ToolError;
 import com.dati.semantic.repository.dao.SubjectDAO;
-import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.semantic.repository.po.SubjectPO;
 import jakarta.annotation.Nullable;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Service
 public class ScopeValidator {
 
-    private final TableInfoDAO tableInfoDAO;
-    private final SubjectTableDAO subjectTableDAO;
     private final SubjectDAO subjectDAO;
 
-    public ScopeValidator(TableInfoDAO tableInfoDAO, SubjectTableDAO subjectTableDAO, SubjectDAO subjectDAO) {
-        this.tableInfoDAO = tableInfoDAO;
-        this.subjectTableDAO = subjectTableDAO;
+    public ScopeValidator(SubjectDAO subjectDAO) {
         this.subjectDAO = subjectDAO;
     }
 
@@ -99,19 +90,7 @@ public class ScopeValidator {
     }
 
     private Set<String> coveredDataSourceIds(List<McpServiceDataScope> scopeItems) {
-        Set<String> coveredDsIds = new HashSet<>();
-        for (McpServiceDataScope scope : scopeItems) {
-            if (scope.getScopeType() == McpDataScopeType.DATA_SOURCE) {
-                coveredDsIds.add(scope.getReferenceId());
-            } else if (scope.getScopeType() == McpDataScopeType.SUBJECT) {
-                List<TableInfoPO> tables = subjectTableDAO.findTablesBySubjectId(
-                    scope.getReferenceId(), Pageable.unpaged()).getContent();
-                for (TableInfoPO ti : tables) {
-                    coveredDsIds.add(ti.getDataSourceId());
-                }
-            }
-        }
-        return coveredDsIds;
+        return McpScopeResolution.resolvedDataSourceIds(scopeItems);
     }
 
     /**
@@ -146,20 +125,7 @@ public class ScopeValidator {
     }
 
     private Set<TableRef> buildAllowedTableRefs(List<McpServiceDataScope> scopeItems, String dsId) {
-        Set<TableRef> allowed = new HashSet<>();
-        for (McpServiceDataScope scope : scopeItems) {
-            if (scope.getScopeType() == McpDataScopeType.DATA_SOURCE
-                    && scope.getReferenceId().equals(dsId)) {
-                tableInfoDAO.findByDataSourceId(dsId)
-                    .forEach(ti -> allowed.add(new TableRef(ti.getSchema(), ti.getName())));
-            } else if (scope.getScopeType() == McpDataScopeType.SUBJECT) {
-                subjectTableDAO.findTablesBySubjectId(
-                    scope.getReferenceId(), Pageable.unpaged()).getContent().stream()
-                    .filter(ti -> ti.getDataSourceId().equals(dsId))
-                    .forEach(ti -> allowed.add(new TableRef(ti.getSchema(), ti.getName())));
-            }
-        }
-        return allowed;
+        return McpScopeResolution.frozenTableRefs(scopeItems, dsId);
     }
 
     /** Try to match tableRef against allowed via schema resolution or stripping. */

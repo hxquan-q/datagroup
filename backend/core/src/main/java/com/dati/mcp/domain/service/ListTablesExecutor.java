@@ -7,6 +7,7 @@ import com.dati.datasource.domain.service.JdbcMetaService;
 import com.dati.datasource.repository.dao.TableInfoDAO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.db.Table;
+import com.dati.db.analysis.TableRef;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
@@ -34,21 +35,18 @@ import java.util.Set;
 @Component
 public class ListTablesExecutor implements ToolExecutor {
 
-    private final McpServiceDataScopeService dataScopeService;
     private final TableInfoDAO tableInfoDAO;
     private final DataSourceService dataSourceService;
     private final TermService termService;
     private final JdbcMetaService jdbcMetaService;
     private final int maxPhysicalTablesPerDataSource;
 
-    public ListTablesExecutor(McpServiceDataScopeService dataScopeService,
-                              TableInfoDAO tableInfoDAO,
+    public ListTablesExecutor(TableInfoDAO tableInfoDAO,
                               DataSourceService dataSourceService,
                               TermService termService,
                               JdbcMetaService jdbcMetaService,
                               @Value("${dati.mcp.list-tables.max-physical-tables-per-datasource:1000}")
                               int maxPhysicalTablesPerDataSource) {
-        this.dataScopeService = dataScopeService;
         this.tableInfoDAO = tableInfoDAO;
         this.dataSourceService = dataSourceService;
         this.termService = termService;
@@ -80,7 +78,7 @@ public class ListTablesExecutor implements ToolExecutor {
                     .toList();
         }
 
-        Set<String> dsIds = dataScopeService.getResolvedDataSourceIds(ctx.serviceId());
+        Set<String> dsIds = McpScopeResolution.resolvedDataSourceIds(ctx.scopeItems());
         if (dsIds.isEmpty()) {
             return new TableListData(List.of(), termDefs);
         }
@@ -90,7 +88,8 @@ public class ListTablesExecutor implements ToolExecutor {
         for (String dsId : dsIds) {
             List<TableInfoPO> importedTables = tableInfoDAO.findByDataSourceId(dsId);
             Set<String> allowedSchemas = McpDataScopeSchemas.allowedSchemas(ctx.scopeItems(), dsId);
-            List<TableDef> tableDefs = buildTableDefs(dsId, importedTables, allowedSchemas);
+            List<TableDef> tableDefs = buildTableDefs(dsId, importedTables, allowedSchemas,
+                McpScopeResolution.frozenTableRefs(ctx.scopeItems(), dsId));
             if (tableDefs.isEmpty()) {
                 continue;
             }
@@ -106,11 +105,16 @@ public class ListTablesExecutor implements ToolExecutor {
     }
 
     private List<TableDef> buildTableDefs(String dsId, List<TableInfoPO> importedTables,
-                                          Set<String> allowedSchemas) {
+                                          Set<String> allowedSchemas, Set<TableRef> frozenTables) {
         List<TableDef> tableDefs = new ArrayList<>();
         Set<TableKey> seen = new LinkedHashSet<>();
 
         for (TableInfoPO table : importedTables) {
+            boolean includedBySchema = allowedSchemas.contains(table.getSchema());
+            boolean includedByFrozenScope = frozenTables.contains(new TableRef(table.getSchema(), table.getName()));
+            if (!includedBySchema && !includedByFrozenScope) {
+                continue;
+            }
             TableKey key = new TableKey(table.getSchema(), table.getName());
             if (seen.add(key)) {
                 tableDefs.add(new TableDef(table.getName(), table.getSchema(),
