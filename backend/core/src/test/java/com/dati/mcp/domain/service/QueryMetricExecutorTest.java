@@ -110,4 +110,54 @@ class QueryMetricExecutorTest {
             .hasMessageContaining("factory");
         verifyNoInteractions(parameterizedSqlExecutor);
     }
+
+    @Test
+    @DisplayName("duplicate codes across scoped subjects are ambiguous")
+    void duplicateCodesAreAmbiguous() {
+        McpServiceSnapshot.MetricDraft second = new McpServiceSnapshot.MetricDraft(
+            "metric-2", "subject-2", "ds-2", "quality_daily_fpy", "Other", null,
+            null, null, null, null, null, List.of(), "SELECT 2", List.of(), 30, 1000, 1);
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.QUERY_METRIC, new ToolConfig.QueryMetricConfig(),
+            new com.dati.mcp.domain.model.param.QueryMetricArgs("quality_daily_fpy", Map.of(), List.of()),
+            List.of(), List.of(metric(), second));
+
+        assertThatThrownBy(() -> executor.execute(ctx))
+            .isInstanceOf(ToolExecuteException.class)
+            .hasMessageContaining("ambiguous");
+        verifyNoInteractions(parameterizedSqlExecutor);
+    }
+
+    @Test
+    @DisplayName("nested dimensions cannot bypass the top-level allowlist")
+    void rejectsNestedDimensions() {
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.QUERY_METRIC, new ToolConfig.QueryMetricConfig(),
+            new com.dati.mcp.domain.model.param.QueryMetricArgs(
+                "quality_daily_fpy", Map.of("dimensions", List.of("factory")), List.of()),
+            List.of(), List.of(metric()));
+
+        assertThatThrownBy(() -> executor.execute(ctx))
+            .isInstanceOf(ToolExecuteException.class)
+            .hasMessageContaining("top-level dimensions");
+        verifyNoInteractions(parameterizedSqlExecutor);
+    }
+
+    @Test
+    @DisplayName("raw metric placeholders are rejected before caller input can alter SQL")
+    void rejectsRawPlaceholders() {
+        McpServiceSnapshot.MetricDraft rawMetric = new McpServiceSnapshot.MetricDraft(
+            "metric-raw", "subject-1", "ds-1", "raw_metric", "Raw", null,
+            null, null, null, null, null, List.of(), "SELECT {{{columns}}} FROM quality_daily", List.of(), 30, 1000, 1);
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.QUERY_METRIC, new ToolConfig.QueryMetricConfig(),
+            new com.dati.mcp.domain.model.param.QueryMetricArgs(
+                "raw_metric", Map.of("columns", "*"), List.of()),
+            List.of(), List.of(rawMetric));
+
+        assertThatThrownBy(() -> executor.execute(ctx))
+            .isInstanceOf(ToolExecuteException.class)
+            .hasMessageContaining("bound placeholders");
+        verifyNoInteractions(parameterizedSqlExecutor);
+    }
 }

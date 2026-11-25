@@ -9,6 +9,7 @@ import com.dati.mcp.domain.model.McpDataScopeAccessMode;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpPrebuiltToolConfig;
 import com.dati.mcp.domain.model.McpResolvedTable;
+import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpServiceStatus;
 import com.dati.mcp.repository.dao.McpServiceDAO;
@@ -175,6 +176,11 @@ public class McpServicePublishService {
 
         McpServiceSnapshot activeSnapshot = McpServiceSnapshotMapper.toModel(activeSnapshotPO);
         McpServiceSnapshot.SnapshotContent activeContent = activeSnapshot.getContent();
+        dataScopeService.getDataScope(serviceId).stream()
+            .filter(scope -> scope.getScopeType() == McpDataScopeType.SUBJECT)
+            .map(McpServiceDataScope::getReferenceId)
+            .distinct()
+            .forEach(subjectId -> permissionService.requireSubject(subjectId, Permission.VIEW));
         McpServiceSnapshot.SnapshotContent currentContent = buildCurrentSnapshotContent(servicePO);
 
         if (activeContent == null) {

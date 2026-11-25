@@ -102,9 +102,9 @@ public class McpServiceSnapshot extends BaseResource {
                               List<MetricParameter> parameters, Integer timeout, Integer maxRows,
                               Integer revision) {
         public MetricDraft {
-            aliases = aliases == null ? List.of() : List.copyOf(aliases);
-            allowedDimensions = allowedDimensions == null ? List.of() : List.copyOf(allowedDimensions);
-            parameters = parameters == null ? List.of() : List.copyOf(parameters);
+            aliases = aliases == null ? List.of() : aliases.stream().filter(Objects::nonNull).toList();
+            allowedDimensions = allowedDimensions == null ? List.of() : allowedDimensions.stream().filter(Objects::nonNull).toList();
+            parameters = parameters == null ? List.of() : parameters.stream().filter(Objects::nonNull).toList();
             timeout = timeout == null ? 30 : timeout;
             maxRows = maxRows == null ? 1000 : maxRows;
             revision = revision == null ? 1 : revision;

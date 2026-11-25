@@ -87,6 +87,15 @@ public class McpServiceSnapshotMapper {
             content.setCustomTools(tools);
         }
 
+        // metrics — Draft record
+        if (root.has("metrics")) {
+            List<McpServiceSnapshot.MetricDraft> metrics = new ArrayList<>();
+            for (JsonNode n : root.get("metrics")) {
+                metrics.add(JsonUtils.fromJson(n.toString(), McpServiceSnapshot.MetricDraft.class));
+            }
+            content.setMetrics(metrics);
+        }
+
         // prompts — Draft record
         if (root.has("prompts")) {
             List<McpServiceSnapshot.PromptDraft> prompts = new ArrayList<>();

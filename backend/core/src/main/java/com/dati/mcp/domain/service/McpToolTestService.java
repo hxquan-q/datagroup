@@ -59,6 +59,7 @@ public class McpToolTestService {
                 .map(McpServiceDataScope::getReferenceId)
                 .distinct()
                 .toList();
+            subjectIds.forEach(subjectId -> permissionService.requireSubject(subjectId, Permission.VIEW));
             ToolExecutionContext ctx = new ToolExecutionContext(
                 serviceId, tool.toolType(), tool.config(),
                 parameterBinder.bind(tool.toolType().getParameterType(), request.arguments()),

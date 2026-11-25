@@ -95,4 +95,29 @@ class ToolResultConverterTest {
         assertFalse(text.contains("\"change_type\":null"));
         assertNotNull(result.structuredContent());
     }
+
+    @Test
+    @DisplayName("semantic catalog and metric execution serialize with protocol type markers")
+    void convertsSemanticResults() {
+        com.dati.mcp.server.pojo.SemanticCatalog catalog = new com.dati.mcp.server.pojo.SemanticCatalog(List.of(
+            new com.dati.mcp.server.pojo.SemanticCatalog.SemanticMetric(
+                "metric-1", "subject-1", "quality_daily_fpy", "Quality", null,
+                List.of(), null, null, null, null, List.of(), List.of(), 1)));
+        McpSchema.CallToolResult catalogResult = converter.toResult(catalog);
+        String catalogText = ((McpSchema.TextContent) catalogResult.content().getFirst()).text();
+        assertTrue(catalogText.contains("\"type\":\"SEMANTIC_CATALOG\""));
+        assertTrue(catalogText.contains("quality_daily_fpy"));
+
+        com.dati.mcp.server.pojo.SqlExecution execution = new com.dati.mcp.server.pojo.SqlExecution(
+            "SELECT 1", List.of(), List.of());
+        com.dati.mcp.server.pojo.MetricExecution metricExecution = new com.dati.mcp.server.pojo.MetricExecution(
+            new com.dati.mcp.server.pojo.MetricExecution.MetricInfo(
+                "metric-1", "subject-1", "quality_daily_fpy", "Quality", null,
+                null, null, null, List.of(), 1),
+            Map.of(), List.of(), execution);
+        McpSchema.CallToolResult metricResult = converter.toResult(metricExecution);
+        String metricText = ((McpSchema.TextContent) metricResult.content().getFirst()).text();
+        assertTrue(metricText.contains("\"type\":\"METRIC_EXECUTION\""));
+        assertTrue(metricText.contains("\"execution\""));
+    }
 }

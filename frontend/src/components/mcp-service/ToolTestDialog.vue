@@ -140,7 +140,11 @@ const handleTestClick = async () => {
           :subjects="scopeSubjects"
         />
         <SearchMetadataParams
-          v-else-if="tool?.tool_type === 'SEARCH_METADATA'"
+          v-else-if="tool?.tool_type === 'SEARCH_METADATA' || tool?.tool_type === 'SEARCH_SEMANTICS'"
+          ref="paramRef"
+        />
+        <QueryMetricParams
+          v-else-if="tool?.tool_type === 'QUERY_METRIC'"
           ref="paramRef"
         />
         <ListTablesParams

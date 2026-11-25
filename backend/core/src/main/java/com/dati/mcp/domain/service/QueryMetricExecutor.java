@@ -38,6 +38,14 @@ public class QueryMetricExecutor implements ToolExecutor {
         QueryMetricArgs args = ctx.args(QueryMetricArgs.class);
         McpServiceSnapshot.MetricDraft metric = resolveMetric(ctx.metrics(), args.metric());
         validateDimensions(metric, args.dimensions());
+        if (args.arguments().containsKey("dimensions")) {
+            throw new ToolExecuteException(ToolError.PARAM_INVALID,
+                "Pass dimensions in the top-level dimensions field, not inside arguments");
+        }
+        if (containsRawPlaceholder(metric.sqlTemplate())) {
+            throw new ToolExecuteException(ToolError.PARAM_INVALID,
+                "Metric SQL templates must use bound placeholders only; raw placeholders are not executable through query_metric");
+        }
 
         Map<String, Object> parameters = new HashMap<>(args.arguments());
         if (!args.dimensions().isEmpty()) {
@@ -62,10 +70,15 @@ public class QueryMetricExecutor implements ToolExecutor {
     }
 
     private McpServiceSnapshot.MetricDraft resolveMetric(List<McpServiceSnapshot.MetricDraft> metrics, String key) {
-        for (McpServiceSnapshot.MetricDraft metric : metrics) {
-            if (key.equals(metric.metricId()) || key.equals(metric.code())) {
-                return metric;
-            }
+        List<McpServiceSnapshot.MetricDraft> exact = metrics.stream()
+            .filter(metric -> key.equals(metric.metricId()) || key.equals(metric.code()))
+            .toList();
+        if (exact.size() == 1) {
+            return exact.getFirst();
+        }
+        if (exact.size() > 1) {
+            throw new ToolExecuteException(ToolError.PARAM_INVALID,
+                "Metric reference is ambiguous: " + key + "; use the metric ID");
         }
         String normalized = key.toLowerCase(Locale.ROOT);
         List<McpServiceSnapshot.MetricDraft> matches = metrics.stream()
@@ -93,6 +106,19 @@ public class QueryMetricExecutor implements ToolExecutor {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,
                 "Dimensions are not allowed for metric " + metric.code() + ": " + String.join(", ", invalid));
         }
+    }
+
+    private boolean containsRawPlaceholder(String template) {
+        if (template == null) {
+            return false;
+        }
+        for (int i = 0; i + 2 < template.length(); i++) {
+            if (template.charAt(i) == '{' && template.charAt(i + 1) == '{' && template.charAt(i + 2) == '{'
+                && (i == 0 || template.charAt(i - 1) != '\\')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String lower(String value) {
