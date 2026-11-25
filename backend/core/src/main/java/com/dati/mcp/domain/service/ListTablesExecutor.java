@@ -86,6 +86,10 @@ public class ListTablesExecutor implements ToolExecutor {
         Map<String, DataSourceService.DsBrief> briefs = dataSourceService.getDataSourceBriefs(dsIds);
         List<DataSourceDef> groups = new ArrayList<>();
         for (String dsId : dsIds) {
+            DataSourceService.DsBrief brief = briefs.get(dsId);
+            if (brief == null) {
+                continue;
+            }
             List<TableInfoPO> importedTables = tableInfoDAO.findByDataSourceId(dsId);
             Set<String> allowedSchemas = McpDataScopeSchemas.allowedSchemas(ctx.scopeItems(), dsId);
             List<TableDef> tableDefs = buildTableDefs(dsId, importedTables, allowedSchemas,
@@ -93,12 +97,11 @@ public class ListTablesExecutor implements ToolExecutor {
             if (tableDefs.isEmpty()) {
                 continue;
             }
-            DataSourceService.DsBrief brief = briefs.get(dsId);
             groups.add(new DataSourceDef(dsId,
-                brief != null ? brief.name() : dsId,
-                brief != null && brief.dbType() != null ? brief.dbType().name() : null,
-                brief != null ? brief.defaultSchema() : null,
-                brief != null ? brief.description() : null,
+                brief.name(),
+                brief.dbType() != null ? brief.dbType().name() : null,
+                brief.defaultSchema(),
+                brief.description(),
                 tableDefs));
         }
         return new TableListData(groups, termDefs);

@@ -328,4 +328,18 @@ class ListTablesExecutorTest {
             .containsExactly(org.assertj.core.groups.Tuple.tuple("public", "users"));
     }
 
+    @Test
+    @DisplayName("omits frozen tables when the data source no longer exists")
+    void omitsFrozenTablesForDeletedDataSource() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(new McpResolvedTable("ds-1", "public", "orders")));
+        when(dataSourceService.getDataSourceBriefs(Set.of("ds-1"))).thenReturn(Map.of());
+
+        TableListData data = (TableListData) executor.execute(ctx(List.of(scope)));
+
+        assertThat(data.dataSources()).isEmpty();
+    }
+
 }
