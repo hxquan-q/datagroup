@@ -8,7 +8,6 @@ const { t } = useI18n();
 
 <template>
   <el-table :data="data.metrics" border size="small" stripe max-height="430">
-    
     <el-table-column prop="metric_id" :label="t('mcpService.toolTest.metricId')" min-width="210" />
     <el-table-column prop="code" :label="t('mcpService.toolTest.metricCode')" min-width="170" />
     <el-table-column prop="name" :label="t('mcpService.toolTest.metricName')" min-width="170" />

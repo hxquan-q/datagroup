@@ -9,7 +9,6 @@ import com.dati.mcp.server.pojo.ToolTestData;
 import com.dati.mcp.server.pojo.ToolTestError;
 import com.dati.mcp.server.pojo.ToolTestRequest;
 import com.dati.mcp.server.pojo.ToolTestResponse;
-import com.dati.base.exception.DatiException;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.service.MetricService;
@@ -62,8 +61,8 @@ public class McpToolTestService {
                 .toList();
             List<com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft> metrics = List.of();
             if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC) {
+                subjectIds.forEach(subjectId -> permissionService.requireSubject(subjectId, Permission.VIEW));
                 metrics = metricService.getMetricsBySubjectIds(subjectIds).stream()
-                    .filter(metric -> canViewSubject(metric.getSubjectId()))
                     .map(McpServiceSnapshotMapper::toMetricDraft)
                     .toList();
             }
@@ -87,12 +86,4 @@ public class McpToolTestService {
         }
     }
 
-    private boolean canViewSubject(String subjectId) {
-        try {
-            permissionService.requireSubject(subjectId, Permission.VIEW);
-            return true;
-        } catch (DatiException e) {
-            return false;
-        }
-    }
 }
