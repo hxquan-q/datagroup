@@ -122,6 +122,13 @@ public class ListTablesExecutor implements ToolExecutor {
             }
         }
 
+        for (TableRef frozen : frozenTables) {
+            TableKey key = new TableKey(frozen.schema(), frozen.name());
+            if (seen.add(key)) {
+                tableDefs.add(new TableDef(frozen.name(), frozen.schema(), null, List.of(), null));
+            }
+        }
+
         int physicalCount = 0;
         boolean truncated = false;
         for (String schema : allowedSchemas) {

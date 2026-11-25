@@ -309,4 +309,23 @@ class ListTablesExecutorTest {
         assertThat(data.terms().getFirst().description()).isEqualTo("成交总额");
         assertThat(data.terms().getFirst().subjectName()).isEqualTo("电商主题");
     }
+
+    @Test
+    @DisplayName("frozen tables remain listed when current import metadata is removed")
+    void frozenTablesRemainListedAfterUnimport() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(new McpResolvedTable("ds-1", "public", "users")));
+        when(tableInfoDAO.findByDataSourceId("ds-1")).thenReturn(List.of());
+        when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
+            .thenReturn(Map.of("ds-1", new DataSourceService.DsBrief("音乐库", DbType.POSTGRESQL, "public", null)));
+
+        TableListData data = (TableListData) executor.execute(ctx(List.of(scope)));
+
+        assertThat(data.dataSources().getFirst().tables())
+            .extracting(TableDef::schema, TableDef::table)
+            .containsExactly(org.assertj.core.groups.Tuple.tuple("public", "users"));
+    }
+
 }
