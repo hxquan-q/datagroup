@@ -1,6 +1,8 @@
 package com.dati.mcp.domain.service;
 
+import com.dati.datasource.domain.service.TableMetadataService.TableMeta;
 import com.dati.mcp.domain.model.McpDataScopeType;
+import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
@@ -69,4 +71,27 @@ class SearchMetadataExecutorTest {
         assertThat(hit.terms()).isEmpty();
         verifyNoInteractions(semanticSearchService);
     }
+
+    @Test
+    @DisplayName("filters live search hits outside frozen published tables")
+    void filtersLiveSearchHitsOutsideFrozenScope() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(new McpResolvedTable("ds-1", "public", "orders")));
+
+        TableMeta orders = new TableMeta("t-1", "public", "orders", null, List.of(), "ds-1", List.of());
+        TableMeta customers = new TableMeta("t-2", "public", "customers", null, List.of(), "ds-1", List.of());
+        when(semanticSearchService.search(List.of("o"), new ArrayList<>(Set.of("ds-1")), List.of()))
+            .thenReturn(new SearchResult(List.of(new SemanticSearchService.DataSourceGroup(
+                "ds-1", "ds", "POSTGRESQL", "public", null, List.of(orders, customers))), List.of()));
+
+        SearchHit hit = (SearchHit) executor.execute(ctx(new SearchMetadataArgs(List.of("o")), List.of(scope)));
+
+        assertThat(hit.dataSources()).hasSize(1);
+        assertThat(hit.dataSources().getFirst().tables())
+            .extracting(com.dati.datasource.domain.model.TableDef::table)
+            .containsExactly("orders");
+    }
+
 }

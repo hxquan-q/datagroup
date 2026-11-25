@@ -50,6 +50,13 @@ public class SearchMetadataExecutor implements ToolExecutor {
                 keywords, new ArrayList<>(dsIds), subjectIds);
 
         List<DataSourceDef> dataSources = result.dataSources().stream()
+                .map(g -> new SemanticSearchService.DataSourceGroup(g.dataSourceId(), g.dataSourceName(),
+                        g.dbType(), g.defaultSchema(), g.description(),
+                        g.tables().stream()
+                                .filter(table -> McpScopeResolution.tableAllowed(ctx.scopeItems(),
+                                        g.dataSourceId(), table.schema(), table.tableName(), g.defaultSchema()))
+                                .toList()))
+                .filter(g -> !g.tables().isEmpty())
                 .map(g -> new DataSourceDef(g.dataSourceId(), g.dataSourceName(),
                         g.dbType(), g.defaultSchema(), g.description(),
                         g.tables().stream()

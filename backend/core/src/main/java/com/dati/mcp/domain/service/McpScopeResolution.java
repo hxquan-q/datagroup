@@ -58,4 +58,16 @@ final class McpScopeResolution {
         return scope.getScopeType() == McpDataScopeType.DATA_SOURCE
             && scope.getAccessMode() != McpDataScopeAccessMode.SCHEMA_SCOPE;
     }
+
+    static boolean tableAllowed(List<McpServiceDataScope> scopeItems, String dataSourceId,
+                                String schema, String tableName, String defaultSchema) {
+        Set<String> schemas = McpDataScopeSchemas.allowedSchemas(scopeItems, dataSourceId);
+        if (schemas.contains(schema) || (schema == null && schemas.contains(defaultSchema))) {
+            return true;
+        }
+        Set<TableRef> frozen = frozenTableRefs(scopeItems, dataSourceId);
+        return frozen.contains(new TableRef(schema, tableName))
+            || (schema == null && frozen.contains(new TableRef(defaultSchema, tableName)));
+    }
+
 }
