@@ -51,18 +51,31 @@ public class McpServiceSnapshot extends BaseResource {
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record DataScopeDraft(String serviceId, McpDataScopeType scopeType, String referenceId,
-                                 McpDataScopeAccessMode accessMode, List<String> allowedSchemas) {
+                                 McpDataScopeAccessMode accessMode, List<String> allowedSchemas,
+                                 List<McpResolvedTable> resolvedTables) {
+
+        /** Constructor for snapshots without resolved table metadata. */
+        public DataScopeDraft(String serviceId, McpDataScopeType scopeType, String referenceId,
+                              McpDataScopeAccessMode accessMode, List<String> allowedSchemas) {
+            this(serviceId, scopeType, referenceId, accessMode, allowedSchemas, List.of());
+        }
 
         /** Backward-compatible constructor for legacy snapshots/tests. */
         public DataScopeDraft(String serviceId, McpDataScopeType scopeType, String referenceId) {
             this(serviceId, scopeType, referenceId,
-                    McpDataScopeAccessMode.IMPORTED_TABLES, List.of());
+                    McpDataScopeAccessMode.IMPORTED_TABLES, List.of(), List.of());
         }
 
         public DataScopeDraft {
             accessMode = accessMode != null ? accessMode : McpDataScopeAccessMode.IMPORTED_TABLES;
             allowedSchemas = allowedSchemas == null ? List.of()
                     : allowedSchemas.stream().filter(Objects::nonNull).toList();
+            resolvedTables = resolvedTables == null ? List.of()
+                    : resolvedTables.stream().filter(Objects::nonNull).toList();
+        }
+
+        public DataScopeDraft withResolvedTables(List<McpResolvedTable> tables) {
+            return new DataScopeDraft(serviceId, scopeType, referenceId, accessMode, allowedSchemas, tables);
         }
     }
 

@@ -85,6 +85,10 @@ public interface SemanticSearchDAO extends ElasticsearchRepository<SemanticSearc
                     { "nested": {
                         "path": "entity",
                         "query": { "terms": { "entity.subjectId": ?2 } }
+                    }},
+                    { "nested": {
+                        "path": "entity",
+                        "query": { "terms": { "entity.tableId": ?3 } }
                     }}
                   ],
                   "minimum_should_match": 1
@@ -97,5 +101,6 @@ public interface SemanticSearchDAO extends ElasticsearchRepository<SemanticSearc
             String keyword,
             List<String> datasourceIds,
             List<String> subjectIds,
+            List<String> tableIds,
             Pageable pageable);
 }

@@ -51,10 +51,8 @@ import static org.mockito.Mockito.when;
 /**
  * Executor behavior tests for PARAMETERIZED_SQL.
  * <p>
- * Core regression anchor: the tool config carries NO runtime SQL policy
- * (sqlPolicy removed) — a template rendering to DELETE/INSERT etc. must
- * execute without permission checks. Scope validation and error mapping
- * are still enforced.
+ * Parameterized SQL is a read-only metric execution path: non-SELECT
+ * statements are rejected before any data source lookup or JDBC execution.
  */
 @ExtendWith(MockitoExtension.class)
 class ParameterizedSqlExecutorTest {
@@ -129,33 +127,22 @@ class ParameterizedSqlExecutorTest {
     }
 
     @Test
-    @DisplayName("execute - DELETE template runs without policy check (no SQL_POLICY_VIOLATION)")
-    void execute_deleteTemplate_noPolicyBlock() throws SQLException {
-        when(dataSourceService.getDataSourceInternal("ds-1")).thenReturn(Optional.of(dataSource()));
-        PreparedStatement stmt = mockStatementNoResults();
-        Connection conn = mock(Connection.class);
-        when(conn.prepareStatement(anyString())).thenReturn(stmt);
-
+    @DisplayName("execute - DELETE template is rejected by read-only policy before JDBC")
+    void execute_deleteTemplate_rejectedByReadOnlyPolicy() {
         ToolExecutionContext ctx = new ToolExecutionContext(
             "svc-1", McpToolType.PARAMETERIZED_SQL,
             paramSqlConfig("DELETE FROM tasks WHERE id = {{id}}"),
             Map.of("id", 1), List.of());
 
-        try (MockedStatic<HikariPoolManager> hpm = mockStatic(HikariPoolManager.class)) {
-            hpm.when(() -> HikariPoolManager.getConnection(any(JdbcConnector.class))).thenReturn(conn);
+        assertThatThrownBy(() -> executor.execute(ctx))
+            .isInstanceOf(ToolExecuteException.class)
+            .satisfies(e -> {
+                ToolExecuteException ex = (ToolExecuteException) e;
+                assertThat(ex.getToolError()).isEqualTo(ToolError.SQL_POLICY_VIOLATION);
+                assertThat(ex.getMessage()).contains("DELETE not allowed");
+            });
 
-            ToolTestData data = executor.execute(ctx);
-
-            assertThat(data).isInstanceOf(SqlExecution.class);
-            SqlExecution exec = (SqlExecution) data;
-            assertThat(exec.executedSql()).isEqualTo("DELETE FROM tasks WHERE id = ?");
-            assertThat(exec.results()).isEmpty();
-        }
-
-        // the validator is the single entry point; table checks run against the rendered SQL
-        verify(scopeValidator, times(1)).validate(eq(List.of()), eq("ds-1"),
-            argThat(tables -> tables.contains(new TableRef(null, "tasks"))),
-            eq(Set.of()), eq("public"));
+        verifyNoInteractions(dataSourceService, scopeValidator);
     }
 
     @Test

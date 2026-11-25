@@ -16,5 +16,6 @@ public class McpServiceDataScope extends BaseResource {
     private String referenceId;
     private McpDataScopeAccessMode accessMode = McpDataScopeAccessMode.IMPORTED_TABLES;
     private List<String> allowedSchemas = new ArrayList<>();
+    private List<McpResolvedTable> resolvedTables = new ArrayList<>();
 
 }

@@ -153,6 +153,7 @@ public class McpServiceSnapshotMapper {
         scope.setReferenceId(draft.referenceId());
         scope.setAccessMode(draft.accessMode());
         scope.setAllowedSchemas(new ArrayList<>(draft.allowedSchemas()));
+        scope.setResolvedTables(new ArrayList<>(draft.resolvedTables()));
         return scope;
     }
 
@@ -192,7 +193,7 @@ public class McpServiceSnapshotMapper {
 
     public static McpServiceSnapshot.DataScopeDraft toDataScopeDraft(McpServiceDataScope scope) {
         return new McpServiceSnapshot.DataScopeDraft(scope.getServiceId(), scope.getScopeType(),
-                scope.getReferenceId(), scope.getAccessMode(), scope.getAllowedSchemas());
+                scope.getReferenceId(), scope.getAccessMode(), scope.getAllowedSchemas(), scope.getResolvedTables());
     }
 
     public static McpServiceSnapshot.PrebuiltToolDraft toPrebuiltToolDraft(McpPrebuiltToolConfig tool) {

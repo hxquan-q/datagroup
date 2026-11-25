@@ -7,6 +7,7 @@ import com.dati.datasource.domain.service.JdbcMetaService;
 import com.dati.datasource.repository.dao.TableInfoDAO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.db.Table;
+import com.dati.db.analysis.TableRef;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
@@ -34,21 +35,18 @@ import java.util.Set;
 @Component
 public class ListTablesExecutor implements ToolExecutor {
 
-    private final McpServiceDataScopeService dataScopeService;
     private final TableInfoDAO tableInfoDAO;
     private final DataSourceService dataSourceService;
     private final TermService termService;
     private final JdbcMetaService jdbcMetaService;
     private final int maxPhysicalTablesPerDataSource;
 
-    public ListTablesExecutor(McpServiceDataScopeService dataScopeService,
-                              TableInfoDAO tableInfoDAO,
+    public ListTablesExecutor(TableInfoDAO tableInfoDAO,
                               DataSourceService dataSourceService,
                               TermService termService,
                               JdbcMetaService jdbcMetaService,
                               @Value("${dati.mcp.list-tables.max-physical-tables-per-datasource:1000}")
                               int maxPhysicalTablesPerDataSource) {
-        this.dataScopeService = dataScopeService;
         this.tableInfoDAO = tableInfoDAO;
         this.dataSourceService = dataSourceService;
         this.termService = termService;
@@ -80,7 +78,7 @@ public class ListTablesExecutor implements ToolExecutor {
                     .toList();
         }
 
-        Set<String> dsIds = dataScopeService.getResolvedDataSourceIds(ctx.serviceId());
+        Set<String> dsIds = McpScopeResolution.resolvedDataSourceIds(ctx.scopeItems());
         if (dsIds.isEmpty()) {
             return new TableListData(List.of(), termDefs);
         }
@@ -88,33 +86,49 @@ public class ListTablesExecutor implements ToolExecutor {
         Map<String, DataSourceService.DsBrief> briefs = dataSourceService.getDataSourceBriefs(dsIds);
         List<DataSourceDef> groups = new ArrayList<>();
         for (String dsId : dsIds) {
+            DataSourceService.DsBrief brief = briefs.get(dsId);
+            if (brief == null) {
+                continue;
+            }
             List<TableInfoPO> importedTables = tableInfoDAO.findByDataSourceId(dsId);
             Set<String> allowedSchemas = McpDataScopeSchemas.allowedSchemas(ctx.scopeItems(), dsId);
-            List<TableDef> tableDefs = buildTableDefs(dsId, importedTables, allowedSchemas);
+            List<TableDef> tableDefs = buildTableDefs(dsId, importedTables, allowedSchemas,
+                McpScopeResolution.frozenTableRefs(ctx.scopeItems(), dsId));
             if (tableDefs.isEmpty()) {
                 continue;
             }
-            DataSourceService.DsBrief brief = briefs.get(dsId);
             groups.add(new DataSourceDef(dsId,
-                brief != null ? brief.name() : dsId,
-                brief != null && brief.dbType() != null ? brief.dbType().name() : null,
-                brief != null ? brief.defaultSchema() : null,
-                brief != null ? brief.description() : null,
+                brief.name(),
+                brief.dbType() != null ? brief.dbType().name() : null,
+                brief.defaultSchema(),
+                brief.description(),
                 tableDefs));
         }
         return new TableListData(groups, termDefs);
     }
 
     private List<TableDef> buildTableDefs(String dsId, List<TableInfoPO> importedTables,
-                                          Set<String> allowedSchemas) {
+                                          Set<String> allowedSchemas, Set<TableRef> frozenTables) {
         List<TableDef> tableDefs = new ArrayList<>();
         Set<TableKey> seen = new LinkedHashSet<>();
 
         for (TableInfoPO table : importedTables) {
+            boolean includedBySchema = allowedSchemas.contains(table.getSchema());
+            boolean includedByFrozenScope = frozenTables.contains(new TableRef(table.getSchema(), table.getName()));
+            if (!includedBySchema && !includedByFrozenScope) {
+                continue;
+            }
             TableKey key = new TableKey(table.getSchema(), table.getName());
             if (seen.add(key)) {
                 tableDefs.add(new TableDef(table.getName(), table.getSchema(),
                     table.getDescription(), table.getAliases(), null));
+            }
+        }
+
+        for (TableRef frozen : frozenTables) {
+            TableKey key = new TableKey(frozen.schema(), frozen.name());
+            if (seen.add(key)) {
+                tableDefs.add(new TableDef(frozen.name(), frozen.schema(), null, List.of(), null));
             }
         }
 

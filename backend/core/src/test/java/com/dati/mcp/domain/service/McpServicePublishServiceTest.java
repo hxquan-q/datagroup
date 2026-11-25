@@ -10,6 +10,9 @@ import com.dati.mcp.domain.model.McpDataScopeAccessMode;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpPrebuiltToolConfig;
 import com.dati.mcp.domain.model.McpPrompt;
+import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.datasource.repository.po.TableInfoPO;
+import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpServiceStatus;
@@ -17,6 +20,7 @@ import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 import com.dati.mcp.repository.dao.McpServiceDAO;
 import com.dati.mcp.repository.dao.McpServiceSnapshotDAO;
+import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.mcp.repository.mapper.McpServiceSnapshotMapper;
 import com.dati.mcp.repository.po.McpServicePO;
 import com.dati.mcp.repository.po.McpServiceSnapshotPO;
@@ -30,6 +34,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Collections;
 import java.util.List;
@@ -65,6 +71,12 @@ class McpServicePublishServiceTest {
 
     @Mock
     private PermissionService permissionService;
+
+    @Mock
+    private TableInfoDAO tableInfoDAO;
+
+    @Mock
+    private SubjectTableDAO subjectTableDAO;
 
     @InjectMocks
     private McpServicePublishService publishService;
@@ -462,6 +474,62 @@ class McpServicePublishServiceTest {
         assertThat(diff.isHasChanges()).isFalse();
     }
 
+
+    @Test
+    @DisplayName("Imported table membership change - diff reports DATA_SCOPE")
+    void getDiff_ResolvedTablesChanged_ReportsChange() {
+        testServicePO.setStatus(McpServiceStatus.PUBLISHED);
+        testServicePO.setActiveVersionId("snap-001");
+        testServicePO.setActiveVersionNumber(1);
+
+        McpServiceSnapshot.SnapshotContent content = new McpServiceSnapshot.SnapshotContent();
+        McpServiceSnapshot.ServiceInfo sInfo = new McpServiceSnapshot.ServiceInfo();
+        sInfo.setId(TestFixtures.TEST_MCP_SERVICE_ID);
+        sInfo.setName("Test MCP Service");
+        sInfo.setDescription("Test MCP service for unit tests");
+        sInfo.setCode("test-mcp-service");
+        content.setServiceInfo(sInfo);
+
+        McpServiceDataScope activeScope = new McpServiceDataScope();
+        activeScope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        activeScope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        activeScope.setReferenceId("ds-001");
+        content.setDataScopes(List.of(McpServiceSnapshotMapper.toDataScopeDraft(activeScope)
+            .withResolvedTables(List.of(new McpResolvedTable("ds-001", "public", "orders")))));
+        content.setPrebuiltTools(Collections.emptyList());
+        content.setCustomTools(Collections.emptyList());
+        content.setPrompts(Collections.emptyList());
+
+        McpServiceSnapshotPO snapshotPO = new McpServiceSnapshotPO();
+        snapshotPO.setId("snap-001");
+        snapshotPO.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        snapshotPO.setVersionNumber(1);
+        snapshotPO.setSnapshotContent(com.dati.common.JsonUtils.toJson(content));
+
+        McpServiceDataScope currentScope = new McpServiceDataScope();
+        currentScope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        currentScope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        currentScope.setReferenceId("ds-001");
+
+        TableInfoPO currentTable = new TableInfoPO();
+        currentTable.setDataSourceId("ds-001");
+        currentTable.setSchema("public");
+        currentTable.setName("customers");
+
+        when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
+        when(snapshotDAO.findById("snap-001")).thenReturn(Optional.of(snapshotPO));
+        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(currentScope));
+        when(tableInfoDAO.findByDataSourceId("ds-001")).thenReturn(List.of(currentTable));
+        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID))
+                .thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
+        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
+
+        McpServiceDiffVO diff = publishService.getDiff(TestFixtures.TEST_MCP_SERVICE_ID);
+
+        assertThat(diff.isDataScopeChanged()).isTrue();
+        assertThat(diff.getModifiedComponents()).contains("DATA_SCOPE");
+    }
+
     @Test
     @DisplayName("Data scope access mode change - diff reports DATA_SCOPE")
     void getDiff_DataScopeAccessModeChanged_ReportsChange() {
@@ -512,6 +580,44 @@ class McpServicePublishServiceTest {
         assertThat(diff.getModifiedComponents()).contains("DATA_SCOPE");
     }
 
+
+    @Test
+    @DisplayName("Publish subject scope - freezes resolved subject tables into snapshot")
+    void publish_SubjectScope_FreezesResolvedTables() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        scope.setScopeType(McpDataScopeType.SUBJECT);
+        scope.setReferenceId("sub-1");
+
+        TableInfoPO table = new TableInfoPO();
+        table.setDataSourceId("ds-1");
+        table.setSchema("public");
+        table.setName("orders");
+
+        when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
+        when(snapshotDAO.findMaxVersionNumberByServiceId(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(null);
+        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(scope));
+        when(subjectTableDAO.findTablesBySubjectId(eq("sub-1"), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(table)));
+        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
+        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
+        when(snapshotDAO.save(any(McpServiceSnapshotPO.class))).thenAnswer(inv -> {
+            McpServiceSnapshotPO po = inv.getArgument(0);
+            po.setId("snap-001");
+            return po;
+        });
+        when(mcpServiceDAO.save(any(McpServicePO.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        publishService.publish(TestFixtures.TEST_MCP_SERVICE_ID, "freeze scope");
+
+        org.mockito.ArgumentCaptor<McpServiceSnapshotPO> captor = org.mockito.ArgumentCaptor.forClass(McpServiceSnapshotPO.class);
+        verify(snapshotDAO).save(captor.capture());
+        McpServiceSnapshot.SnapshotContent saved = com.dati.common.JsonUtils.fromJson(
+            captor.getValue().getSnapshotContent(), McpServiceSnapshot.SnapshotContent.class);
+        assertThat(saved.getDataScopes().getFirst().resolvedTables())
+            .containsExactly(new McpResolvedTable("ds-1", "public", "orders"));
+    }
+
     // ── 回滚 ──
 
     @Test
@@ -534,7 +640,8 @@ class McpServicePublishServiceTest {
         scope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
         scope.setScopeType(McpDataScopeType.DATA_SOURCE);
         scope.setReferenceId("ds-001");
-        v1Content.setDataScopes(List.of(McpServiceSnapshotMapper.toDataScopeDraft(scope)));
+        v1Content.setDataScopes(List.of(McpServiceSnapshotMapper.toDataScopeDraft(scope)
+            .withResolvedTables(List.of(new McpResolvedTable("ds-001", "public", "frozen_orders")))));
 
         v1Content.setPrebuiltTools(Collections.emptyList());
         McpCustomTool v1Tool = TestFixtures.createTestCustomTool();
@@ -554,10 +661,6 @@ class McpServicePublishServiceTest {
         when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
         when(snapshotDAO.findByServiceIdAndVersionNumber(TestFixtures.TEST_MCP_SERVICE_ID, 1)).thenReturn(Optional.of(v1SnapshotPO));
         when(snapshotDAO.findMaxVersionNumberByServiceId(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(2);
-        // publish 内部 buildCurrentSnapshotContent 读取（已恢复的）草稿
-        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(TestFixtures.createTestDataScope()));
-        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
-        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
         when(snapshotDAO.save(any(McpServiceSnapshotPO.class))).thenAnswer(inv -> {
             McpServiceSnapshotPO po = inv.getArgument(0);
             po.setId("snap-003");
@@ -579,6 +682,8 @@ class McpServicePublishServiceTest {
         assertThat(testServicePO.getActiveVersionNumber()).isEqualTo(3);
         assertThat(testServicePO.getActiveVersionId()).isEqualTo("snap-003");
         assertThat(testServicePO.getStatus()).isEqualTo(McpServiceStatus.PUBLISHED);
+        assertThat(snapshot.getContent().getDataScopes().getFirst().resolvedTables())
+            .containsExactly(new McpResolvedTable("ds-001", "public", "frozen_orders"));
     }
 
     @Test
@@ -610,10 +715,6 @@ class McpServicePublishServiceTest {
         when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
         when(snapshotDAO.findByServiceIdAndVersionNumber(TestFixtures.TEST_MCP_SERVICE_ID, 1)).thenReturn(Optional.of(v1SnapshotPO));
         when(snapshotDAO.findMaxVersionNumberByServiceId(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(2);
-        // 恢复后草稿数据范围为空（v1 内容写回）
-        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
-        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
-        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
         when(snapshotDAO.save(any(McpServiceSnapshotPO.class))).thenAnswer(inv -> {
             McpServiceSnapshotPO po = inv.getArgument(0);
             po.setId("snap-003");

@@ -110,7 +110,7 @@ class ExecuteSqlExecutorSchemaScopeIntegrationTest {
         JdbcMetaService jdbcMetaService = new JdbcMetaService(dataSourceDAO);
         TableAutoRegistrationService autoRegistrationService = new TableAutoRegistrationService(
                 tableInfoDAO, columnInfoDAO, jdbcMetaService, semanticIndexService);
-        ScopeValidator scopeValidator = new ScopeValidator(tableInfoDAO, subjectTableDAO, subjectDAO);
+        ScopeValidator scopeValidator = new ScopeValidator(subjectDAO);
         executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, autoRegistrationService);
     }
 
