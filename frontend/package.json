@@ -24,6 +24,7 @@
     "@element-plus/icons-vue": "^2.3.2",
     "@iconify-json/mdi": "^1.2.3",
     "@lezer/highlight": "^1.2.3",
+    "@lucide/vue": "^1.79.0",
     "@vueuse/core": "^13.7.0",
     "axios": "^1.15.0",
     "element-plus": "^2.13.7",

@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { Edit, Delete, Plus, Search, Coin, CaretRight } from "@element-plus/icons-vue";
+import { Coin } from "@element-plus/icons-vue";
+import { Pencil, Play, Plus, Search, Trash2 } from "@lucide/vue";
 import type { McpToolVO } from "~/api/mcp-tool";
 import { updateTool, deleteCustomTool } from "~/api/mcp-tool";
 import { notifyError } from "~/api/http";
@@ -138,23 +139,41 @@ const handleDialogSaved = () => {
           </div>
         </div>
 
-        <div class="flex items-center gap-3.5 shrink-0">
+        <div class="flex items-center gap-2 shrink-0">
           <el-tooltip :content="t('common.edit')" placement="top">
-            <el-icon class="action-icon" :aria-label="t('common.edit')" @click="handleEdit(tool)"><Edit /></el-icon>
+            <el-button
+              link
+              class="tool-action-button"
+              :aria-label="t('common.edit')"
+              @click="handleEdit(tool)"
+            >
+              <Pencil :size="16" />
+            </el-button>
           </el-tooltip>
           <el-tooltip :content="t('common.delete')" placement="top">
-            <el-icon class="action-icon action-delete" :aria-label="t('common.delete')" @click="handleDelete(tool)"><Delete /></el-icon>
+            <el-button
+              link
+              class="tool-action-button action-delete"
+              :aria-label="t('common.delete')"
+              @click="handleDelete(tool)"
+            >
+              <Trash2 :size="16" />
+            </el-button>
           </el-tooltip>
           <el-tooltip
             :content="tool.enabled ? t('common.test') : t('mcpService.tool.disabledTestHint')"
             placement="top"
           >
-            <el-icon
-              class="action-icon"
+            <el-button
+              link
+              class="tool-action-button"
               :class="{ 'icon-disabled': !tool.enabled }"
+              :disabled="!tool.enabled"
               :aria-label="t('common.test')"
-              @click="tool.enabled ? openTest(tool) : undefined"
-            ><CaretRight /></el-icon>
+              @click="openTest(tool)"
+            >
+              <Play :size="16" />
+            </el-button>
           </el-tooltip>
           <el-switch
             :model-value="tool.enabled"
@@ -183,14 +202,14 @@ const handleDialogSaved = () => {
 <style scoped>
 .custom-toolbar {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--ep-bg-color);
 }
 .search-input { width: 240px; }
 .total { font-size: 13px; color: var(--ep-text-color-secondary); flex: 1; }
 .custom-list {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--ep-bg-color);
   overflow: hidden;
 }
@@ -210,20 +229,40 @@ const handleDialogSaved = () => {
 .custom-meta-color { color: var(--ep-text-color-secondary); }
 .meta-divider { color: var(--ep-border-color); }
 .confirm-badge { color: var(--ep-color-warning); }
-.action-icon {
-  cursor: pointer;
+.tool-action-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
   color: var(--ep-text-color-secondary);
-  font-size: 17px;
-  transition: color 0.15s;
+  transition: color 0.15s, background-color 0.15s;
 }
-.action-icon:hover { color: var(--ep-color-primary); }
-.action-icon.icon-disabled {
+
+.tool-action-button :deep(svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.tool-action-button:hover {
+  color: var(--ep-color-primary);
+  background: var(--ep-color-primary-light-9);
+}
+
+.tool-action-button:focus-visible {
+  outline: 2px solid var(--ep-color-primary);
+  outline-offset: 2px;
+}
+
+.tool-action-button.icon-disabled,
+.tool-action-button.icon-disabled:hover {
   cursor: not-allowed;
   color: var(--ep-text-color-placeholder);
+  background: transparent;
   opacity: 0.45;
 }
-.action-icon.icon-disabled:hover {
-  color: var(--ep-text-color-placeholder);
+
+.action-delete:hover {
+  color: var(--ep-color-danger);
+  background: var(--ep-color-danger-light-9);
 }
-.action-delete:hover { color: var(--ep-color-danger); }
 </style>
