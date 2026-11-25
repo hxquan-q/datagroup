@@ -1,6 +1,8 @@
 package com.dati.mcp.domain.service;
 
 import com.dati.datasource.domain.service.TableMetadataService.TableMeta;
+import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
@@ -35,11 +37,14 @@ class SearchMetadataExecutorTest {
     @Mock
     private SemanticSearchService semanticSearchService;
 
+    @Mock
+    private TableInfoDAO tableInfoDAO;
+
     private SearchMetadataExecutor executor;
 
     @BeforeEach
     void setUp() {
-        executor = new SearchMetadataExecutor(semanticSearchService);
+        executor = new SearchMetadataExecutor(semanticSearchService, tableInfoDAO);
     }
 
     private ToolExecutionContext ctx(SearchMetadataArgs args, List<McpServiceDataScope> scopes) {
@@ -53,13 +58,13 @@ class SearchMetadataExecutorTest {
         McpServiceDataScope scope = new McpServiceDataScope();
         scope.setScopeType(McpDataScopeType.DATA_SOURCE);
         scope.setReferenceId("ds-1");
-        when(semanticSearchService.search(List.of("orders"), new ArrayList<>(Set.of("ds-1")), List.of()))
+        when(semanticSearchService.search(List.of("orders"), List.of(), List.of(), List.of()))
             .thenReturn(new SearchResult(List.of(), List.of()));
 
         SearchHit hit = (SearchHit) executor.execute(ctx(new SearchMetadataArgs(List.of("orders")), List.of(scope)));
 
         assertThat(hit.keywords()).containsExactly("orders");
-        verify(semanticSearchService).search(eq(List.of("orders")), any(), eq(List.of()));
+        verify(semanticSearchService).search(eq(List.of("orders")), any(), eq(List.of()), any());
     }
 
     @Test
@@ -80,9 +85,21 @@ class SearchMetadataExecutorTest {
         scope.setReferenceId("ds-1");
         scope.setResolvedTables(List.of(new McpResolvedTable("ds-1", "public", "orders")));
 
+        TableInfoPO ordersTable = new TableInfoPO();
+        ordersTable.setId("t-1");
+        ordersTable.setDataSourceId("ds-1");
+        ordersTable.setSchema("public");
+        ordersTable.setName("orders");
+        TableInfoPO customersTable = new TableInfoPO();
+        customersTable.setId("t-2");
+        customersTable.setDataSourceId("ds-1");
+        customersTable.setSchema("public");
+        customersTable.setName("customers");
+        when(tableInfoDAO.findByDataSourceId("ds-1")).thenReturn(List.of(ordersTable, customersTable));
+
         TableMeta orders = new TableMeta("t-1", "public", "orders", null, List.of(), "ds-1", List.of());
         TableMeta customers = new TableMeta("t-2", "public", "customers", null, List.of(), "ds-1", List.of());
-        when(semanticSearchService.search(List.of("o"), new ArrayList<>(Set.of("ds-1")), List.of()))
+        when(semanticSearchService.search(List.of("o"), List.of(), List.of(), List.of("t-1")))
             .thenReturn(new SearchResult(List.of(new SemanticSearchService.DataSourceGroup(
                 "ds-1", "ds", "POSTGRESQL", "public", null, List.of(orders, customers))), List.of()));
 

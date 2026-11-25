@@ -141,14 +141,16 @@ public class SemanticIndexService {
             List<String> keywords,
             List<String> datasourceIds,
             List<String> subjectIds,
+            List<String> tableIds,
             int maxResults) {
 
         if (keywords == null || keywords.isEmpty()) return List.of();
 
         String queryString = String.join(" ", keywords);
-        if (datasourceIds.isEmpty() && subjectIds.isEmpty()) return List.of();
+        if (datasourceIds.isEmpty() && subjectIds.isEmpty() && tableIds.isEmpty()) return List.of();
 
-        return semanticSearchDAO.searchByKeyword(queryString, datasourceIds, subjectIds, PageRequest.of(0, maxResults))
+        return semanticSearchDAO.searchByKeyword(queryString, datasourceIds, subjectIds, tableIds,
+                PageRequest.of(0, maxResults))
                 .getContent();
     }
 
