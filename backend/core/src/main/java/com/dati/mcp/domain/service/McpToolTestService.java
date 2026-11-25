@@ -1,5 +1,7 @@
 package com.dati.mcp.domain.service;
 
+import com.dati.base.exception.DatiException;
+import com.dati.base.exception.ErrorCode;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.repository.dao.McpServiceDataScopeDAO;
@@ -61,7 +63,7 @@ public class McpToolTestService {
                 .toList();
             List<com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft> metrics = List.of();
             if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC) {
-                subjectIds.forEach(subjectId -> permissionService.requireSubject(subjectId, Permission.VIEW));
+                subjectIds.forEach(this::requireSubjectIfExists);
                 metrics = metricService.getMetricsBySubjectIds(subjectIds).stream()
                     .map(McpServiceSnapshotMapper::toMetricDraft)
                     .toList();
@@ -83,6 +85,16 @@ public class McpToolTestService {
             long elapsed = System.currentTimeMillis() - start;
             return new ToolTestResponse(false, elapsed, null,
                 new ToolTestError(e.getErrorCategory(), e.getMessage()));
+        }
+    }
+
+    private void requireSubjectIfExists(String subjectId) {
+        try {
+            permissionService.requireSubject(subjectId, Permission.VIEW);
+        } catch (DatiException e) {
+            if (e.getCode() != ErrorCode.SM_SUBJECT_NOT_FOUND) {
+                throw e;
+            }
         }
     }
 
