@@ -9,6 +9,7 @@ import com.dati.mcp.server.pojo.ToolTestData;
 import com.dati.mcp.server.pojo.ToolTestError;
 import com.dati.mcp.server.pojo.ToolTestRequest;
 import com.dati.mcp.server.pojo.ToolTestResponse;
+import com.dati.base.exception.DatiException;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.service.MetricService;
@@ -59,14 +60,18 @@ public class McpToolTestService {
                 .map(McpServiceDataScope::getReferenceId)
                 .distinct()
                 .toList();
-            subjectIds.forEach(subjectId -> permissionService.requireSubject(subjectId, Permission.VIEW));
+            List<com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft> metrics = List.of();
+            if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC) {
+                metrics = metricService.getMetricsBySubjectIds(subjectIds).stream()
+                    .filter(metric -> canViewSubject(metric.getSubjectId()))
+                    .map(McpServiceSnapshotMapper::toMetricDraft)
+                    .toList();
+            }
             ToolExecutionContext ctx = new ToolExecutionContext(
                 serviceId, tool.toolType(), tool.config(),
                 parameterBinder.bind(tool.toolType().getParameterType(), request.arguments()),
                 scopeItems,
-                metricService.getMetricsBySubjectIds(subjectIds).stream()
-                    .map(McpServiceSnapshotMapper::toMetricDraft)
-                    .toList());
+                metrics);
             ToolExecutor executor = executorMap.get(tool.toolType());
             if (executor == null) {
                 throw new IllegalStateException(
@@ -79,6 +84,15 @@ public class McpToolTestService {
             long elapsed = System.currentTimeMillis() - start;
             return new ToolTestResponse(false, elapsed, null,
                 new ToolTestError(e.getErrorCategory(), e.getMessage()));
+        }
+    }
+
+    private boolean canViewSubject(String subjectId) {
+        try {
+            permissionService.requireSubject(subjectId, Permission.VIEW);
+            return true;
+        } catch (DatiException e) {
+            return false;
         }
     }
 }

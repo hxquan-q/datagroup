@@ -10,11 +10,41 @@ const form = reactive({
   dimensions: [] as string[],
 });
 
+function assertSafeIntegerLiterals(source: string) {
+  let inString = false;
+  let escaped = false;
+  let quote = "";
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === quote) inString = false;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      inString = true;
+      quote = ch;
+      continue;
+    }
+    if (!/[0-9]/.test(ch)) continue;
+    const prev = source[i - 1] || "";
+    if (/[A-Za-z0-9_.$]/.test(prev)) continue;
+    let end = i + 1;
+    while (end < source.length && /[0-9]/.test(source[end])) end++;
+    if (end - i > 15 && source[end] !== ".") {
+      throw new Error(t("mcpService.toolTest.metricArgumentsUnsafeInteger"));
+    }
+    i = end - 1;
+  }
+}
+
 defineExpose({
   getArgs: () => {
     let metricArguments: Record<string, any> = {};
     const raw = form.argumentsJson.trim();
     if (raw) {
+      assertSafeIntegerLiterals(raw);
       const parsed = JSON.parse(raw);
       if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error(t("mcpService.toolTest.metricArgumentsInvalid"));

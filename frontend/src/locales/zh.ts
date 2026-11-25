@@ -644,6 +644,8 @@ export default {
       metricArgumentsInvalid: "指标参数必须是 JSON 对象",
       dimensions: "分组维度",
       dimensionsPlaceholder: "已发布的分组维度",
+      metricId: "指标 ID",
+      metricArgumentsUnsafeInteger: "大整数筛选值必须写成字符串，避免精度丢失",
       metricCode: "编码",
       metricName: "名称",
       metricOwner: "负责人",

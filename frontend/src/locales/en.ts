@@ -644,6 +644,8 @@ export default {
       metricArgumentsInvalid: "Metric arguments must be a JSON object",
       dimensions: "Dimensions",
       dimensionsPlaceholder: "Allowed grouping dimensions",
+      metricId: "Metric ID",
+      metricArgumentsUnsafeInteger: "Large integer filters must be quoted as strings to avoid precision loss",
       metricCode: "Code",
       metricName: "Name",
       metricOwner: "Owner",

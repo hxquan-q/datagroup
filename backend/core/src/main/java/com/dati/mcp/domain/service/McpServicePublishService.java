@@ -176,12 +176,8 @@ public class McpServicePublishService {
 
         McpServiceSnapshot activeSnapshot = McpServiceSnapshotMapper.toModel(activeSnapshotPO);
         McpServiceSnapshot.SnapshotContent activeContent = activeSnapshot.getContent();
-        dataScopeService.getDataScope(serviceId).stream()
-            .filter(scope -> scope.getScopeType() == McpDataScopeType.SUBJECT)
-            .map(McpServiceDataScope::getReferenceId)
-            .distinct()
-            .forEach(subjectId -> permissionService.requireSubject(subjectId, Permission.VIEW));
         McpServiceSnapshot.SnapshotContent currentContent = buildCurrentSnapshotContent(servicePO);
+        boolean metricSubjectsVisible = canViewMetricSubjects(serviceId);
 
         if (activeContent == null) {
             diff.setHasChanges(true);
@@ -245,11 +241,13 @@ public class McpServicePublishService {
             diff.getModifiedComponents().add("TOOLS");
         }
 
-        // 4. Metrics Diff
-        Map<String, McpServiceSnapshot.MetricDraft> activeMetrics = activeContent.getMetrics() != null
+        // 4. Metrics Diff. Metric details require visibility into both draft and previously published subjects.
+        Map<String, McpServiceSnapshot.MetricDraft> activeMetrics =
+            metricSubjectsVisible && activeContent.getMetrics() != null
                 ? activeContent.getMetrics().stream().collect(Collectors.toMap(McpServiceSnapshot.MetricDraft::metricId, Function.identity(), (a, b) -> a))
                 : Map.of();
-        Map<String, McpServiceSnapshot.MetricDraft> currentMetrics = currentContent.getMetrics() != null
+        Map<String, McpServiceSnapshot.MetricDraft> currentMetrics =
+            metricSubjectsVisible && currentContent.getMetrics() != null
                 ? currentContent.getMetrics().stream().collect(Collectors.toMap(McpServiceSnapshot.MetricDraft::metricId, Function.identity(), (a, b) -> a))
                 : Map.of();
         List<String> addedMetrics = new ArrayList<>();
@@ -426,6 +424,22 @@ public class McpServicePublishService {
     private String customToolKey(McpServiceSnapshot.CustomToolDraft t) {
         return t.toolType() + "|" + t.name() + "|" + t.title() + "|" + t.description()
                 + "|" + t.enabled() + "|" + JsonUtils.toJson(t.config());
+    }
+
+    private boolean canViewMetricSubjects(String serviceId) {
+        List<String> subjectIds = dataScopeService.getDataScope(serviceId).stream()
+            .filter(scope -> scope.getScopeType() == McpDataScopeType.SUBJECT)
+            .map(McpServiceDataScope::getReferenceId)
+            .distinct()
+            .toList();
+        for (String subjectId : subjectIds) {
+            try {
+                permissionService.requireSubject(subjectId, Permission.VIEW);
+            } catch (DatiException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String metricKey(McpServiceSnapshot.MetricDraft metric) {
