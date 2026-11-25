@@ -30,6 +30,18 @@ public class McpServiceDiffVO {
     @JsonProperty("prompts_changed")
     private boolean promptsChanged;
 
+    @JsonProperty("metrics_changed")
+    private boolean metricsChanged;
+
+    @JsonProperty("added_metrics")
+    private List<String> addedMetrics = new ArrayList<>();
+
+    @JsonProperty("modified_metrics")
+    private List<String> modifiedMetrics = new ArrayList<>();
+
+    @JsonProperty("deleted_metrics")
+    private List<String> deletedMetrics = new ArrayList<>();
+
     @JsonProperty("added_tools")
     private List<String> addedTools = new ArrayList<>();
 

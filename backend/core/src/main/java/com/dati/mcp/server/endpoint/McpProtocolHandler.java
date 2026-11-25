@@ -136,7 +136,8 @@ public class McpProtocolHandler {
         ToolExecutionContext ctx = new ToolExecutionContext(
             serviceId, tool.toolType(), tool.config(),
             parameterBinder.bind(tool.toolType().getParameterType(), arguments),
-            snapshotToolResolver.buildScopeItems(serviceId, content));
+            snapshotToolResolver.buildScopeItems(serviceId, content),
+            content.getMetrics() == null ? List.of() : content.getMetrics());
         var data = executor.execute(ctx);
         return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult(data));
     }

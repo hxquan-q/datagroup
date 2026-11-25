@@ -4,12 +4,14 @@ import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.repository.dao.McpServiceDataScopeDAO;
 import com.dati.mcp.repository.mapper.McpServiceDataScopeMapper;
+import com.dati.mcp.repository.mapper.McpServiceSnapshotMapper;
 import com.dati.mcp.server.pojo.ToolTestData;
 import com.dati.mcp.server.pojo.ToolTestError;
 import com.dati.mcp.server.pojo.ToolTestRequest;
 import com.dati.mcp.server.pojo.ToolTestResponse;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.service.PermissionService;
+import com.dati.semantic.domain.service.MetricService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -28,18 +30,21 @@ public class McpToolTestService {
     private final Map<McpToolType, ToolExecutor> executorMap;
     private final PermissionService permissionService;
     private final McpScopeResolver scopeResolver;
+    private final MetricService metricService;
 
     public McpToolTestService(ToolResolver toolResolver, McpServiceDataScopeDAO scopeDAO,
                               List<ToolExecutor> toolExecutorList,
                               ToolParameterBinder parameterBinder,
                               PermissionService permissionService,
-                              McpScopeResolver scopeResolver) {
+                              McpScopeResolver scopeResolver,
+                              MetricService metricService) {
         this.toolResolver = toolResolver;
         this.scopeDAO = scopeDAO;
         this.parameterBinder = parameterBinder;
         this.executorMap = toolExecutorList.stream().collect(Collectors.toMap(ToolExecutor::getToolType, Function.identity()));
         this.permissionService = permissionService;
         this.scopeResolver = scopeResolver;
+        this.metricService = metricService;
     }
 
     public ToolTestResponse test(String serviceId, String toolId, ToolTestRequest request) {
@@ -49,10 +54,18 @@ public class McpToolTestService {
             ToolResolver.ResolvedTool tool = toolResolver.resolve(serviceId, toolId);
             List<McpServiceDataScope> scopeItems = scopeResolver.resolve(scopeDAO.findAllByServiceId(serviceId)
                 .stream().map(McpServiceDataScopeMapper::toModel).toList());
+            List<String> subjectIds = scopeItems.stream()
+                .filter(scope -> scope.getScopeType() == com.dati.mcp.domain.model.McpDataScopeType.SUBJECT)
+                .map(McpServiceDataScope::getReferenceId)
+                .distinct()
+                .toList();
             ToolExecutionContext ctx = new ToolExecutionContext(
                 serviceId, tool.toolType(), tool.config(),
                 parameterBinder.bind(tool.toolType().getParameterType(), request.arguments()),
-                scopeItems);
+                scopeItems,
+                metricService.getMetricsBySubjectIds(subjectIds).stream()
+                    .map(McpServiceSnapshotMapper::toMetricDraft)
+                    .toList());
             ToolExecutor executor = executorMap.get(tool.toolType());
             if (executor == null) {
                 throw new IllegalStateException(

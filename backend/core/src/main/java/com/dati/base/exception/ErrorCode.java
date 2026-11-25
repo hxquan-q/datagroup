@@ -46,6 +46,9 @@ public enum ErrorCode {
     SM_TERM_RELATION_INVALID("SM004", 400, "Invalid term relation: {0}"),
     SM_TABLE_ALREADY_ASSOCIATED("SM005", 400, "Table {0} is already associated with subject {1}"),
     SM_ASSOCIATION_NOT_FOUND("SM006", 404, "Association between subject {0} and table {1} not found"),
+    SM_METRIC_NOT_FOUND("SM007", 404, "Metric not found: {0}"),
+    SM_METRIC_CODE_EXISTS("SM008", 409, "Metric code already exists in this subject: {0}"),
+    SM_METRIC_CODE_INVALID("SM009", 400, "Metric code must be 1-128 chars, lowercase letters, digits and underscores only, starting with a letter"),
 
     FIELD_REQUIRED("VAL002", 400, "Field {0} is required"),
 

@@ -20,6 +20,7 @@ import com.dati.mcp.server.pojo.McpServiceDiffVO;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.model.ResourceType;
 import com.dati.permission.domain.service.PermissionService;
+import com.dati.semantic.domain.service.MetricService;
 import com.dati.semantic.repository.dao.SubjectTableDAO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ public class McpServicePublishService {
     private final PermissionService permissionService;
     private final TableInfoDAO tableInfoDAO;
     private final SubjectTableDAO subjectTableDAO;
+    private final MetricService metricService;
 
     public McpServicePublishService(McpServiceDAO mcpServiceDAO,
                                      McpServiceSnapshotDAO snapshotDAO,
@@ -51,7 +53,8 @@ public class McpServicePublishService {
                                      McpPromptService promptService,
                                      PermissionService permissionService,
                                      TableInfoDAO tableInfoDAO,
-                                     SubjectTableDAO subjectTableDAO) {
+                                     SubjectTableDAO subjectTableDAO,
+                                     MetricService metricService) {
         this.mcpServiceDAO = mcpServiceDAO;
         this.snapshotDAO = snapshotDAO;
         this.dataScopeService = dataScopeService;
@@ -60,6 +63,7 @@ public class McpServicePublishService {
         this.permissionService = permissionService;
         this.tableInfoDAO = tableInfoDAO;
         this.subjectTableDAO = subjectTableDAO;
+        this.metricService = metricService;
     }
 
     @Transactional
@@ -235,7 +239,37 @@ public class McpServicePublishService {
             diff.getModifiedComponents().add("TOOLS");
         }
 
-        // 4. Prompts Diff
+        // 4. Metrics Diff
+        Map<String, McpServiceSnapshot.MetricDraft> activeMetrics = activeContent.getMetrics() != null
+                ? activeContent.getMetrics().stream().collect(Collectors.toMap(McpServiceSnapshot.MetricDraft::metricId, Function.identity(), (a, b) -> a))
+                : Map.of();
+        Map<String, McpServiceSnapshot.MetricDraft> currentMetrics = currentContent.getMetrics() != null
+                ? currentContent.getMetrics().stream().collect(Collectors.toMap(McpServiceSnapshot.MetricDraft::metricId, Function.identity(), (a, b) -> a))
+                : Map.of();
+        List<String> addedMetrics = new ArrayList<>();
+        List<String> modifiedMetrics = new ArrayList<>();
+        List<String> deletedMetrics = new ArrayList<>();
+        for (Map.Entry<String, McpServiceSnapshot.MetricDraft> entry : currentMetrics.entrySet()) {
+            if (!activeMetrics.containsKey(entry.getKey())) {
+                addedMetrics.add(entry.getValue().code());
+            } else if (!Objects.equals(metricKey(activeMetrics.get(entry.getKey())), metricKey(entry.getValue()))) {
+                modifiedMetrics.add(entry.getValue().code());
+            }
+        }
+        for (Map.Entry<String, McpServiceSnapshot.MetricDraft> entry : activeMetrics.entrySet()) {
+            if (!currentMetrics.containsKey(entry.getKey())) {
+                deletedMetrics.add(entry.getValue().code());
+            }
+        }
+        if (!addedMetrics.isEmpty() || !modifiedMetrics.isEmpty() || !deletedMetrics.isEmpty()) {
+            diff.setMetricsChanged(true);
+            diff.setAddedMetrics(addedMetrics);
+            diff.setModifiedMetrics(modifiedMetrics);
+            diff.setDeletedMetrics(deletedMetrics);
+            diff.getModifiedComponents().add("METRICS");
+        }
+
+        // 5. Prompts Diff
         Map<String, McpServiceSnapshot.PromptDraft> activePrompts = activeContent.getPrompts() != null
                 ? activeContent.getPrompts().stream().collect(Collectors.toMap(McpServiceSnapshot.PromptDraft::name, Function.identity(), (a, b) -> a))
                 : Map.of();
@@ -270,7 +304,8 @@ public class McpServicePublishService {
             diff.getModifiedComponents().add("PROMPTS");
         }
 
-        boolean hasChanges = diff.isBasicInfoChanged() || diff.isDataScopeChanged() || diff.isToolsChanged() || diff.isPromptsChanged();
+        boolean hasChanges = diff.isBasicInfoChanged() || diff.isDataScopeChanged() || diff.isToolsChanged()
+                || diff.isMetricsChanged() || diff.isPromptsChanged();
         diff.setHasChanges(hasChanges);
 
         return diff;
@@ -387,6 +422,15 @@ public class McpServicePublishService {
                 + "|" + t.enabled() + "|" + JsonUtils.toJson(t.config());
     }
 
+    private String metricKey(McpServiceSnapshot.MetricDraft metric) {
+        return metric.code() + "|" + metric.name() + "|" + metric.description()
+                + "|" + JsonUtils.toJson(metric.aliases()) + "|" + metric.owner()
+                + "|" + metric.grain() + "|" + metric.timeField() + "|" + metric.timeZone()
+                + "|" + JsonUtils.toJson(metric.allowedDimensions()) + "|" + metric.sqlTemplate()
+                + "|" + JsonUtils.toJson(metric.parameters()) + "|" + metric.timeout()
+                + "|" + metric.maxRows() + "|" + metric.revision();
+    }
+
     private String promptKey(McpServiceSnapshot.PromptDraft p) {
         return p.name() + "|" + p.description() + "|" + p.content()
                 + "|" + JsonUtils.toJson(p.parameters()) + "|" + p.enabled();
@@ -418,12 +462,23 @@ public class McpServicePublishService {
                 .map(McpServiceSnapshotMapper::toPromptDraft)
                 .toList();
 
+        List<String> subjectIds = dataScopes.stream()
+                .filter(scope -> scope.scopeType() == McpDataScopeType.SUBJECT)
+                .map(McpServiceSnapshot.DataScopeDraft::referenceId)
+                .distinct()
+                .toList();
+        List<McpServiceSnapshot.MetricDraft> metrics = metricService.getMetricsBySubjectIds(subjectIds).stream()
+                .map(McpServiceSnapshotMapper::toMetricDraft)
+                .sorted((a, b) -> a.code().compareTo(b.code()))
+                .toList();
+
         McpServiceSnapshot.SnapshotContent content = new McpServiceSnapshot.SnapshotContent();
         content.setServiceInfo(serviceInfo);
         content.setDataScopes(dataScopes);
         content.setPrebuiltTools(prebuiltTools);
         content.setCustomTools(customTools);
         content.setPrompts(prompts);
+        content.setMetrics(metrics);
         return content;
     }
 

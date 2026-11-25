@@ -105,13 +105,14 @@ class McpToolServiceTest {
 
         ToolsResult result = mcpToolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID);
 
-        assertThat(result.prebuilt()).hasSize(7);
+        assertThat(result.prebuilt()).hasSize(9);
         // Read tools + EXECUTE_SQL default enabled; metadata update tools default disabled
         assertThat(result.prebuilt())
             .filteredOn(McpPrebuiltToolConfig::isEnabled)
             .extracting(McpPrebuiltToolConfig::getToolType)
-            .containsExactlyInAnyOrder(McpToolType.SEARCH_METADATA, McpToolType.GET_TABLE_INFO,
-                McpToolType.EXECUTE_SQL, McpToolType.LIST_TABLES);
+            .containsExactlyInAnyOrder(McpToolType.SEARCH_METADATA, McpToolType.SEARCH_SEMANTICS,
+                McpToolType.GET_TABLE_INFO, McpToolType.LIST_TABLES, McpToolType.QUERY_METRIC,
+                McpToolType.EXECUTE_SQL);
         assertThat(result.prebuilt())
             .filteredOn(cfg -> !cfg.isEnabled())
             .extracting(McpPrebuiltToolConfig::getToolType)
@@ -133,7 +134,7 @@ class McpToolServiceTest {
 
         ToolsResult result = mcpToolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID);
 
-        assertThat(result.prebuilt()).hasSize(7);
+        assertThat(result.prebuilt()).hasSize(9);
         assertThat(result.custom()).hasSize(1);
     }
 
@@ -465,7 +466,7 @@ class McpToolServiceTest {
 
         long result = mcpToolService.countToolsByServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
 
-        assertThat(result).isEqualTo(9L);
+        assertThat(result).isEqualTo(11L);
     }
 
     // ── 全量替换（回滚恢复草稿用）──
