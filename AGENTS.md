@@ -90,18 +90,18 @@ src/
 
 ## Design System
 
-The project follows a **Flat Design + Enterprise Minimal** style with Element Plus as the UI framework.
+The project follows an **enterprise data-console** style: calm, spacious, precise, and technically credible. Element Plus provides the base controls; XIAOAI brand tokens define the shell, sidebar, dashboard surfaces, and blue/cyan accents.
 
 **Key rules (always apply):**
 
 | Rule | Standard |
 |------|----------|
-| **Colors** | Use `var(--ep-color-*)` semantic variables everywhere. Never raw hex in component templates. |
-| **Typography** | Page title `24px/650`, section title `16px/650`, body `14px`, meta `13px`, label `12px`. |
+| **Colors** | Use `var(--ep-color-*)` semantic variables plus `var(--xiaoai-*)` brand tokens. Never raw hex in component templates or scoped styles. |
+| **Typography** | Page title `24px/700+`, section title `18–20px/700`, card title `15–17px`, body `13–14px`, meta `11–13px`. |
 | **Spacing** | Tailwind 4px base unit: `gap-1`=`4px`, `gap-2`=`8px`, `gap-4`=`16px`. |
-| **Page layout** | List pages: `p-5 md:p-6` → toolbar → `DataTableShell` → dialog. Detail pages with breadcrumb + tabs or side nav. |
+| **Page layout** | Fixed header + dark collapsible sidebar; only main content scrolls. List pages use generous spacing → toolbar → `DataTableShell`; avoid nested page frames. |
 | **Buttons** | Primary CTA: `el-button type="primary"`. Table actions: `type="primary" link`. Danger: `type="danger" link`. |
-| **Icons** | SVG only via Element Plus icons (`@element-plus/icons-vue`) or Iconify. **Never emoji as structural icons.** |
+| **Icons** | Prefer Lucide SVG icons via `@lucide/vue`; Element Plus icons only where established. **Never emoji as structural icons.** |
 | **Loading** | Tables: `v-loading="loading"`. Card grids: `el-skeleton`. Buttons: `:loading="loading"`. |
 | **Empty states** | Use `el-empty` with contextual `description` via i18n `t('xxx.emptyList')`. |
 | **Dark mode** | `useDark()` from `@vueuse/core`. Element Plus CSS vars auto-switch. Test both modes. |
