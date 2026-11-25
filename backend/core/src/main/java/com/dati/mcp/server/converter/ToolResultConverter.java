@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Converts ToolTestData (DatI internal result) into MCP {@link McpSchema.CallToolResult}.
+ * Converts ToolTestData (XIAOAI internal result) into MCP {@link McpSchema.CallToolResult}.
  * Protocol errors are JSON-RPC errors (handled by McpProtocolHandler);
  * tool execution errors become isError=true results so LLMs can self-correct.
  */

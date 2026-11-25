@@ -1,6 +1,6 @@
 # skills/
 
-DatI 仓库技能的唯一事实来源。技能以 [Agent Skills 开放标准](https://agentskills.io)格式存放,任何支持该标准的 agent 均可使用。
+XIAOAI 仓库技能的唯一事实来源。技能以 [Agent Skills 开放标准](https://agentskills.io)格式存放,任何支持该标准的 agent 均可使用。
 
 ## 接入方式
 
@@ -24,4 +24,4 @@ skills/dati-ops/            # 技能源码(单一事实来源,可独立交付/�
 
 | 技能 | 说明 |
 |------|------|
-| `dati-ops` | 通过 HTTP API 对 DatI 平台进行配置与操作(数据源/主题术语/MCP 服务;不含注册登录/系统管理)。已通过真实环境场景验证 |
+| `dati-ops` | 通过 HTTP API 对 XIAOAI 平台进行配置与操作(数据源/主题术语/MCP 服务;不含注册登录/系统管理)。已通过真实环境场景验证 |

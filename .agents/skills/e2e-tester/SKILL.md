@@ -1,6 +1,6 @@
 ---
 name: e2e-tester
-description: Use when you need to run E2E HTTP integration tests against the DatI backend, verify bug fixes, or validate API behavior using test cases defined in e2e-tests/test-cases/
+description: Use when you need to run E2E HTTP integration tests against the XIAOAI backend, verify bug fixes, or validate API behavior using test cases defined in e2e-tests/test-cases/
 ---
 
 # E2E Tester

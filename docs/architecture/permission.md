@@ -1,6 +1,6 @@
 # 授权架构（Permission Architecture）
 
-本文档概述 DatI 授权（Authorization）体系的设计理念、核心模型、判定链路与扩展机制。与 [authentication.md](authentication.md)（身份认证，解决"你是谁"）互补，本文解决"你能做什么"。
+本文档概述 XIAOAI 授权（Authorization）体系的设计理念、核心模型、判定链路与扩展机制。与 [authentication.md](authentication.md)（身份认证，解决"你是谁"）互补，本文解决"你能做什么"。
 
 ## 设计理念
 

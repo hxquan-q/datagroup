@@ -1,13 +1,13 @@
 ---
 name: dati-ops
-description: Use when performing configuration or operations on the DatI platform via its HTTP API — managing data sources, MCP services, subjects, terms, users, or running admin operations.
+description: Use when performing configuration or operations on the XIAOAI platform via its HTTP API — managing data sources, MCP services, subjects, terms, users, or running admin operations.
 ---
 
 # Dati Ops
 
 ## 核心原则
 
-**技能即前端。** 本技能让 agent 通过 HTTP API 完成前端界面上普通用户能做的全部配置与操作,作为 DatI 界面的替代品。
+**技能即前端。** 本技能让 agent 通过 HTTP API 完成前端界面上普通用户能做的全部配置与操作,作为 XIAOAI 界面的替代品。
 
 - 站在用户视角审视每一步:返回是否合理、字段是否自洽、操作顺序是否符合业务
 - 本技能是**操作指南**,不是测试工具;验证 API 行为正确性用 `e2e-tester` 技能
@@ -18,10 +18,10 @@ description: Use when performing configuration or operations on the DatI platfor
 
 | 项 | 对应环境变量 | 默认值 / 格式 | 说明 |
 |---|---|---|---|
-| `baseUrl` | `DATI_BASE_URL` | `http://localhost:8085` | 后端服务地址 |
-| `apiKey` | `DATI_API_KEY` | `sk_...` | 访问凭据，所有 HTTP 请求带 `Authorization: Bearer <apiKey>` |
+| `baseUrl` | `XIAOAI_BASE_URL` | `http://localhost:8085` | 后端服务地址 |
+| `apiKey` | `XIAOAI_API_KEY` | `sk_...` | 访问凭据，所有 HTTP 请求带 `Authorization: Bearer <apiKey>` |
 
-- **推荐方式**：在环境变量中设置 `export DATI_BASE_URL=...` 与 `export DATI_API_KEY=...`，Agent 执行时直接引用环境变量（如 `curl -H "Authorization: Bearer $DATI_API_KEY" $DATI_BASE_URL/v1/...`）。
+- **推荐方式**：在环境变量中设置 `export XIAOAI_BASE_URL=...` 与 `export XIAOAI_API_KEY=...`，Agent 执行时直接引用环境变量（如 `curl -H "Authorization: Bearer $XIAOAI_API_KEY" $XIAOAI_BASE_URL/v1/...`）。
 - **兜底交互**：若环境变量未设置且当前对话上下文未提供，**必须先主动询问用户**获取，禁止自行臆测。认证失败表现为 401。
 
 ## 接口事实来源

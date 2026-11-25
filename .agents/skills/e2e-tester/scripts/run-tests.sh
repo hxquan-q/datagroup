@@ -67,7 +67,7 @@ if [ ${#MODULES[@]} -eq 0 ]; then
 fi
 
 echo "========================================"
-echo "  DatI E2E Test Runner"
+echo "  XIAOAI E2E Test Runner"
 echo "  模块: ${MODULES[*]}"
 echo "  模型: ${MODEL}"
 echo "========================================"

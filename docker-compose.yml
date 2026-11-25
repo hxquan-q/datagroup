@@ -1,31 +1,30 @@
-# DatI single-host deployment (default resource budgets fit a 2C4G box):
-#   dati-app       mem_limit 1.5g (JVM heap self-adapts to ~75% of it)
+# XIAOAI single-host deployment (default resource budgets fit a 2C4G box):
+#   xiaoai-app     mem_limit 1.5g (JVM heap self-adapts to ~75% of it)
 #   elasticsearch  heap 512m + mem_limit 1g (8.18.x: native pairing with the app client)
-# Peak ≈ 2.5GB. Bigger boxes can raise DATI_MEM_LIMIT / ES_HEAP / ES_MEM_LIMIT in .env.
+# Peak ≈ 2.5GB. Bigger boxes can raise XIAOAI_MEM_LIMIT / ES_HEAP / ES_MEM_LIMIT in .env.
 #
 # Quick start:
 #   cp .env.example .env            # fill JWT_SECRET + SPRING_ELASTICSEARCH_PASSWORD
-#   docker compose up -d
+#   docker compose up -d --build
 services:
-  dati-app:
-    # Build from source locally (uncomment when modifying code):
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    image: ghcr.io/yimindev/dati:latest
-    container_name: dati-app
+  xiaoai-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/hxquan-q/datagroup:latest
+    container_name: xiaoai-app
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: ${DATI_MEM_LIMIT:-1536m}
+          memory: ${XIAOAI_MEM_LIMIT:-1536m}
     ports:
-      - "${DATI_PORT:-8085}:8085"
+      - "${XIAOAI_PORT:-8085}:8085"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      # Default: embedded H2 persisted under /app/db (dati_data volume).
+      # Default: embedded H2 persisted under /app/db (xiaoai_data volume).
       # External DB (RDS/MySQL...) via SPRING_DATASOURCE_* in .env.
-      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:h2:file:/app/db/dati;QUERY_TIMEOUT=30;mode=mysql}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:h2:file:/app/db/xiaoai;QUERY_TIMEOUT=30;mode=mysql}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-sa}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-}
       - SPRING_JPA_DATABASE_PLATFORM=${SPRING_JPA_DATABASE_PLATFORM:-}
@@ -34,12 +33,12 @@ services:
       - SPRING_ELASTICSEARCH_PASSWORD=${SPRING_ELASTICSEARCH_PASSWORD:?SPRING_ELASTICSEARCH_PASSWORD must be set in .env}
       # Semantic index analyzers (applied when the index is first created).
       # Defaults assume the bundled IK image below; set both to standard for vanilla Elasticsearch.
-      - DATI_ELASTICSEARCH_INDEX_ANALYZER=${DATI_ELASTICSEARCH_INDEX_ANALYZER:-ik_max_word}
-      - DATI_ELASTICSEARCH_SEARCH_ANALYZER=${DATI_ELASTICSEARCH_SEARCH_ANALYZER:-ik_smart}
+      - XIAOAI_ELASTICSEARCH_INDEX_ANALYZER=${XIAOAI_ELASTICSEARCH_INDEX_ANALYZER:-ik_max_word}
+      - XIAOAI_ELASTICSEARCH_SEARCH_ANALYZER=${XIAOAI_ELASTICSEARCH_SEARCH_ANALYZER:-ik_smart}
       - ADMIN_USERS=${ADMIN_USERS:-admin}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
     volumes:
-      - dati_data:/app/db
+      - xiaoai_data:/app/db
     depends_on:
       - elasticsearch
 
@@ -67,5 +66,5 @@ services:
       - es_data:/usr/share/elasticsearch/data
 
 volumes:
-  dati_data:
+  xiaoai_data:
   es_data:

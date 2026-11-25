@@ -10,7 +10,7 @@
     </parent>
     <artifactId>dati-auth-local</artifactId>
     <name>dati-auth-local</name>
-    <description>DatI Local Authentication Extension</description>
+    <description>XIAOAI Local Authentication Extension</description>
 
     <dependencies>
         <dependency>

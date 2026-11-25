@@ -44,7 +44,7 @@ function goToDocs() {
   >
     <el-menu-item index="/" @click="router.push('/')">
       <div class="flex items-center justify-center gap-2">
-        <img src="/dati.svg" alt="dati" class="size-7 object-contain" />
+        <img src="/xiaoai.svg" alt="XIAOAI" class="size-7 object-contain" />
         <span class="text-base font-semibold leading-none">
           {{ t("layout.header.brand") }}
         </span>

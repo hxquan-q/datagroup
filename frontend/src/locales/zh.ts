@@ -2,7 +2,7 @@ export default {
   home: {
     heroTitle: "为 Agent 接入数据库",
     heroDesc: "将数据库转为安全、语义增强的 MCP 服务，让 Agent 灵活分析与维护数据。",
-    brandTagline: "Data Intelligence",
+    brandTagline: "小爱智能问数平台",
     docLink: "查看帮助文档",
     workflow: {
       title: "如何开始",
@@ -149,7 +149,7 @@ export default {
 
   layout: {
     header: {
-      brand: "DatI",
+      brand: "XIAOAI",
       theme: "主题",
       help: "帮助",
     },

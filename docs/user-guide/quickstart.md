@@ -1,6 +1,6 @@
 # 快速上手
 
-你可以通过以下两种方式快速上手 DatI：
+你可以通过以下两种方式快速上手 XIAOAI：
 - **方式一：Agent 自动化操作** —— 使用 `dati-ops` skill，通过对话直接让 AI 助手自动完成数据源接入与服务发布；
 - **方式二：Web 控制台可视化操作** —— 在浏览器控制台中逐步完成数据源接入、主题划定与 MCP 服务发布。
 
@@ -8,17 +8,17 @@
 
 ## 方式一：使用 dati-ops 技能自动化操作
 
-DatI 原生提供了遵循 [Agent Skills 开放标准](https://agentskills.io) 的自动化运维技能 **`dati-ops`**。你可以直接将该技能挂载到 AI 编码助手（如 OpenCode、Claude Code、Antigravity 等），通过自然语言下达指令，让 Agent 全自动完成数据源接入、语义建模和 MCP 服务发布。
+XIAOAI 原生提供了遵循 [Agent Skills 开放标准](https://agentskills.io) 的自动化运维技能 **`dati-ops`**。你可以直接将该技能挂载到 AI 编码助手（如 OpenCode、Claude Code、Antigravity 等），通过自然语言下达指令，让 Agent 全自动完成数据源接入、语义建模和 MCP 服务发布。
 
 ### 1. 前置条件与 API Key 获取
 
 使用 `dati-ops` 技能前，需获取访问凭据并建议配置为环境变量：
 
-1. **获取 API Key**：登录 DatI 平台后，点击右上角 **用户头像 ->「API Key 管理」**，点击「新建 API Key」即可生成；
+1. **获取 API Key**：登录 XIAOAI 平台后，点击右上角 **用户头像 ->「API Key 管理」**，点击「新建 API Key」即可生成；
 2. **配置连接参数（推荐方式）**：在终端或环境配置文件（如 `~/.zshrc`、`~/.bashrc` 或工作区 `.env`）中导出环境变量：
    ```bash
-   export DATI_BASE_URL="http://localhost:8085"  # DatI 服务地址（默认为 http://localhost:8085）
-   export DATI_API_KEY="sk_your_api_key_here"    # 生成的 API Key
+   export XIAOAI_BASE_URL="http://localhost:8085"  # XIAOAI 服务地址（默认为 http://localhost:8085）
+   export XIAOAI_API_KEY="sk_your_api_key_here"    # 生成的 API Key
    ```
    配置环境变量后，Agent 在执行技能时会自动读取，安全且无需在每次对话中重复传递。
 
@@ -53,7 +53,7 @@ Agent 将自动查询 OpenAPI 接口契约，自动校验连接、批量同步�
 
 ::: tip 核心机制：为什么需要「抽取字典值」？
 大模型仅凭物理字段名（如 `status`、`pay_type`）很难准确推断具体业务枚举。
-在列详情中对枚举字段点击 **「抽取字典值」**，DatI 会自动探查实际数据并记录字段字典值（例如 `1 -> 待支付`、`2 -> 已完成`）。这些信息会在语义检索时提供给 Agent，大幅提升 SQL 生成的准确率。
+在列详情中对枚举字段点击 **「抽取字典值」**，XIAOAI 会自动探查实际数据并记录字段字典值（例如 `1 -> 待支付`、`2 -> 已完成`）。这些信息会在语义检索时提供给 Agent，大幅提升 SQL 生成的准确率。
 :::
 
 ### 2. 建立业务主题与术语关联
@@ -87,7 +87,7 @@ Agent 将自动查询 OpenAPI 接口契约，自动校验连接、批量同步�
 
 ### 4. 在 Agent 客户端中接入
 
-DatI 采用标准 **Model Context Protocol (Streamable HTTP)** 协议暴露服务端点。服务发布后，在服务详情页右侧的 **「接入配置」卡片** 中可一键复制客户端 JSON 配置。
+XIAOAI 采用标准 **Model Context Protocol (Streamable HTTP)** 协议暴露服务端点。服务发布后，在服务详情页右侧的 **「接入配置」卡片** 中可一键复制客户端 JSON 配置。
 
 #### 客户端配置示例
 

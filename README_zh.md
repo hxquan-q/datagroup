@@ -1,103 +1,30 @@
-# DatI - 让 Agent 读懂数据库
+# XIAOAI - 小爱智能问数平台
 
 [English](README.md) | [简体中文](README_zh.md)
 
-DatI(Data Intelligence) 把数据库发布为语义增强、权限可控的 MCP 服务，接入用户的 Agent 或任意 MCP Host 后，即可在授权范围内查询、分析、修改数据。
+XIAOAI（小爱智能问数平台）是面向企业业务数据库的智能问数与 MCP 服务平台。它把数据库发布为语义增强、权限可控的 MCP 服务，让 Agent 或任意 MCP Host 可以在授权范围内查询、分析和维护数据。
 
-```text
-┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐
-│  User A: OpenCode  │  │  User B: WorkBuddy │  │  User N: DataAgent │
-└──────────┬─────────┘  └──────────┬─────────┘  └──────────┬─────────┘
-           └───────────────────────┼───────────────────────┘
-                                   ▼ MCP (Streamable HTTP)
-┌─────────────────────────────── DatI ───────────────────────────────┐
-│       Semantic       │       Security       │        Tools         │
-└──────────────────────────────────┬─────────────────────────────────┘
-                                   ▼
-┌────────────────────────────────────────────────────────────────────┐
-│     MySQL      │   PostgreSQL    │   ClickHouse   │     Doris      │
-└────────────────────────────────────────────────────────────────────┘
-```
+本仓库是基于上游开源项目 [DatI](https://github.com/yimindev/dati) 二次开发的独立下游项目；上游版权与许可信息见 [NOTICE](NOTICE) 和 [LICENSE](LICENSE)。
 
-## 为什么选择 DatI？
+## 核心能力
 
-1. **多数据库**：支持 MySQL、PostgreSQL、ClickHouse、Doris 等多种关系型与分析型数据库
-2. **语义增强**：支持业务术语、字段别名与枚举字典值自动抽取，结合语义检索，让模型能够理解业务黑话、快速找对表
-3. **灵活集成**：基于标准 [MCP](https://modelcontextprotocol.io/) 协议（Streamable HTTP），可集成至用户现有 Agent 或工作流
-4. **高效构建**：提供开箱即用的预置工具（元数据探查、SQL 执行）与参数化 SQL 工具，无需额外部署即可发布 MCP 服务
-5. **安全管控**：凭据集中托管，支持按用户权限隔离
-
-## 适用场景
-
-- **智能问数**：接入业务数据库，通过业务元数据配置以及通用预置工具即可支持 NL2SQL 分析工作流
-- **轻应用搭建**：将数据库封装为 MCP 服务，Agent 通过对话即可直接对业务数据增删改查，快速构建轻量级应用
-
-## 在线试用
-
-- **国内节点（优先访问）**：https://dati.yimindev.cn
-- **海外节点**：https://dati-demo.zhangyimin.me
-
-内置示例数据仅供体验，环境会定期重置。
-
-### Demo
-
-数据与配置参考 [AdventureWorks 样例](examples/adventureworks-dw)，可使用 [dati-ops skill](skills/dati-ops) 自动化配置。
-
-#### 1. 数据源元数据配置（表、列、列值可配置）
-
-<details>
-<summary><b>查看操作演示 (GIF)</b></summary>
-
-![数据源元数据配置](docs/images/datasource_config.gif)
-
-</details>
-
-#### 2. 主题配置（圈定表范围，配置业务术语）
-
-<details>
-<summary><b>查看操作演示 (GIF)</b></summary>
-
-![主题配置](docs/images/subject-config.gif)
-
-</details>
-
-#### 3. MCP 配置（选定主题，开启预置工具，增加参数化 SQL 工具）
-
-<details open>
-<summary><b>查看操作演示 (GIF)</b></summary>
-
-![MCP 配置](docs/images/mcp-service-config.gif)
-
-</details>
-
-#### 4. 配置 Agent 的 MCP（以 Antigravity 为例）
-
-<details>
-<summary><b>查看配置截图</b></summary>
-
-![配置 Agent 的 MCP](docs/images/antigravity-mcp-config.jpg)
-
-</details>
-
-#### 5. Agent 中问数
-
-<details open>
-<summary><b>查看效果演示 (GIF)</b></summary>
-
-![Agent 中问数](docs/images/agy-analysis.gif)
-
-</details>
-
+1. **智能问数**：通过业务术语、字段别名、枚举值和指标口径增强 NL2SQL 问答效果
+2. **多数据库**：支持 MySQL、PostgreSQL、ClickHouse、Doris 等关系型与分析型数据库
+3. **语义治理**：按业务主题组织表范围，维护业务术语和字段语义
+4. **MCP 发布**：基于标准 [MCP](https://modelcontextprotocol.io/) Streamable HTTP 发布数据服务
+5. **安全管控**：集中托管数据库凭据，支持用户级权限和数据范围隔离
 
 ## 快速开始
 
 ```bash
-git clone https://github.com/yimindev/dati.git && cd dati
-cp .env.example .env                # 需配置 JWT_SECRET 与 ES 密码
-docker compose up -d
+git clone https://github.com/hxquan-q/datagroup.git
+cd datagroup
+cp .env.example .env
+# 编辑 .env，至少配置 JWT_SECRET 与 SPRING_ELASTICSEARCH_PASSWORD
+docker compose up -d --build
 ```
 
-访问 `http://localhost:8085`，首个注册用户填写 `admin` 即自动成为超级管理员。详细配置与生产部署见 [部署手册](docs/deployment_zh.md)。
+访问 `http://localhost:8085`。首个注册用户填写 `admin` 即自动成为超级管理员。详细配置与生产部署见 [部署手册](docs/deployment_zh.md)。
 
 ## 技术栈
 
@@ -111,20 +38,27 @@ docker compose up -d
 - [本地开发指南](docs/development_zh.md)：环境准备、前后端启动与开发约定
 - [服务器部署手册](docs/deployment_zh.md)：架构组成、Docker Compose 部署与运维排障
 - [架构总览](docs/architecture/overview_zh.md)：系统分层架构、核心模块设计与接口约定
-- **实战案例**：
-  - [企业级零售 BI 分析 (AdventureWorks DW)](examples/adventureworks-dw/README.md)：星型模型智能问数、指标治理、多表关联与参数化加速
-  - [家庭共享记账助手](examples/family-finance/README.md)：多用户协作记账、参数化防越权、全员透明 SQL 查账与开箱自愈示例
-- **Agent Skill**（[Agent Skills 开放标准](https://agentskills.io)，仓库内 agent 自动发现）：
-  - [dati-ops](skills/dati-ops/SKILL.md)：**用户技能**——通过 HTTP API 完成平台配置与操作（数据源/主题术语/MCP 服务），技能自包含（内置 openapi.json 与查询工具），可独立分发；仓库内通过 `.agents/skills/dati-ops/` 薄壳接入
-  - [e2e-tester](.agents/skills/e2e-tester/SKILL.md)：**开发技能**——E2E HTTP 集成测试与 API 行为验证（测试用例见 [e2e-tests/test-cases/](e2e-tests/test-cases)）
-- **用户帮助中心**：[docs/user-guide](docs/user-guide/index.md)（VitePress 站点，中英双语）
-- **API 契约**：[docs/api/openapi.json](docs/api/openapi.json)（E2E 测试工具链使用）
-- **AI 编码助手规范**：[AGENTS.md](AGENTS.md) 与 [.agents/rules/](.agents/rules)（后端/前端/设计系统规范）
+- [用户帮助中心](docs/user-guide/index.md)：VitePress 站点，中英双语
+- [API 契约](docs/api/openapi.json)：E2E 测试工具链使用
+- [AI 编码助手规范](AGENTS.md)：后端、前端与设计系统规则
 
-## 社区与交流
+## 实战案例
 
-- **社区讨论**：[LINUX DO](https://linux.do/t/topic/2929301)
-- **微信公众号**：
+- [企业级零售 BI 分析 (AdventureWorks DW)](examples/adventureworks-dw/README.md)
+- [家庭共享记账助手](examples/family-finance/README.md)
 
-  <img src="docs/images/qrcode_for_dati_niffler.jpg" width="140" alt="微信公众号" />
+## Agent Skills
 
+- [dati-ops](skills/dati-ops/SKILL.md)：通过 HTTP API 完成平台配置与操作（数据源、主题术语、MCP 服务）
+- [e2e-tester](.agents/skills/e2e-tester/SKILL.md)：E2E HTTP 集成测试与 API 行为验证
+
+## 版权与许可
+
+XIAOAI / 小爱智能问数平台是 DatI 的下游衍生项目。
+
+- 上游项目：[yimindev/dati](https://github.com/yimindev/dati)
+- 上游版权：`Copyright 2026 DatI Contributors`
+- 下游修改版权：`Copyright 2026 XIAOAI Contributors`
+- 许可证：[Apache License 2.0](LICENSE)
+
+完整的 attribution 说明见 [NOTICE](NOTICE)。使用 XIAOAI 名称或标识不代表上游 DatI 项目或其贡献者的认可或隶属关系。

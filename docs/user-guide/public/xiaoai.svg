@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="xiaoai-gradient" x1="10" y1="6" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#xiaoai-gradient)"/>
+  <path d="M18 23c0-4.97 6.27-9 14-9s14 4.03 14 9-6.27 9-14 9-14-4.03-14-9Z" fill="white" fill-opacity="0.96"/>
+  <path d="M18 23v12c0 4.97 6.27 9 14 9s14-4.03 14-9V23" stroke="white" stroke-opacity="0.96" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M22 28.5c2.4 2.02 5.98 3.06 10 3.06s7.6-1.04 10-3.06" stroke="#2563EB" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="46" cy="18" r="4" fill="#A7F3D0"/>
+</svg>

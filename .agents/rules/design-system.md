@@ -1,7 +1,7 @@
-# DatI Design System (Master)
+# XIAOAI Design System (Master)
 
 > **Generated**: 2026-06-09
-> **Project**: DatI — Data Intelligence Platform
+> **Project**: XIAOAI — Intelligent Data Q&A Platform
 > **Stack**: Vue 3 + TypeScript + Element Plus + TailwindCSS 4
 > **Style**: Flat Design + Enterprise Minimal
 
@@ -27,10 +27,10 @@
 ## 1. Brand & Identity
 
 ### 1.1 Brand Name
-**DatI** (Data Intelligence)
+**XIAOAI** / 小爱智能问数平台
 
 ### 1.2 Logo
-Located at `/public/dati.svg` — used in the sidebar header, login/auth pages.
+Located at `/public/xiaoai.svg` — used in the header and home page brand areas.
 
 ### 1.3 Product Category
 - B2B data platform / SaaS
@@ -479,7 +479,8 @@ A progress bar at the top of the page for navigation:
 |--------|-------|
 | `@element-plus/icons-vue` | All UI controls, navigation, actions |
 | `@iconify-json/codicon` via `icon-[codicon--*]` | Special icons (MCP, database) |
-| SVG (`/public/dati.svg`) | Brand logo |
+| `@lucide/vue` | General-purpose product/action icons |
+| SVG (`/public/xiaoai.svg`) | Brand logo |
 
 ### 7.2 Icon Rules
 

@@ -9,7 +9,7 @@
     </parent>
     <artifactId>dati-backend</artifactId>
     <name>dati-backend</name>
-    <description>DatI Backend Aggregator</description>
+    <description>XIAOAI Backend Aggregator</description>
     <packaging>pom</packaging>
 
     <modules>

@@ -55,8 +55,8 @@ public class SemanticIndexInitializer {
         } catch (RuntimeException e) {
             log.error("Failed to create semantic search index [{}] with index analyzer [{}] and search analyzer [{}]. "
                             + "If the analyzer is not available in Elasticsearch (ik_max_word/ik_smart require the IK plugin), "
-                            + "install the plugin or switch to a built-in analyzer via DATI_ELASTICSEARCH_INDEX_ANALYZER / "
-                            + "DATI_ELASTICSEARCH_SEARCH_ANALYZER (e.g. standard).",
+                            + "install the plugin or switch to a built-in analyzer via XIAOAI_ELASTICSEARCH_INDEX_ANALYZER / "
+                            + "XIAOAI_ELASTICSEARCH_SEARCH_ANALYZER (e.g. standard).",
                     indexName, analyzerConfig.getIndexAnalyzer(), resolvedSearchAnalyzer());
             throw e;
         }

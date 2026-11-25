@@ -2,11 +2,11 @@
 
 [English](overview.md) | [简体中文](overview_zh.md)
 
-This directory contains architecture documentation for DatI modules, maintained continuously alongside the codebase. We recommend reading in the order listed below.
+This directory contains architecture documentation for XIAOAI modules, maintained continuously alongside the codebase. We recommend reading in the order listed below.
 
 ## High-Level Architecture
 
-![DatI Architecture Diagram](../images/dati-visual-positioning.svg)
+![XIAOAI Architecture Diagram](../images/xiaoai-visual-positioning.svg)
 
 - **Frontend** (`frontend/`): Vue 3 + Vite + TypeScript, Element Plus component library, TailwindCSS 4 styling, Vitest for unit testing.
 - **Backend** (`backend/`): Spring Boot 3.5.x (Java 21), organized by DDD layers (`domain` / `repository` / `server`), exposing REST APIs, with JPA for metadata database access.

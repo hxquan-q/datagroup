@@ -1,6 +1,6 @@
 # 典型实战案例：家庭共享记账助手 (Family Finance)
 
-本案例演示如何基于 DatI 快速构建一个**多成员协作、全员透明共享、记账责任到人**的家庭记账 MCP 服务。
+本案例演示如何基于 XIAOAI 快速构建一个**多成员协作、全员透明共享、记账责任到人**的家庭记账 MCP 服务。
 
 ---
 
@@ -47,11 +47,11 @@
 
 ---
 
-## 二、 DatI 平台配置步骤
+## 二、 XIAOAI 平台配置步骤
 
 ### 步骤 1：接入数据源与元数据标注
 
-1. 登录 DatI 管理端，进入「**数据源管理**」→ 点击「**新建数据源**」；
+1. 登录 XIAOAI 管理端，进入「**数据源管理**」→ 点击「**新建数据源**」；
 2. 填写数据库连接信息（如 `jdbc:postgresql://localhost:5432/family_finance`），连接测试通过后保存；
 3. 进入数据源详情页，添加数据表：`account`、`category`、`transaction` 并同步列；
 4. 增强元数据语义标注：
@@ -152,7 +152,7 @@
 
 ### 步骤 4：预置通用查询工具说明 (`execute_sql`)
 
-DatI 会在对外暴露 MCP `tools/list` 时，自动在 `execute_sql` 工具的描述末尾追加当前认证用户的上下文：
+XIAOAI 会在对外暴露 MCP `tools/list` 时，自动在 `execute_sql` 工具的描述末尾追加当前认证用户的上下文：
 
 ```text
 Execute an SQL query or statement against a data source. Allowed operations: SELECT, INSERT. Max rows: 1000. Context: current user name: zhangsan, user id: c90c07a5-...

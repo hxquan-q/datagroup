@@ -1,6 +1,6 @@
 # 认证架构（Authentication Architecture）
 
-本文档概述 DatI 认证框架的设计理念、核心组件与扩展机制。
+本文档概述 XIAOAI 认证框架的设计理念、核心组件与扩展机制。
 
 ## 设计理念
 

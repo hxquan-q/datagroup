@@ -1,10 +1,10 @@
 # Introduction
 
-DatI (Data Intelligence) publishes databases as **semantically enhanced, access-controlled** MCP services. Connect them to your agents or any MCP host, and query, analyze, or modify data within the authorized scope.
+XIAOAI, an intelligent data Q&A platform, publishes databases as **semantically enhanced, access-controlled** MCP services. Connect them to your agents or any MCP host, and query, analyze, or modify data within the authorized scope.
 
-![DatI Architecture](/images/dati-visual-positioning.svg)
+![XIAOAI Architecture](/images/xiaoai-visual-positioning.svg)
 
-## Why DatI?
+## Why XIAOAI?
 
 1. **Multiple Databases**: Supports MySQL, PostgreSQL, ClickHouse, Doris, and other relational and analytical databases
 2. **Semantic Enhancement**: Supports business terms, column aliases, and automatic enum dictionary extraction. Combined with semantic search, it helps models understand business jargon and find the right tables
@@ -19,7 +19,7 @@ DatI (Data Intelligence) publishes databases as **semantically enhanced, access-
 
 ## Next Steps
 
-- Go to [Quick Start](/en/quickstart) to publish your first DatI service
+- Go to [Quick Start](/en/quickstart) to publish your first XIAOAI service
 - Learn about [Template Syntax](/en/template-syntax)
 - Browse [FAQ](/en/faq)
 - Visit the <a :href="$frontmatter.repoUrl" target="_blank" rel="noopener noreferrer">GitHub Repository</a> to explore the source code, report issues, or contribute

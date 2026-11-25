@@ -1,10 +1,10 @@
 # 平台介绍
 
-DatI(Data Intelligence) 把数据库发布为**语义增强、权限可控**的 MCP 服务，接入用户的 Agent 或任意 MCP Host 后，即可在授权范围内查询、分析、修改数据。
+XIAOAI（小爱智能问数平台）把数据库发布为**语义增强、权限可控**的 MCP 服务，接入用户的 Agent 或任意 MCP Host 后，即可在授权范围内查询、分析、修改数据。
 
-![DatI 架构示意图](/images/dati-visual-positioning.svg)
+![XIAOAI 架构示意图](/images/xiaoai-visual-positioning.svg)
 
-## 为什么选择 DatI？
+## 为什么选择 XIAOAI？
 
 1. **多数据库**：支持 MySQL、PostgreSQL、ClickHouse、Doris 等多种关系型与分析型数据库
 2. **语义增强**：支持业务术语、字段别名与枚举字典值自动抽取，结合语义检索，让模型能够理解业务黑话、快速找对表
@@ -20,7 +20,7 @@ DatI(Data Intelligence) 把数据库发布为**语义增强、权限可控**的 
 
 ## 下一步
 
-- 前往 [快速上手](/quickstart) 开启你的第一个 DatI 服务
+- 前往 [快速上手](/quickstart) 开启你的第一个 XIAOAI 服务
 - 深入了解 [模板语法详解](/template-syntax)
 - 查阅 [常见问题](/faq)
 - 访问 <a :href="$frontmatter.repoUrl" target="_blank" rel="noopener noreferrer">GitHub 仓库</a> 了解源码、提交 Issue 或参与共建

@@ -1,1 +1,1 @@
-console.log("DatI Static App JS");
+console.log("XIAOAI Static App JS");

@@ -1,6 +1,6 @@
 ---
 name: dati-ops
-description: Use when performing configuration or operations on the DatI platform via its HTTP API — managing data sources, MCP services, subjects, terms, users, or running admin operations.
+description: Use when performing configuration or operations on the XIAOAI platform via its HTTP API — managing data sources, MCP services, subjects, terms, users, or running admin operations.
 ---
 
 # Dati Ops(仓库接入层)

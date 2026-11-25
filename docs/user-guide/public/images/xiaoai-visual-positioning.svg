@@ -6,7 +6,7 @@
       .box-more { fill: #FFFFFF; stroke: #94A3B8; stroke-width: 1.5; stroke-dasharray: 4 3; rx: 6px; }
       .agent-title { font-size: 13px; font-weight: 600; fill: #0F172A; text-anchor: middle; }
       .more-title { font-size: 14px; font-weight: 600; fill: #64748B; text-anchor: middle; letter-spacing: 1px; }
-      .dati-title { font-size: 18px; font-weight: 700; fill: #0F172A; text-anchor: middle; }
+      .xiaoai-title { font-size: 18px; font-weight: 700; fill: #0F172A; text-anchor: middle; }
       .mcp-text { font-size: 12px; font-weight: 700; fill: #0F172A; text-anchor: middle; letter-spacing: 0.5px; }
       .db-title { font-size: 13px; font-weight: 600; fill: #334155; text-anchor: middle; }
       .line { stroke: #94A3B8; stroke-width: 1.5; fill: none; }
@@ -25,11 +25,11 @@
   <path d="M 537 84 L 537 110 L 410 110" class="line" />
   <path d="M 682 84 L 682 110 L 410 110" class="line" />
 
-  <!-- MCP Pill to DatI -->
+  <!-- MCP Pill to XIAOAI -->
   <line x1="410" y1="126" x2="410" y2="152" class="line" />
   <polygon points="406,148 410,154 414,148" class="arrow" />
 
-  <!-- DatI to Bottom DBs -->
+  <!-- XIAOAI to Bottom DBs -->
   <path d="M 410 204 L 410 230 L 102 230 L 102 258" class="line" />
   <polygon points="99,254 102,260 105,254" class="arrow" />
 
@@ -85,10 +85,10 @@
   </g>
 
 
-  <!-- ================= LAYER 2: MIDDLE (DatI) ================= -->
+  <!-- ================= LAYER 2: MIDDLE (XIAOAI) ================= -->
   <g transform="translate(300, 154)">
     <rect width="220" height="50" rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="2" />
-    <text x="110" y="32" class="dati-title" fill="#1D4ED8">DatI</text>
+    <text x="110" y="32" class="xiaoai-title" fill="#1D4ED8">XIAOAI</text>
   </g>
 
 

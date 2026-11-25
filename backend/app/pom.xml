@@ -10,7 +10,7 @@
     </parent>
     <artifactId>dati-app</artifactId>
     <name>dati-app</name>
-    <description>DatI Runnable Application</description>
+    <description>XIAOAI Runnable Application</description>
 
     <dependencies>
         <dependency>

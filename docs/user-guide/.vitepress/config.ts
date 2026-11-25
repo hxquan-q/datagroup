@@ -5,7 +5,7 @@ import { defineConfig } from 'vitepress'
 const REPO_URL =
   process.env.VITE_REPO_URL ||
   process.env.REPO_URL ||
-  'https://github.com/yimindev/dati'
+  'https://github.com/hxquan-q/datagroup'
 
 const SKILL_URL =
   process.env.VITE_SKILL_URL ||
@@ -21,11 +21,11 @@ export default defineConfig({
   base: '/docs/',
   outDir: '../../frontend/public/docs',
 
-  title: 'DatI 帮助中心',
-  description: 'DatI 数据智能平台使用文档',
+  title: 'XIAOAI 帮助中心',
+  description: 'XIAOAI 小爱智能问数平台使用文档',
 
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/dati.svg' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/xiaoai.svg' }],
     [
       'script',
       {},
@@ -44,7 +44,7 @@ export default defineConfig({
   ],
 
   themeConfig: {
-    logo: '/dati.svg',
+    logo: '/xiaoai.svg',
     search: {
       provider: 'local',
     },
@@ -69,8 +69,8 @@ export default defineConfig({
     root: {
       label: '简体中文',
       lang: 'zh-CN',
-      title: 'DatI 帮助中心',
-      description: 'DatI 数据智能平台使用文档',
+      title: 'XIAOAI 帮助中心',
+      description: 'XIAOAI 小爱智能问数平台使用文档',
       themeConfig: {
         skillsUrl: SKILLS_URL,
         skillUrl: SKILL_URL,
@@ -102,8 +102,8 @@ export default defineConfig({
     en: {
       label: 'English',
       lang: 'en',
-      title: 'DatI Help Center',
-      description: 'DatI Data Intelligence Platform User Guide',
+      title: 'XIAOAI Help Center',
+      description: 'XIAOAI Intelligent Data Q&A Platform User Guide',
       themeConfig: {
         skillsUrl: SKILLS_URL,
         skillUrl: SKILL_URL,
