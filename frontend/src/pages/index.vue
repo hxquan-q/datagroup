@@ -129,7 +129,14 @@ onMounted(fetchOverview);
           <div class="signal-card-header">
             <span></span><span></span><span></span>
           </div>
-          <div v-if="featuredService" class="signal-service">
+          <div v-if="loadingStats" class="signal-service signal-empty">
+            <div class="service-icon"><Zap :size="17" /></div>
+            <div class="signal-service-copy">
+              <span class="text-skeleton text-skeleton-title"></span>
+              <span class="text-skeleton text-skeleton-endpoint"></span>
+            </div>
+          </div>
+          <div v-else-if="featuredService" class="signal-service">
             <div class="service-icon"><Zap :size="17" /></div>
             <div class="signal-service-copy">
               <strong>{{ featuredService.name }}</strong>
@@ -402,6 +409,24 @@ onMounted(fetchOverview);
 
 .signal-empty {
   grid-template-columns: auto minmax(0, 1fr);
+}
+
+.text-skeleton {
+  display: block;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.text-skeleton-title {
+  width: 132px;
+  height: 14px;
+}
+
+.text-skeleton-endpoint {
+  width: 176px;
+  max-width: 100%;
+  height: 11px;
+  margin-top: 7px;
 }
 
 .signal-grid {
