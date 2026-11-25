@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import BaseHeader from "~/components/layouts/BaseHeader.vue";
@@ -13,6 +13,15 @@ const route = useRoute();
 const { t } = useI18n();
 
 const isAuthPage = computed(() => ["/login", "/register"].includes(route.path));
+const mainRef = ref<HTMLElement>();
+
+watch(
+  () => route.fullPath,
+  async () => {
+    await nextTick();
+    mainRef.value?.scrollTo({ top: 0 });
+  },
+);
 
 watch(
   () => authStore.isLoggedIn,
@@ -37,7 +46,7 @@ watch(
         <BaseHeader />
         <div class="app-body">
           <BaseSide />
-          <main id="main-content" tabindex="-1" class="app-main">
+          <main id="main-content" ref="mainRef" tabindex="-1" class="app-main">
             <RouterView />
           </main>
         </div>
