@@ -47,6 +47,7 @@ const activeMenu = computed(() => {
 
     <!-- 展开/收起按钮 -->
     <el-tooltip
+      :trigger-keys="[]"
       :content="collapsed ? t('layout.side.expand') : t('layout.side.collapse')"
       placement="right"
     >

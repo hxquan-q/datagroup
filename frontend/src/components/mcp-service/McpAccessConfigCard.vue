@@ -105,7 +105,7 @@ const goToApiKeys = () => {
           >
             {{ endpointUrl || t("mcpService.notPublished") }}
           </span>
-          <el-tooltip v-if="endpointUrl" :content="t('mcpService.accessConfig.copyEndpoint')" placement="top">
+          <el-tooltip v-if="endpointUrl" :trigger-keys="[]" :content="t('mcpService.accessConfig.copyEndpoint')" placement="top">
             <el-button
               link
               :icon="Copy"
@@ -124,6 +124,7 @@ const goToApiKeys = () => {
             {{ t("mcpService.accessConfig.configTitle") }}
           </span>
           <el-tooltip
+            :trigger-keys="[]"
             :content="t('mcpService.accessConfig.configGuide')"
             placement="top"
           >
@@ -141,7 +142,7 @@ const goToApiKeys = () => {
             class="m-0 font-mono text-xs text-[var(--ep-text-color-primary)] whitespace-pre-wrap break-all leading-relaxed select-text rounded-lg bg-[var(--ep-fill-color-light)] border border-[var(--ep-border-color-lighter)] p-3.5 pr-10"
             >{{ jsonConfigSnippet }}</pre
           >
-          <el-tooltip :content="t('mcpService.accessConfig.copyConfig')" placement="top">
+          <el-tooltip :trigger-keys="[]" :content="t('mcpService.accessConfig.copyConfig')" placement="top">
             <el-button
               link
               :icon="Copy"

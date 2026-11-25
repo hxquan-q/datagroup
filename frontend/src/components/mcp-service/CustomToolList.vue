@@ -140,7 +140,7 @@ const handleDialogSaved = () => {
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
-          <el-tooltip :content="t('common.edit')" placement="top">
+          <el-tooltip :trigger-keys="[]" :content="t('common.edit')" placement="top">
             <el-button
               link
               class="tool-action-button"
@@ -150,7 +150,7 @@ const handleDialogSaved = () => {
               <Pencil :size="16" />
             </el-button>
           </el-tooltip>
-          <el-tooltip :content="t('common.delete')" placement="top">
+          <el-tooltip :trigger-keys="[]" :content="t('common.delete')" placement="top">
             <el-button
               link
               class="tool-action-button action-delete"
@@ -161,6 +161,7 @@ const handleDialogSaved = () => {
             </el-button>
           </el-tooltip>
           <el-tooltip
+            :trigger-keys="[]"
             :content="tool.enabled ? t('common.test') : t('mcpService.tool.disabledTestHint')"
             placement="top"
           >

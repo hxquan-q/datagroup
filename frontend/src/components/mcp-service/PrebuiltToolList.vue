@@ -87,7 +87,7 @@ const toolTypeLabel = (status: string) => {
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <el-tooltip v-if="tool.tool_type === 'EXECUTE_SQL'" :content="t('common.config')" placement="top">
+        <el-tooltip v-if="tool.tool_type === 'EXECUTE_SQL'" :trigger-keys="[]" :content="t('common.config')" placement="top">
           <el-button
             link
             class="tool-action-button"
@@ -98,6 +98,7 @@ const toolTypeLabel = (status: string) => {
           </el-button>
         </el-tooltip>
         <el-tooltip
+          :trigger-keys="[]"
           :content="tool.enabled ? t('common.test') : t('mcpService.tool.disabledTestHint')"
           placement="top"
         >
