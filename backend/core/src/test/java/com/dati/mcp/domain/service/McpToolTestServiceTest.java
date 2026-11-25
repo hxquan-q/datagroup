@@ -41,13 +41,17 @@ class McpToolTestServiceTest {
     @Mock
     private com.dati.permission.domain.service.PermissionService permissionService;
 
+    @Mock
+    private McpScopeResolver scopeResolver;
+
     private McpToolTestService service;
 
     @BeforeEach
     void setUp() {
         when(toolExecutor.getToolType()).thenReturn(McpToolType.EXECUTE_SQL);
+        when(scopeResolver.resolve(any())).thenAnswer(inv -> inv.getArgument(0));
         service = new McpToolTestService(toolResolver, scopeDAO, List.of(toolExecutor),
-            new ToolParameterBinder(), permissionService);
+            new ToolParameterBinder(), permissionService, scopeResolver);
     }
 
     @Test

@@ -27,16 +27,19 @@ public class McpToolTestService {
     private final ToolParameterBinder parameterBinder;
     private final Map<McpToolType, ToolExecutor> executorMap;
     private final PermissionService permissionService;
+    private final McpScopeResolver scopeResolver;
 
     public McpToolTestService(ToolResolver toolResolver, McpServiceDataScopeDAO scopeDAO,
                               List<ToolExecutor> toolExecutorList,
                               ToolParameterBinder parameterBinder,
-                              PermissionService permissionService) {
+                              PermissionService permissionService,
+                              McpScopeResolver scopeResolver) {
         this.toolResolver = toolResolver;
         this.scopeDAO = scopeDAO;
         this.parameterBinder = parameterBinder;
         this.executorMap = toolExecutorList.stream().collect(Collectors.toMap(ToolExecutor::getToolType, Function.identity()));
         this.permissionService = permissionService;
+        this.scopeResolver = scopeResolver;
     }
 
     public ToolTestResponse test(String serviceId, String toolId, ToolTestRequest request) {
@@ -44,8 +47,8 @@ public class McpToolTestService {
         long start = System.currentTimeMillis();
         try {
             ToolResolver.ResolvedTool tool = toolResolver.resolve(serviceId, toolId);
-            List<McpServiceDataScope> scopeItems = scopeDAO.findAllByServiceId(serviceId)
-                .stream().map(McpServiceDataScopeMapper::toModel).toList();
+            List<McpServiceDataScope> scopeItems = scopeResolver.resolve(scopeDAO.findAllByServiceId(serviceId)
+                .stream().map(McpServiceDataScopeMapper::toModel).toList());
             ToolExecutionContext ctx = new ToolExecutionContext(
                 serviceId, tool.toolType(), tool.config(),
                 parameterBinder.bind(tool.toolType().getParameterType(), request.arguments()),
