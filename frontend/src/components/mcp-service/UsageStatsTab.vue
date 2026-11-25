@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Refresh, Warning } from "@element-plus/icons-vue";
+import { Close, Refresh, Warning } from "@element-plus/icons-vue";
 import type { McpUsageStatsVO, McpInvocationLogVO } from "~/api/mcp-usage";
 import { getMcpUsageStats, listMcpInvocationLogs } from "~/api/mcp-usage";
 import DataTableShell from "~/components/common/DataTableShell.vue";
@@ -15,6 +15,8 @@ const logsLoading = ref(false);
 
 const stats = ref<McpUsageStatsVO | null>(null);
 const logs = ref<McpInvocationLogVO[]>([]);
+const selectedLog = ref<McpInvocationLogVO | null>(null);
+const logDetailVisible = ref(false);
 const totalLogs = ref(0);
 
 const page = ref(1);
@@ -70,6 +72,11 @@ const handleSizeChange = (newSize: number) => {
   size.value = newSize;
   page.value = 1;
   loadLogs();
+};
+
+const openLogDetail = (log: McpInvocationLogVO) => {
+  selectedLog.value = log;
+  logDetailVisible.value = true;
 };
 
 watch(() => props.serviceId, () => {
@@ -242,9 +249,10 @@ onMounted(handleRefresh);
       >
         <el-table
           :data="logs"
-          class="w-full"
+          class="w-full log-table"
           stripe
           row-key="id"
+          @row-click="openLogDetail"
         >
           <template #empty>
             <el-empty :description="t('mcpService.stats.emptyLogs')" :image-size="80" />
@@ -255,7 +263,7 @@ onMounted(handleRefresh);
             min-width="170"
           >
             <template #default="{ row }">
-              <span class="font-mono text-xs text-[var(--ep-text-color-regular)]">
+              <span class="font-mono text-xs whitespace-nowrap text-[var(--ep-text-color-regular)]">
                 {{ formatDateTime(row.created_at) }}
               </span>
             </template>
@@ -266,7 +274,7 @@ onMounted(handleRefresh);
             min-width="150"
           >
             <template #default="{ row }">
-              <span class="font-mono text-xs font-medium text-[var(--ep-text-color-primary)]">
+              <span class="font-mono text-xs font-medium whitespace-nowrap text-[var(--ep-text-color-primary)]">
                 {{ row.tool_name || "-" }}
               </span>
             </template>
@@ -345,9 +353,105 @@ onMounted(handleRefresh);
               <span v-else class="text-xs text-[var(--ep-text-color-placeholder)]">-</span>
             </template>
           </el-table-column>
+
+          <el-table-column
+            :label="t('common.actions')"
+            width="90"
+            fixed="right"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-button
+                type="primary"
+                link
+                size="small"
+                @click.stop="openLogDetail(row)"
+              >
+                {{ t("common.detail") }}
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </DataTableShell>
     </div>
+
+
+    <el-drawer
+      v-model="logDetailVisible"
+      size="440px"
+      class="log-detail-drawer"
+      :with-header="false"
+    >
+      <div v-if="selectedLog" class="flex flex-col gap-5 h-full">
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <div class="text-xs text-[var(--ep-text-color-secondary)] mb-1">
+              {{ t("mcpService.stats.logDetailTitle") }}
+            </div>
+            <div class="font-mono text-base font-semibold text-[var(--ep-text-color-primary)] break-all">
+              {{ selectedLog.tool_name || selectedLog.method }}
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <el-tag
+              :type="selectedLog.success ? 'success' : 'danger'"
+              effect="light"
+            >
+              {{ selectedLog.success ? t("mcpService.stats.statusSuccess") : t("mcpService.stats.statusFailed") }}
+            </el-tag>
+            <el-button
+              link
+              :icon="Close"
+              :aria-label="t('common.close')"
+              class="!p-1 text-[var(--ep-text-color-secondary)] hover:text-[var(--ep-text-color-primary)]"
+              @click="logDetailVisible = false"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="detail-metric">
+            <span>{{ t("mcpService.stats.duration") }}</span>
+            <strong>{{ selectedLog.duration_ms }} ms</strong>
+          </div>
+          <div class="detail-metric">
+            <span>{{ t("mcpService.stats.method") }}</span>
+            <strong>{{ selectedLog.method || "-" }}</strong>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">{{ t("mcpService.stats.executionInfo") }}</div>
+          <dl class="detail-list">
+            <div>
+              <dt>{{ t("mcpService.stats.time") }}</dt>
+              <dd>{{ formatDateTime(selectedLog.created_at) }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("mcpService.stats.caller") }}</dt>
+              <dd>{{ selectedLog.caller_name || selectedLog.caller_id || t("mcpService.stats.unknownCaller") }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("mcpService.stats.clientIp") }}</dt>
+              <dd>{{ selectedLog.client_ip || "-" }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("mcpService.stats.statDate") }}</dt>
+              <dd>{{ selectedLog.stat_date || "-" }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("mcpService.stats.logId") }}</dt>
+              <dd class="font-mono break-all">{{ selectedLog.id }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div v-if="selectedLog.error_message" class="detail-section error-section">
+          <div class="detail-section-title">{{ t("mcpService.stats.errorMessage") }}</div>
+          <pre>{{ selectedLog.error_message }}</pre>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -387,4 +491,80 @@ onMounted(handleRefresh);
   border: 1px solid var(--ep-border-color-lighter);
   border-radius: 8px;
 }
+
+.log-table :deep(tbody tr) {
+  cursor: pointer;
+}
+
+.detail-metric {
+  padding: 14px;
+  border: 1px solid var(--ep-border-color-lighter);
+  border-radius: 10px;
+  background: var(--ep-fill-color-lighter);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-metric span {
+  font-size: 12px;
+  color: var(--ep-text-color-secondary);
+}
+
+.detail-metric strong {
+  font-size: 18px;
+  color: var(--ep-text-color-primary);
+}
+
+.detail-section {
+  padding: 16px;
+  border: 1px solid var(--ep-border-color-lighter);
+  border-radius: 12px;
+  background: var(--ep-bg-color);
+}
+
+.detail-section-title {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ep-text-color-primary);
+}
+
+.detail-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-list div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.detail-list dt {
+  color: var(--ep-text-color-secondary);
+  font-size: 12px;
+}
+
+.detail-list dd {
+  margin: 0;
+  color: var(--ep-text-color-primary);
+  font-size: 13px;
+}
+
+.error-section {
+  border-color: color-mix(in srgb, var(--ep-color-danger) 28%, var(--ep-border-color-lighter));
+}
+
+.error-section pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ep-color-danger);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 </style>
