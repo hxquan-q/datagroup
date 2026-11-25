@@ -130,7 +130,7 @@ onMounted(() => {
     </div>
 
     <!-- Top Horizontal Underline Tabs -->
-    <div class="tabs-bar flex items-center border-b border-[var(--ep-border-color-lighter)] gap-8 shrink-0">
+    <div class="tabs-bar flex flex-wrap items-center border-b border-[var(--ep-border-color-lighter)] gap-x-8 gap-y-0 shrink-0">
       <button
         v-for="tab in tabs"
         :key="tab.key"
