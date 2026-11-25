@@ -436,7 +436,9 @@ public class McpServicePublishService {
             try {
                 permissionService.requireSubject(subjectId, Permission.VIEW);
             } catch (DatiException e) {
-                return false;
+                if (e.getCode() != ErrorCode.SM_SUBJECT_NOT_FOUND) {
+                    return false;
+                }
             }
         }
         return true;
