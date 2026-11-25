@@ -139,7 +139,7 @@ const handleDialogSaved = () => {
           </div>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="tool-actions flex items-center gap-2 shrink-0">
           <el-tooltip :trigger-keys="[]" :content="t('common.edit')" placement="top">
             <el-button
               link
@@ -265,5 +265,20 @@ const handleDialogSaved = () => {
 .action-delete:hover {
   color: var(--ep-color-danger);
   background: var(--ep-color-danger-light-9);
+}
+
+@media (max-width: 640px) {
+  .custom-card {
+    flex-direction: column;
+  }
+
+  .custom-card > div:first-child {
+    width: 100%;
+  }
+
+  .custom-card .tool-actions {
+    align-self: flex-end;
+    flex-wrap: wrap;
+  }
 }
 </style>

@@ -86,7 +86,7 @@ const toolTypeLabel = (status: string) => {
         </div>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="tool-actions flex items-center gap-2 shrink-0">
         <el-tooltip v-if="tool.tool_type === 'EXECUTE_SQL'" :trigger-keys="[]" :content="t('common.config')" placement="top">
           <el-button
             link
@@ -196,5 +196,20 @@ const toolTypeLabel = (status: string) => {
   color: var(--ep-text-color-placeholder);
   background: transparent;
   opacity: 0.45;
+}
+
+@media (max-width: 640px) {
+  .prebuilt-card {
+    flex-direction: column;
+  }
+
+  .prebuilt-card > div:first-child {
+    width: 100%;
+  }
+
+  .prebuilt-card .tool-actions {
+    align-self: flex-end;
+    flex-wrap: wrap;
+  }
 }
 </style>
