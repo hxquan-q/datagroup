@@ -9,6 +9,7 @@ import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.model.Metric;
 import com.dati.semantic.repository.dao.MetricDAO;
 import com.dati.semantic.repository.dao.SubjectDAO;
+import com.dati.semantic.repository.dao.ValidationCaseDAO;
 import com.dati.semantic.repository.mapper.MetricMapper;
 import com.dati.semantic.repository.po.MetricPO;
 import com.dati.semantic.repository.po.SubjectPO;
@@ -28,11 +29,14 @@ public class MetricService {
 
     private final MetricDAO metricDAO;
     private final SubjectDAO subjectDAO;
+    private final ValidationCaseDAO validationCaseDAO;
     private final PermissionService permissionService;
 
-    public MetricService(MetricDAO metricDAO, SubjectDAO subjectDAO, PermissionService permissionService) {
+    public MetricService(MetricDAO metricDAO, SubjectDAO subjectDAO, ValidationCaseDAO validationCaseDAO,
+                         PermissionService permissionService) {
         this.metricDAO = metricDAO;
         this.subjectDAO = subjectDAO;
+        this.validationCaseDAO = validationCaseDAO;
         this.permissionService = permissionService;
     }
 
@@ -88,6 +92,7 @@ public class MetricService {
             .orElseThrow(() -> new DatiException(ErrorCode.SM_METRIC_NOT_FOUND, id));
         SubjectPO subject = requireSubject(po.getSubjectId());
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.EDIT, subject.getCreatedBy());
+        validationCaseDAO.deleteByMetricId(id);
         metricDAO.delete(po);
     }
 

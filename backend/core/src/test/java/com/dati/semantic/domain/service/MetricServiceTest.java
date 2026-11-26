@@ -9,6 +9,7 @@ import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.model.Metric;
 import com.dati.semantic.repository.dao.MetricDAO;
 import com.dati.semantic.repository.dao.SubjectDAO;
+import com.dati.semantic.repository.dao.ValidationCaseDAO;
 import com.dati.semantic.repository.po.MetricPO;
 import com.dati.semantic.repository.po.SubjectPO;
 import org.junit.jupiter.api.AfterEach;
@@ -38,6 +39,9 @@ class MetricServiceTest {
 
     @Mock
     private SubjectDAO subjectDAO;
+
+    @Mock
+    private ValidationCaseDAO validationCaseDAO;
 
     @Mock
     private PermissionService permissionService;

@@ -131,6 +131,7 @@ public class ValidationCaseService {
         po.setLastRunAt(Instant.now());
         po.setLastMetricRevision(metric.getRevision());
         try {
+            validateDimensions(po, metric);
             SqlExecution execution = executeMetric(po, metric);
             int returnedRows = firstSelectRows(execution);
             boolean sqlSuccess = execution.results() != null && execution.results().stream().allMatch(StatementResult::success);
@@ -150,6 +151,19 @@ public class ValidationCaseService {
         }
         po.setLastDurationMs(System.currentTimeMillis() - started);
         return ValidationCaseMapper.toModel(validationCaseDAO.save(po));
+    }
+
+    private void validateDimensions(ValidationCasePO po, MetricPO metric) {
+        if (po.getDimensions() == null || po.getDimensions().isEmpty()) {
+            return;
+        }
+        List<String> invalid = po.getDimensions().stream()
+            .filter(dimension -> metric.getAllowedDimensions() == null || !metric.getAllowedDimensions().contains(dimension))
+            .toList();
+        if (!invalid.isEmpty()) {
+            throw new DatiException(ErrorCode.INVALID_PARAMETER,
+                "dimensions are not allowed for metric: " + String.join(", ", invalid));
+        }
     }
 
     private SqlExecution executeMetric(ValidationCasePO po, MetricPO metric) {

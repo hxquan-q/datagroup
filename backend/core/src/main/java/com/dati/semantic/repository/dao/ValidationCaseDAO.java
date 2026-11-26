@@ -13,4 +13,5 @@ public interface ValidationCaseDAO extends JpaRepository<ValidationCasePO, Strin
     Page<ValidationCasePO> findBySubjectId(String subjectId, Pageable pageable);
     List<ValidationCasePO> findBySubjectId(String subjectId);
     void deleteBySubjectId(String subjectId);
+    void deleteByMetricId(String metricId);
 }

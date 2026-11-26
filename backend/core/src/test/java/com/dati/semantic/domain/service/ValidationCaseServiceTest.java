@@ -117,6 +117,31 @@ class ValidationCaseServiceTest {
         assertThat(result.getLastMessage()).contains("expected non-empty result");
     }
 
+
+    @Test
+    @DisplayName("run records an error when case dimensions are not allowed by the metric")
+    void runErrorsWhenDimensionNotAllowed() {
+        ValidationCasePO existing = existingCase("EXECUTION_SUCCESS");
+        existing.setDimensions(java.util.List.of("workshop_id"));
+        MetricPO metric = new MetricPO();
+        metric.setId("metric-1");
+        metric.setSubjectId("subject-1");
+        metric.setRevision(2);
+        metric.setDataSourceId("ds-1");
+        metric.setSqlTemplate("SELECT 1");
+        metric.setParameters(java.util.List.of());
+        metric.setAllowedDimensions(java.util.List.of("org_id"));
+        metric.setTimeout(30);
+        metric.setMaxRows(1000);
+        when(metricDAO.findById("metric-1")).thenReturn(Optional.of(metric));
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+
+        ValidationCase result = service.runCase("case-1");
+
+        assertThat(result.getLastStatus()).isEqualTo("ERROR");
+        assertThat(result.getLastMessage()).contains("dimensions are not allowed");
+    }
+
     private ValidationCasePO existingCase(String assertionType) {
         ValidationCasePO po = new ValidationCasePO();
         po.setId("case-1");
