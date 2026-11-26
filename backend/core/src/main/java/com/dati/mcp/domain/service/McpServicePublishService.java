@@ -23,6 +23,8 @@ import com.dati.permission.domain.model.ResourceType;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.service.MetricService;
 import com.dati.semantic.repository.dao.SubjectTableDAO;
+import com.dati.semantic.repository.dao.TableRelationDAO;
+import com.dati.semantic.repository.po.TableRelationPO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,7 @@ public class McpServicePublishService {
     private final TableInfoDAO tableInfoDAO;
     private final SubjectTableDAO subjectTableDAO;
     private final MetricService metricService;
+    private final TableRelationDAO tableRelationDAO;
 
     public McpServicePublishService(McpServiceDAO mcpServiceDAO,
                                      McpServiceSnapshotDAO snapshotDAO,
@@ -55,7 +58,8 @@ public class McpServicePublishService {
                                      PermissionService permissionService,
                                      TableInfoDAO tableInfoDAO,
                                      SubjectTableDAO subjectTableDAO,
-                                     MetricService metricService) {
+                                     MetricService metricService,
+                                     TableRelationDAO tableRelationDAO) {
         this.mcpServiceDAO = mcpServiceDAO;
         this.snapshotDAO = snapshotDAO;
         this.dataScopeService = dataScopeService;
@@ -65,6 +69,7 @@ public class McpServicePublishService {
         this.tableInfoDAO = tableInfoDAO;
         this.subjectTableDAO = subjectTableDAO;
         this.metricService = metricService;
+        this.tableRelationDAO = tableRelationDAO;
     }
 
     @Transactional
@@ -273,6 +278,11 @@ public class McpServicePublishService {
             diff.getModifiedComponents().add("METRICS");
         }
 
+        boolean relationsChanged = metricSubjectsVisible && !Objects.equals(relationKeys(activeContent.getRelations()), relationKeys(currentContent.getRelations()));
+        if (relationsChanged) {
+            diff.getModifiedComponents().add("TABLE_RELATIONS");
+        }
+
         // 5. Prompts Diff
         Map<String, McpServiceSnapshot.PromptDraft> activePrompts = activeContent.getPrompts() != null
                 ? activeContent.getPrompts().stream().collect(Collectors.toMap(McpServiceSnapshot.PromptDraft::name, Function.identity(), (a, b) -> a))
@@ -309,7 +319,7 @@ public class McpServicePublishService {
         }
 
         boolean hasChanges = diff.isBasicInfoChanged() || diff.isDataScopeChanged() || diff.isToolsChanged()
-                || diff.isMetricsChanged() || diff.isPromptsChanged();
+                || diff.isMetricsChanged() || diff.isPromptsChanged() || relationsChanged;
         diff.setHasChanges(hasChanges);
 
         return diff;
@@ -494,6 +504,11 @@ public class McpServicePublishService {
                 .sorted((a, b) -> a.code().compareTo(b.code()))
                 .toList();
 
+        List<McpServiceDataScope> publishedScopeItems = dataScopes.stream()
+                .map(McpServiceSnapshotMapper::toDataScope)
+                .toList();
+        List<McpServiceSnapshot.TableRelationDraft> relations = buildRelationDrafts(subjectIds, publishedScopeItems);
+
         McpServiceSnapshot.SnapshotContent content = new McpServiceSnapshot.SnapshotContent();
         content.setServiceInfo(serviceInfo);
         content.setDataScopes(dataScopes);
@@ -501,9 +516,56 @@ public class McpServicePublishService {
         content.setCustomTools(customTools);
         content.setPrompts(prompts);
         content.setMetrics(metrics);
+        content.setRelations(relations);
         return content;
     }
 
+
+    private List<McpServiceSnapshot.TableRelationDraft> buildRelationDrafts(List<String> subjectIds,
+                                                                              List<McpServiceDataScope> scopeItems) {
+        if (subjectIds.isEmpty()) {
+            return List.of();
+        }
+        List<TableRelationPO> rows = new ArrayList<>();
+        for (String subjectId : subjectIds) {
+            List<TableRelationPO> subjectRows = tableRelationDAO.findBySubjectId(subjectId);
+            if (subjectRows != null) {
+                rows.addAll(subjectRows);
+            }
+        }
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+        List<String> tableIds = rows.stream()
+                .flatMap(row -> java.util.stream.Stream.of(row.getFactTableId(), row.getDimensionTableId()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<String, TableInfoPO> tablesById = tableInfoDAO.findAllById(tableIds).stream()
+                .collect(Collectors.toMap(TableInfoPO::getId, Function.identity(), (a, b) -> a));
+        return rows.stream()
+                .filter(row -> tablesById.containsKey(row.getFactTableId()) && tablesById.containsKey(row.getDimensionTableId()))
+                .map(row -> McpServiceSnapshotMapper.toTableRelationDraft(row,
+                        tablesById.get(row.getFactTableId()), tablesById.get(row.getDimensionTableId())))
+                .filter(relation -> McpScopeResolution.relationAllowed(scopeItems, relation))
+                .sorted((a, b) -> {
+                    int byFact = a.factTableName().compareTo(b.factTableName());
+                    if (byFact != 0) return byFact;
+                    int byDimension = a.dimensionTableName().compareTo(b.dimensionTableName());
+                    if (byDimension != 0) return byDimension;
+                    return a.factColumn().compareTo(b.factColumn());
+                })
+                .toList();
+    }
+
+    private List<String> relationKeys(List<McpServiceSnapshot.TableRelationDraft> relations) {
+        return relations == null ? List.of() : relations.stream()
+                .map(row -> row.factDataSourceId() + "." + row.factSchema() + "." + row.factTableName() + "." + row.factColumn()
+                        + "->" + row.dimensionDataSourceId() + "." + row.dimensionSchema() + "." + row.dimensionTableName() + "." + row.dimensionColumn()
+                        + "|" + row.cardinality() + "|" + row.owner() + "|" + row.revision())
+                .sorted()
+                .toList();
+    }
 
     private McpServiceSnapshot.DataScopeDraft withResolvedTables(McpServiceSnapshot.DataScopeDraft draft) {
         if (draft.accessMode() == McpDataScopeAccessMode.SCHEMA_SCOPE) {

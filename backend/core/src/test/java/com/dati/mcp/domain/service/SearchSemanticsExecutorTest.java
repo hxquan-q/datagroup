@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("SearchSemanticsExecutor tests")
@@ -49,5 +51,20 @@ class SearchSemanticsExecutorTest {
         SemanticCatalog result = (SemanticCatalog) executor.execute(ctx);
 
         assertThat(result.metrics()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("exposes published table relations for agent join discovery")
+    void exposesPublishedRelations() {
+        TableRelationDraft relation = new TableRelationDraft(
+            "subject-1", "fact-id", "ds-1", "public", "orders", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 2);
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.SEARCH_SEMANTICS, new ToolConfig.SearchSemanticsConfig(),
+            new SearchSemanticsArgs(List.of()), List.of(), List.of(metric()), List.of(relation));
+
+        SemanticCatalog result = (SemanticCatalog) executor.execute(ctx);
+
+        assertThat(result.relations()).containsExactly(relation);
     }
 }

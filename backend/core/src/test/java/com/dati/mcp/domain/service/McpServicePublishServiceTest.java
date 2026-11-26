@@ -11,6 +11,8 @@ import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpPrebuiltToolConfig;
 import com.dati.mcp.domain.model.McpPrompt;
 import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.semantic.repository.dao.TableRelationDAO;
+import com.dati.semantic.repository.po.TableRelationPO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
@@ -81,6 +83,9 @@ class McpServicePublishServiceTest {
     @Mock
     private com.dati.semantic.domain.service.MetricService metricService;
 
+    @Mock
+    private TableRelationDAO tableRelationDAO;
+
     @InjectMocks
     private McpServicePublishService publishService;
 
@@ -94,6 +99,7 @@ class McpServicePublishServiceTest {
         user.setName(TestFixtures.TEST_USER_ID);
         RequestContext.setUser(user);
         lenient().when(metricService.getMetricsBySubjectIds(any())).thenReturn(List.of());
+        lenient().when(tableRelationDAO.findBySubjectId(any())).thenReturn(List.of());
         lenient().doAnswer(inv -> {
             String ownerId = inv.getArgument(3);
             if (!TestFixtures.TEST_USER_ID.equals(ownerId)) {
@@ -667,6 +673,118 @@ class McpServicePublishServiceTest {
         assertThat(saved.getMetrics().getFirst().code()).isEqualTo("quality_daily_fpy");
         assertThat(saved.getMetrics().getFirst().sqlTemplate()).isEqualTo("SELECT * FROM quality_daily");
         assertThat(saved.getMetrics().getFirst().revision()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("Publish subject scope - freezes confirmed table relations into snapshot")
+    void publish_SubjectScope_FreezesTableRelations() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        scope.setScopeType(McpDataScopeType.SUBJECT);
+        scope.setReferenceId("sub-1");
+
+        com.dati.datasource.repository.po.TableInfoPO fact = new com.dati.datasource.repository.po.TableInfoPO();
+        fact.setId("fact-1");
+        fact.setDataSourceId("ds-1");
+        fact.setSchema("mes");
+        fact.setName("t_pass");
+        com.dati.datasource.repository.po.TableInfoPO dimension = new com.dati.datasource.repository.po.TableInfoPO();
+        dimension.setId("dim-1");
+        dimension.setDataSourceId("ds-1");
+        dimension.setSchema("mes");
+        dimension.setName("t_mo");
+
+        TableRelationPO relation = new TableRelationPO();
+        relation.setSubjectId("sub-1");
+        relation.setFactTableId("fact-1");
+        relation.setFactColumn("FMoID");
+        relation.setDimensionTableId("dim-1");
+        relation.setDimensionColumn("F_id");
+        relation.setCardinality("MANY_TO_ONE");
+        relation.setOwner("mes-owner");
+        relation.setRevision(4);
+
+        when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
+        when(snapshotDAO.findMaxVersionNumberByServiceId(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(null);
+        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(scope));
+        when(subjectTableDAO.findTablesBySubjectId(eq("sub-1"), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(fact, dimension)));
+        when(tableRelationDAO.findBySubjectId("sub-1")).thenReturn(List.of(relation));
+        when(tableInfoDAO.findAllById(any())).thenReturn(List.of(fact, dimension));
+        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
+        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
+        when(snapshotDAO.save(any(McpServiceSnapshotPO.class))).thenAnswer(inv -> {
+            McpServiceSnapshotPO po = inv.getArgument(0);
+            po.setId("snap-001");
+            return po;
+        });
+        when(mcpServiceDAO.save(any(McpServicePO.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        publishService.publish(TestFixtures.TEST_MCP_SERVICE_ID, "freeze relations");
+
+        org.mockito.ArgumentCaptor<McpServiceSnapshotPO> captor = org.mockito.ArgumentCaptor.forClass(McpServiceSnapshotPO.class);
+        verify(snapshotDAO).save(captor.capture());
+        McpServiceSnapshot.SnapshotContent saved = com.dati.common.JsonUtils.fromJson(
+            captor.getValue().getSnapshotContent(), McpServiceSnapshot.SnapshotContent.class);
+        assertThat(saved.getRelations()).hasSize(1);
+        McpServiceSnapshot.TableRelationDraft savedRelation = saved.getRelations().getFirst();
+        assertThat(savedRelation.factSchema()).isEqualTo("mes");
+        assertThat(savedRelation.factTableName()).isEqualTo("t_pass");
+        assertThat(savedRelation.factColumn()).isEqualTo("FMoID");
+        assertThat(savedRelation.dimensionTableName()).isEqualTo("t_mo");
+        assertThat(savedRelation.dimensionColumn()).isEqualTo("F_id");
+        assertThat(savedRelation.revision()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("Publish subject scope - omits relations outside frozen scope")
+    void publish_SubjectScope_OmitsRelationsOutsideFrozenScope() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        scope.setScopeType(McpDataScopeType.SUBJECT);
+        scope.setReferenceId("sub-1");
+
+        com.dati.datasource.repository.po.TableInfoPO fact = new com.dati.datasource.repository.po.TableInfoPO();
+        fact.setId("fact-1");
+        fact.setDataSourceId("ds-1");
+        fact.setSchema("mes");
+        fact.setName("t_pass");
+        com.dati.datasource.repository.po.TableInfoPO dimension = new com.dati.datasource.repository.po.TableInfoPO();
+        dimension.setId("dim-1");
+        dimension.setDataSourceId("ds-1");
+        dimension.setSchema("mes");
+        dimension.setName("t_mo");
+
+        TableRelationPO relation = new TableRelationPO();
+        relation.setSubjectId("sub-1");
+        relation.setFactTableId("fact-1");
+        relation.setFactColumn("FMoID");
+        relation.setDimensionTableId("dim-1");
+        relation.setDimensionColumn("F_id");
+
+        when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
+        when(snapshotDAO.findMaxVersionNumberByServiceId(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(null);
+        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(scope));
+        when(subjectTableDAO.findTablesBySubjectId(eq("sub-1"), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(fact)));
+        when(tableRelationDAO.findBySubjectId("sub-1")).thenReturn(List.of(relation));
+        when(tableInfoDAO.findAllById(any())).thenReturn(List.of(fact, dimension));
+        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
+        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
+        when(snapshotDAO.save(any(McpServiceSnapshotPO.class))).thenAnswer(inv -> {
+            McpServiceSnapshotPO po = inv.getArgument(0);
+            po.setId("snap-001");
+            return po;
+        });
+        when(mcpServiceDAO.save(any(McpServicePO.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        publishService.publish(TestFixtures.TEST_MCP_SERVICE_ID, "scope relations");
+
+        org.mockito.ArgumentCaptor<McpServiceSnapshotPO> captor = org.mockito.ArgumentCaptor.forClass(McpServiceSnapshotPO.class);
+        verify(snapshotDAO).save(captor.capture());
+        McpServiceSnapshot.SnapshotContent saved = com.dati.common.JsonUtils.fromJson(
+            captor.getValue().getSnapshotContent(), McpServiceSnapshot.SnapshotContent.class);
+        assertThat(saved.getRelations()).isEmpty();
     }
 
     // ── 回滚 ──

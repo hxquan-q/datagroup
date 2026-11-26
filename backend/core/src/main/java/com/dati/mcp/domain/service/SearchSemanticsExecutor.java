@@ -35,7 +35,7 @@ public class SearchSemanticsExecutor implements ToolExecutor {
             .limit(MAX_RESULTS)
             .map(this::toSemanticMetric)
             .toList();
-        return new SemanticCatalog(metrics);
+        return new SemanticCatalog(metrics, ctx.relations());
     }
 
     private boolean matches(McpServiceSnapshot.MetricDraft metric, String keyword) {

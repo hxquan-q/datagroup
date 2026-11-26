@@ -9,6 +9,7 @@ import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 import com.dati.mcp.domain.model.param.SearchMetadataArgs;
+import com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft;
 import com.dati.mcp.server.pojo.SearchHit;
 import com.dati.semantic.domain.service.SemanticSearchService;
 import com.dati.semantic.domain.service.SemanticSearchService.SearchResult;
@@ -110,5 +111,28 @@ class SearchMetadataExecutorTest {
             .extracting(com.dati.datasource.domain.model.TableDef::table)
             .containsExactly("orders");
     }
+    @Test
+    @DisplayName("returns published relations whose endpoints are inside scope")
+    void returnsScopedPublishedRelations() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(
+            new McpResolvedTable("ds-1", "public", "orders"),
+            new McpResolvedTable("ds-1", "public", "customers")));
+        when(semanticSearchService.search(List.of("orders"), List.of(), List.of(), List.of()))
+            .thenReturn(new SearchResult(List.of(), List.of()));
+        TableRelationDraft visible = new TableRelationDraft(
+            "sub-1", "fact-id", "ds-1", "public", "orders", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        TableRelationDraft hidden = new TableRelationDraft(
+            "sub-1", "fact-id", "ds-1", "public", "orders", "secret_id",
+            "dim-id", "ds-1", "public", "secrets", "id", "MANY_TO_ONE", "owner", 1);
 
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.SEARCH_METADATA,
+            new ToolConfig.SearchMetadataConfig(), new SearchMetadataArgs(List.of("orders")), List.of(scope), List.of(), List.of(visible, hidden));
+        SearchHit hit = (SearchHit) executor.execute(context);
+
+        assertThat(hit.relations()).containsExactly(visible);
+    }
 }

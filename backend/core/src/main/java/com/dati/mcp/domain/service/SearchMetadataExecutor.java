@@ -5,6 +5,7 @@ import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.db.analysis.TableRef;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpServiceDataScope;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.param.SearchMetadataArgs;
 import com.dati.datasource.domain.model.DataSourceDef;
@@ -74,7 +75,11 @@ public class SearchMetadataExecutor implements ToolExecutor {
                 .map(t -> new TermDef(t.name(), t.description(), t.subjectName()))
                 .toList();
 
-        return new SearchHit(keywords, dataSources, terms);
+        List<McpServiceSnapshot.TableRelationDraft> relations = ctx.relations().stream()
+                .filter(relation -> McpScopeResolution.relationAllowed(ctx.scopeItems(), relation))
+                .toList();
+
+        return new SearchHit(keywords, dataSources, terms, relations);
     }
     private List<String> searchableTableIds(List<McpServiceDataScope> scopeItems) {
         Set<String> tableIds = new java.util.LinkedHashSet<>();
