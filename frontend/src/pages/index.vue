@@ -246,7 +246,11 @@ function go(path: string) {
                     {{ t("home.stats.trendCaption") }}
                   </button>
                 </template>
-                <div class="module-trend-table-wrap">
+                <div
+                  class="module-trend-table-wrap"
+                  tabindex="0"
+                  :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
+                >
                   <table class="module-trend-table">
                     <thead>
                       <tr>
