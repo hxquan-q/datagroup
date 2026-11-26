@@ -22,6 +22,7 @@ import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.model.ResourceType;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.service.MetricService;
+import com.dati.semantic.domain.service.ValidationCaseService;
 import com.dati.semantic.repository.dao.SubjectTableDAO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,7 @@ public class McpServicePublishService {
     private final SubjectTableDAO subjectTableDAO;
     private final MetricService metricService;
     private final McpTableRelationSnapshotService relationSnapshotService;
+    private final ValidationCaseService validationCaseService;
 
     public McpServicePublishService(McpServiceDAO mcpServiceDAO,
                                      McpServiceSnapshotDAO snapshotDAO,
@@ -57,7 +59,8 @@ public class McpServicePublishService {
                                      TableInfoDAO tableInfoDAO,
                                      SubjectTableDAO subjectTableDAO,
                                      MetricService metricService,
-                                     McpTableRelationSnapshotService relationSnapshotService) {
+                                     McpTableRelationSnapshotService relationSnapshotService,
+                                     ValidationCaseService validationCaseService) {
         this.mcpServiceDAO = mcpServiceDAO;
         this.snapshotDAO = snapshotDAO;
         this.dataScopeService = dataScopeService;
@@ -68,6 +71,7 @@ public class McpServicePublishService {
         this.subjectTableDAO = subjectTableDAO;
         this.metricService = metricService;
         this.relationSnapshotService = relationSnapshotService;
+        this.validationCaseService = validationCaseService;
     }
 
     @Transactional
@@ -76,13 +80,23 @@ public class McpServicePublishService {
                 .orElseThrow(() -> new DatiException(ErrorCode.MS_SERVICE_NOT_FOUND, serviceId));
         permissionService.requireCurrentUser(ResourceType.MCP_SERVICE, serviceId, Permission.EDIT, servicePO.getCreatedBy());
 
-        dataScopeService.validateScopePermission(dataScopeService.getDataScope(serviceId));
+        List<McpServiceDataScope> scopes = dataScopeService.getDataScope(serviceId);
+        dataScopeService.validateScopePermission(scopes);
 
-        if (dataScopeService.getDataScope(serviceId).isEmpty()) {
+        if (scopes.isEmpty()) {
             throw new DatiException(ErrorCode.MS_SERVICE_DATA_SCOPE_EMPTY, serviceId);
         }
+        List<String> subjectIds = scopes.stream()
+                .filter(scope -> scope.getScopeType() == McpDataScopeType.SUBJECT)
+                .map(McpServiceDataScope::getReferenceId)
+                .distinct()
+                .toList();
+        List<String> validationFailures = validationCaseService.publishBlockingMessages(subjectIds);
+        if (!validationFailures.isEmpty()) {
+            throw new DatiException(ErrorCode.MS_SERVICE_VALIDATION_FAILED, String.join("; ", validationFailures));
+        }
 
-        return doPublish(servicePO, releaseNote);
+        return doPublish(servicePO, releaseNote, scopes);
     }
 
     /**
@@ -91,6 +105,10 @@ public class McpServicePublishService {
      */
     private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote) {
         return doPublish(servicePO, releaseNote, buildCurrentSnapshotContent(servicePO));
+    }
+
+    private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote, List<McpServiceDataScope> scopes) {
+        return doPublish(servicePO, releaseNote, buildCurrentSnapshotContent(servicePO, scopes));
     }
 
     private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote,
@@ -469,6 +487,10 @@ public class McpServicePublishService {
     }
 
     private McpServiceSnapshot.SnapshotContent buildCurrentSnapshotContent(McpServicePO servicePO) {
+        return buildCurrentSnapshotContent(servicePO, dataScopeService.getDataScope(servicePO.getId()));
+    }
+
+    private McpServiceSnapshot.SnapshotContent buildCurrentSnapshotContent(McpServicePO servicePO, List<McpServiceDataScope> scopes) {
         String serviceId = servicePO.getId();
 
         McpServiceSnapshot.ServiceInfo serviceInfo = new McpServiceSnapshot.ServiceInfo();
@@ -477,7 +499,7 @@ public class McpServicePublishService {
         serviceInfo.setDescription(servicePO.getDescription());
         serviceInfo.setCode(servicePO.getCode());
 
-        List<McpServiceSnapshot.DataScopeDraft> dataScopes = dataScopeService.getDataScope(serviceId).stream()
+        List<McpServiceSnapshot.DataScopeDraft> dataScopes = scopes.stream()
                 .map(McpServiceSnapshotMapper::toDataScopeDraft)
                 .map(this::withResolvedTables)
                 .toList();

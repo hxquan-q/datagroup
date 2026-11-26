@@ -175,7 +175,9 @@ public class ValidationCaseService {
             } else {
                 applyAssertion(po, execution, returnedRows);
             }
-            po.setLastEvidence(evidence(execution, returnedRows));
+            Map<String, Object> resultEvidence = new HashMap<>(evidence(execution, returnedRows));
+            resultEvidence.put("relation_fingerprint", relationFingerprint(po.getSubjectId()));
+            po.setLastEvidence(resultEvidence);
         } catch (Exception e) {
             po.setLastStatus("ERROR");
             po.setLastMessage(e.getMessage());
@@ -255,6 +257,16 @@ public class ValidationCaseService {
         return execution.execution();
     }
 
+    private String relationFingerprint(String subjectId) {
+        McpServiceDataScope scope = subjectScope(subjectId);
+        return relationSnapshotService.buildRelationDrafts(List.of(subjectId), List.of(scope)).stream()
+            .map(relation -> relation.factDataSourceId() + "." + relation.factSchema() + "." + relation.factTableName() + "." + relation.factColumn()
+                + "->" + relation.dimensionDataSourceId() + "." + relation.dimensionSchema() + "." + relation.dimensionTableName() + "." + relation.dimensionColumn()
+                + "|" + relation.cardinality() + "|" + relation.revision())
+            .sorted()
+            .collect(java.util.stream.Collectors.joining("\n"));
+    }
+
     private McpServiceDataScope subjectScope(String subjectId) {
         List<String> tableIds = subjectTableDAO.findBySubjectId(subjectId).stream()
             .map(com.dati.semantic.repository.po.SubjectTablePO::getTableId).toList();
@@ -331,6 +343,36 @@ public class ValidationCaseService {
                 evidence.put("sample_rows", result.rows() == null ? List.of() : result.rows().stream().limit(5).toList());
             });
         return evidence;
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> publishBlockingMessages(List<String> subjectIds) {
+        if (subjectIds == null || subjectIds.isEmpty()) {
+            return List.of();
+        }
+        return validationCaseDAO.findBySubjectIdIn(subjectIds).stream()
+            .filter(item -> Boolean.TRUE.equals(item.getEnabled()))
+            .map(this::publishBlockingMessage)
+            .filter(message -> message != null)
+            .toList();
+    }
+
+    private String publishBlockingMessage(ValidationCasePO item) {
+        MetricPO metric = metricDAO.findById(item.getMetricId()).orElse(null);
+        if (metric == null) {
+            return item.getName() + ": metric is missing";
+        }
+        if (!"PASS".equals(item.getLastStatus())) {
+            return item.getName() + ": latest validation did not pass";
+        }
+        if (!Objects.equals(item.getLastMetricRevision(), metric.getRevision())) {
+            return item.getName() + ": metric changed after validation";
+        }
+        Object validatedRelations = item.getLastEvidence() == null ? null : item.getLastEvidence().get("relation_fingerprint");
+        if (!Objects.equals(validatedRelations, relationFingerprint(item.getSubjectId()))) {
+            return item.getName() + ": table relations changed after validation";
+        }
+        return null;
     }
 
     private void validate(ValidationCase item) {

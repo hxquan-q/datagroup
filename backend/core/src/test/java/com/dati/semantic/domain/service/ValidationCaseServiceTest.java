@@ -76,6 +76,8 @@ class ValidationCaseServiceTest {
         lenient().when(validationCaseDAO.save(any(ValidationCasePO.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(dataSourceDAO.existsById("ds-1")).thenReturn(true);
         lenient().when(relationSnapshotService.buildRelationDrafts(any(), any())).thenReturn(java.util.List.of());
+        lenient().when(subjectTableDAO.findBySubjectId(anyString())).thenReturn(java.util.List.of());
+        lenient().when(tableInfoDAO.findAllById(any())).thenReturn(java.util.List.of());
     }
 
     @AfterEach
@@ -95,6 +97,39 @@ class ValidationCaseServiceTest {
         assertThat(created.getMetricId()).isEqualTo("metric-1");
         assertThat(created.getEnabled()).isTrue();
     }
+    @Test
+    @DisplayName("publish gate passes only current passing validation cases")
+    void publishGatePassesCurrentPassingCases() {
+        ValidationCasePO item = new ValidationCasePO();
+        item.setName("FPY regression");
+        item.setMetricId("metric-1");
+        item.setSubjectId("subject-1");
+        item.setEnabled(true);
+        item.setLastStatus("PASS");
+        item.setLastMetricRevision(1);
+        item.setLastEvidence(java.util.Map.of("relation_fingerprint", ""));
+        when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
+
+        assertThat(service.publishBlockingMessages(java.util.List.of("subject-1"))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("publish gate blocks stale validation results")
+    void publishGateBlocksStaleResults() {
+        ValidationCasePO item = new ValidationCasePO();
+        item.setName("FPY regression");
+        item.setMetricId("metric-1");
+        item.setSubjectId("subject-1");
+        item.setEnabled(true);
+        item.setLastStatus("PASS");
+        item.setLastMetricRevision(1);
+        item.setLastEvidence(java.util.Map.of("relation_fingerprint", "old"));
+        when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
+
+        assertThat(service.publishBlockingMessages(java.util.List.of("subject-1")))
+            .containsExactly("FPY regression: table relations changed after validation");
+    }
+
     @Test
     @DisplayName("run passes when execution succeeds and rows are returned for NON_EMPTY")
     void runPassesNonEmpty() {
