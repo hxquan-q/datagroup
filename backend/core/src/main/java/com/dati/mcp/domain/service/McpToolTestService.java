@@ -1,7 +1,5 @@
 package com.dati.mcp.domain.service;
 
-import com.dati.base.exception.DatiException;
-import com.dati.base.exception.ErrorCode;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.repository.dao.McpServiceDataScopeDAO;
@@ -64,18 +62,20 @@ public class McpToolTestService {
                 .map(McpServiceDataScope::getReferenceId)
                 .distinct()
                 .toList();
+            List<String> readableSubjectIds = subjectIds.stream()
+                .filter(subjectId -> permissionService.canSubject(subjectId, Permission.VIEW))
+                .toList();
             List<com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft> metrics = List.of();
             if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC
                     || tool.toolType() == McpToolType.SEARCH_METADATA) {
-                subjectIds.forEach(this::requireSubjectIfExists);
-                metrics = metricService.getMetricsBySubjectIds(subjectIds).stream()
+                metrics = metricService.getMetricsBySubjectIds(readableSubjectIds).stream()
                     .map(McpServiceSnapshotMapper::toMetricDraft)
                     .toList();
             }
             List<com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft> relations = List.of();
             if (tool.toolType() == McpToolType.SEARCH_METADATA || tool.toolType() == McpToolType.LIST_TABLES
                     || tool.toolType() == McpToolType.GET_TABLE_INFO || tool.toolType() == McpToolType.SEARCH_SEMANTICS) {
-                relations = relationSnapshotService.buildRelationDrafts(subjectIds, scopeItems);
+                relations = relationSnapshotService.buildRelationDrafts(readableSubjectIds, scopeItems);
             }
             ToolExecutionContext ctx = new ToolExecutionContext(
                 serviceId, tool.toolType(), tool.config(),
@@ -95,16 +95,6 @@ public class McpToolTestService {
             long elapsed = System.currentTimeMillis() - start;
             return new ToolTestResponse(false, elapsed, null,
                 new ToolTestError(e.getErrorCategory(), e.getMessage()));
-        }
-    }
-
-    private void requireSubjectIfExists(String subjectId) {
-        try {
-            permissionService.requireSubject(subjectId, Permission.VIEW);
-        } catch (DatiException e) {
-            if (e.getCode() != ErrorCode.SM_SUBJECT_NOT_FOUND) {
-                throw e;
-            }
         }
     }
 

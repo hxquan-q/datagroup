@@ -23,6 +23,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -136,4 +139,33 @@ class McpToolTestServiceTest {
         assertThat(resp.error()).isNotNull();
         assertThat(resp.error().errorCategory()).isEqualTo(expectedCategory);
     }
+    @Test
+    @DisplayName("metadata tests hide subject semantics the editor cannot read")
+    void metadataTestsFilterUnreadableSubjects() {
+        ToolExecutor searchExecutor = mock(ToolExecutor.class);
+        when(searchExecutor.getToolType()).thenReturn(McpToolType.SEARCH_METADATA);
+        McpToolTestService searchService = new McpToolTestService(toolResolver, scopeDAO, List.of(searchExecutor),
+            new ToolParameterBinder(), permissionService, scopeResolver, metricService, relationSnapshotService);
+        ToolResolver.ResolvedTool resolved = new ToolResolver.ResolvedTool(
+            McpToolType.SEARCH_METADATA, true, new com.dati.mcp.domain.model.ToolConfig.SearchMetadataConfig(), true);
+        when(toolResolver.resolve("svc", "SEARCH_METADATA")).thenReturn(resolved);
+        com.dati.mcp.repository.po.McpServiceDataScopePO scope = new com.dati.mcp.repository.po.McpServiceDataScopePO();
+        scope.setServiceId("svc");
+        scope.setScopeType(com.dati.mcp.domain.model.McpDataScopeType.SUBJECT);
+        scope.setReferenceId("subject-1");
+        when(scopeDAO.findAllByServiceId("svc")).thenReturn(List.of(scope));
+        when(permissionService.canSubject("subject-1", com.dati.permission.domain.model.Permission.VIEW)).thenReturn(false);
+        when(metricService.getMetricsBySubjectIds(List.of())).thenReturn(List.of());
+        when(relationSnapshotService.buildRelationDrafts(eq(List.of()), any())).thenReturn(List.of());
+        ToolTestData data = new SqlExecution("SELECT 1", List.of(), null);
+        when(searchExecutor.execute(any())).thenReturn(data);
+
+        ToolTestResponse resp = searchService.test("svc", "SEARCH_METADATA",
+            new ToolTestRequest(Map.of("keywords", List.of("quality"))));
+
+        assertThat(resp.success()).isTrue();
+        verify(metricService).getMetricsBySubjectIds(List.of());
+        verify(relationSnapshotService).buildRelationDrafts(eq(List.of()), any());
+    }
+
 }
