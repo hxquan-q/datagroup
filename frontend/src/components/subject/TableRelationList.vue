@@ -228,6 +228,11 @@ onMounted(() => { loadTables(); loadRelations(); });
             <div class="font-mono text-xs text-[var(--ep-text-color-secondary)]">{{ row.dimension_column }}</div>
           </template>
         </el-table-column>
+        <el-table-column :label="t('relation.source')" width="105" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.source === 'FOREIGN_KEY' ? 'success' : 'info'" size="small" effect="plain">{{ row.source === 'FOREIGN_KEY' ? t('relation.sourcePhysical') : t('relation.sourceInferred') }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('relation.confidence')" width="105" align="center">
           <template #default="{ row }"><el-tag :type="confidenceType(row.confidence)" size="small">{{ row.confidence || "-" }}</el-tag></template>
         </el-table-column>

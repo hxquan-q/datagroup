@@ -15,6 +15,8 @@ public class ColumnMapper {
         columnInfo.setColumnType(columnInfoPO.getColumnType());
         columnInfo.setAliases(columnInfoPO.getAliases() != null ? columnInfoPO.getAliases() : new ArrayList<>());
         columnInfo.setExtractValueEnabled(columnInfoPO.isExtractValueEnabled());
+        columnInfo.setPrimaryKey(columnInfoPO.isPrimaryKey());
+        columnInfo.setUniqueKey(columnInfoPO.isUniqueKey());
         return columnInfo;
     }
 
@@ -25,6 +27,8 @@ public class ColumnMapper {
         columnInfoPO.setColumnType(columnInfo.getColumnType());
         columnInfoPO.setAliases(columnInfo.getAliases() != null ? columnInfo.getAliases() : new ArrayList<>());
         columnInfoPO.setExtractValueEnabled(Boolean.TRUE.equals(columnInfo.getExtractValueEnabled()));
+        columnInfoPO.setPrimaryKey(Boolean.TRUE.equals(columnInfo.getPrimaryKey()));
+        columnInfoPO.setUniqueKey(Boolean.TRUE.equals(columnInfo.getUniqueKey()));
         return columnInfoPO;
     }
 

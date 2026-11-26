@@ -71,6 +71,9 @@ class ColumnServiceTest {
     @Mock
     private TableRelationDAO tableRelationDAO;
 
+    @Mock
+    private TableStructureSyncService tableStructureSyncService;
+
     @InjectMocks
     private ColumnService columnService;
 

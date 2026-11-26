@@ -32,7 +32,13 @@ public class ColumnInfoPO extends BaseResourcePO {
     @JdbcTypeCode(SqlTypes.JSON)
     private List<String> aliases = new ArrayList<>();
 
-    @ColumnDefault( "false")
+    @ColumnDefault("false")
     private boolean extractValueEnabled = false;
+
+    @ColumnDefault("false")
+    private boolean primaryKey = false;
+
+    @ColumnDefault("false")
+    private boolean uniqueKey = false;
 
 }

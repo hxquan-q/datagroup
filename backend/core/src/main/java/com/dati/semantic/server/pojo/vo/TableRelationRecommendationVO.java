@@ -13,6 +13,7 @@ public class TableRelationRecommendationVO {
     private String dimensionTableName;
     private String dimensionColumn;
     private String cardinality;
+    private String source;
     private Integer score;
     private String confidence;
     private List<String> evidence;

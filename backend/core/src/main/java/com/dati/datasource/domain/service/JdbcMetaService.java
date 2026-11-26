@@ -8,6 +8,7 @@ import com.dati.datasource.repository.mapper.DSMapper;
 import com.dati.datasource.repository.po.DataSourcePO;
 import com.dati.db.Column;
 import com.dati.db.DbType;
+import com.dati.db.ForeignKey;
 import com.dati.db.HikariPoolManager;
 import com.dati.db.JdbcConnections;
 import com.dati.db.JdbcConnector;
@@ -50,6 +51,13 @@ public class JdbcMetaService {
         DbClient dbClient = DbClientFactory.getDbClient(dataSourcePO.getType());
         DataSource dataSource = DSMapper.toDataSource(dataSourcePO);
         return dbClient.getColumns(new JdbcConnector(dataSource), schema, table);
+    }
+
+    public List<ForeignKey> getImportedKeys(String dataSourceId, String schema, String table) throws SQLException {
+        DataSourcePO dataSourcePO = dataSourceDAO.findById(dataSourceId).orElseThrow();
+        DbClient dbClient = DbClientFactory.getDbClient(dataSourcePO.getType());
+        DataSource dataSource = DSMapper.toDataSource(dataSourcePO);
+        return dbClient.getImportedKeys(new JdbcConnector(dataSource), schema, table);
     }
 
     public List<Map<String, Object>> executeSql(String dataSourceId, String sql) throws SQLException {

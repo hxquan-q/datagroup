@@ -96,6 +96,7 @@ public class TableRelationController {
         vo.setDimensionTableName(item.getDimensionTableName());
         vo.setDimensionColumn(item.getDimensionColumn());
         vo.setCardinality(item.getCardinality());
+        vo.setSource(item.getSource());
         vo.setScore(item.getScore());
         vo.setConfidence(item.getConfidence());
         vo.setEvidence(item.getEvidence());

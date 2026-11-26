@@ -4,8 +4,10 @@ import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
 import com.dati.datasource.repository.dao.DataSourceDAO;
+import com.dati.datasource.repository.dao.TableForeignKeyDAO;
 import com.dati.datasource.repository.po.ColumnInfoPO;
 import com.dati.datasource.repository.po.DataSourcePO;
+import com.dati.datasource.repository.po.TableForeignKeyPO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.db.DbType;
 import com.dati.permission.domain.model.Permission;
@@ -43,18 +45,20 @@ public class TableRelationRecommendationService {
     private final SubjectTableDAO subjectTableDAO;
     private final TableRelationDAO tableRelationDAO;
     private final ColumnInfoDAO columnInfoDAO;
+    private final TableForeignKeyDAO tableForeignKeyDAO;
     private final SemanticIndexService semanticIndexService;
     private final DataSourceDAO dataSourceDAO;
     private final PermissionService permissionService;
 
     public TableRelationRecommendationService(SubjectDAO subjectDAO, SubjectTableDAO subjectTableDAO,
-                                              TableRelationDAO tableRelationDAO, ColumnInfoDAO columnInfoDAO,
+                                              TableRelationDAO tableRelationDAO, ColumnInfoDAO columnInfoDAO, TableForeignKeyDAO tableForeignKeyDAO,
                                               SemanticIndexService semanticIndexService, DataSourceDAO dataSourceDAO,
                                               PermissionService permissionService) {
         this.subjectDAO = subjectDAO;
         this.subjectTableDAO = subjectTableDAO;
         this.tableRelationDAO = tableRelationDAO;
         this.columnInfoDAO = columnInfoDAO;
+        this.tableForeignKeyDAO = tableForeignKeyDAO;
         this.semanticIndexService = semanticIndexService;
         this.dataSourceDAO = dataSourceDAO;
         this.permissionService = permissionService;
@@ -80,6 +84,13 @@ public class TableRelationRecommendationService {
 
         Map<String, Set<String>> valueCache = new HashMap<>();
         List<TableRelationRecommendation> candidates = new ArrayList<>();
+        Set<String> emitted = new HashSet<>();
+        for (TableRelationRecommendation physical : physicalCandidates(tables, columnsByTable, caseInsensitiveColumns)) {
+            String key = relationKey(physical.getFactTableId(), physical.getFactColumn(), physical.getDimensionTableId(), physical.getDimensionColumn(), caseInsensitiveColumns);
+            if (existing.contains(key) || emitted.contains(key)) continue;
+            emitted.add(key);
+            candidates.add(physical);
+        }
         for (TableInfoPO factTable : tables) {
             for (TableInfoPO dimensionTable : tables) {
                 if (factTable.getId().equals(dimensionTable.getId())) continue;
@@ -87,7 +98,9 @@ public class TableRelationRecommendationService {
                     for (ColumnInfoPO dimensionColumn : columnsByTable.getOrDefault(dimensionTable.getId(), List.of())) {
                         TableRelationRecommendation candidate = evaluate(factTable, factColumn, dimensionTable, dimensionColumn, valueCache, canUseDictionaryValues);
                         if (candidate == null) continue;
-                        if (existing.contains(relationKey(candidate.getFactTableId(), candidate.getFactColumn(), candidate.getDimensionTableId(), candidate.getDimensionColumn(), caseInsensitiveColumns))) continue;
+                        String key = relationKey(candidate.getFactTableId(), candidate.getFactColumn(), candidate.getDimensionTableId(), candidate.getDimensionColumn(), caseInsensitiveColumns);
+                        if (existing.contains(key) || emitted.contains(key)) continue;
+                        emitted.add(key);
                         candidates.add(candidate);
                     }
                 }
@@ -99,6 +112,65 @@ public class TableRelationRecommendationService {
             .sorted(Comparator.comparing(TableRelationRecommendation::getScore).reversed())
             .limit(resultLimit)
             .toList();
+    }
+
+
+    private List<TableRelationRecommendation> physicalCandidates(List<TableInfoPO> tables,
+                                                                 Map<String, List<ColumnInfoPO>> columnsByTable,
+                                                                 boolean caseInsensitiveColumns) {
+        List<String> tableIds = tables.stream().map(TableInfoPO::getId).toList();
+        Map<String, List<TableForeignKeyPO>> grouped = new HashMap<>();
+        for (TableForeignKeyPO key : tableForeignKeyDAO.findByTableIdIn(tableIds)) {
+            String group = key.getTableId() + "|" + (key.getName() == null || key.getName().isBlank() ? key.getColumnName() : key.getName());
+            grouped.computeIfAbsent(group, ignored -> new ArrayList<>()).add(key);
+        }
+        List<TableRelationRecommendation> result = new ArrayList<>();
+        for (List<TableForeignKeyPO> rows : grouped.values()) {
+            if (rows.size() != 1) continue;
+            TableForeignKeyPO key = rows.getFirst();
+            TableInfoPO factTable = tables.stream().filter(table -> table.getId().equals(key.getTableId())).findFirst().orElse(null);
+            TableInfoPO dimensionTable = resolveReferencedTable(tables, key, caseInsensitiveColumns);
+            if (factTable == null || dimensionTable == null || factTable.getId().equals(dimensionTable.getId())) continue;
+            ColumnInfoPO factColumn = findColumn(columnsByTable.getOrDefault(factTable.getId(), List.of()), key.getColumnName(), caseInsensitiveColumns);
+            ColumnInfoPO dimensionColumn = findColumn(columnsByTable.getOrDefault(dimensionTable.getId(), List.of()), key.getRefColumn(), caseInsensitiveColumns);
+            if (factColumn == null || dimensionColumn == null) continue;
+
+            TableRelationRecommendation candidate = new TableRelationRecommendation();
+            candidate.setFactTableId(factTable.getId());
+            candidate.setFactTableName(factTable.getName());
+            candidate.setFactColumn(factColumn.getName());
+            candidate.setDimensionTableId(dimensionTable.getId());
+            candidate.setDimensionTableName(dimensionTable.getName());
+            candidate.setDimensionColumn(dimensionColumn.getName());
+            candidate.setCardinality(factColumn.isPrimaryKey() || factColumn.isUniqueKey() ? "ONE_TO_ONE" : "MANY_TO_ONE");
+            candidate.setScore(100);
+            candidate.setConfidence("HIGH");
+            candidate.setSource("FOREIGN_KEY");
+            List<String> evidence = new ArrayList<>(List.of("FOREIGN_KEY_CONSTRAINT"));
+            if (typesCompatible(factColumn.getColumnType(), dimensionColumn.getColumnType())) evidence.add("TYPE_COMPATIBLE");
+            candidate.setEvidence(evidence);
+            result.add(candidate);
+        }
+        return result;
+    }
+
+    private static TableInfoPO resolveReferencedTable(List<TableInfoPO> tables, TableForeignKeyPO key, boolean caseInsensitive) {
+        List<TableInfoPO> matches = tables.stream()
+            .filter(table -> namesEqual(table.getName(), key.getRefTable(), caseInsensitive))
+            .filter(table -> key.getRefSchema() == null || namesEqual(table.getSchema(), key.getRefSchema(), caseInsensitive))
+            .toList();
+        if (matches.size() == 1) return matches.getFirst();
+        if (key.getRefSchema() != null) return null;
+        return matches.size() == 1 ? matches.getFirst() : null;
+    }
+
+    private static ColumnInfoPO findColumn(List<ColumnInfoPO> columns, String name, boolean caseInsensitive) {
+        return columns.stream().filter(column -> namesEqual(column.getName(), name, caseInsensitive)).findFirst().orElse(null);
+    }
+
+    private static boolean namesEqual(String left, String right, boolean caseInsensitive) {
+        if (left == null || right == null) return false;
+        return caseInsensitive ? left.equalsIgnoreCase(right) : left.equals(right);
     }
 
     private TableRelationRecommendation evaluate(TableInfoPO factTable, ColumnInfoPO factColumn,
@@ -164,6 +236,7 @@ public class TableRelationRecommendationService {
         candidate.setDimensionTableName(dimensionTable.getName());
         candidate.setDimensionColumn(dimensionColumn.getName());
         candidate.setCardinality(dimensionPrimaryKey ? "MANY_TO_ONE" : "MANY_TO_MANY");
+        candidate.setSource("INFERRED");
         candidate.setScore(score);
         candidate.setConfidence(score >= 85 ? "HIGH" : score >= 70 ? "MEDIUM" : "LOW");
         candidate.setEvidence(List.copyOf(evidence));

@@ -49,10 +49,12 @@ public class ColumnService {
     private final PermissionService permissionService;
     private final TermRelationDAO termRelationDAO;
     private final TableRelationDAO tableRelationDAO;
+    private final TableStructureSyncService tableStructureSyncService;
 
     public ColumnService(ColumnInfoDAO columnInfoDAO, TableInfoDAO tableInfoDAO,
                          JdbcMetaService jdbcMetaService, SemanticIndexService semanticIndexService,
-                         PermissionService permissionService, TermRelationDAO termRelationDAO, TableRelationDAO tableRelationDAO) {
+                         PermissionService permissionService, TermRelationDAO termRelationDAO, TableRelationDAO tableRelationDAO,
+                         TableStructureSyncService tableStructureSyncService) {
         this.columnInfoDAO = columnInfoDAO;
         this.tableInfoDAO = tableInfoDAO;
         this.jdbcMetaService = jdbcMetaService;
@@ -60,6 +62,7 @@ public class ColumnService {
         this.permissionService = permissionService;
         this.termRelationDAO = termRelationDAO;
         this.tableRelationDAO = tableRelationDAO;
+        this.tableStructureSyncService = tableStructureSyncService;
     }
 
     public Page<ColumnInfo> getColumns(PageReq pageReq, String datasourceId, String tableId, String keyword) {
@@ -172,6 +175,8 @@ public class ColumnService {
             }
             columnInfoPO.setName(column.name());
             columnInfoPO.setColumnType(column.type());
+            columnInfoPO.setPrimaryKey(column.primaryKey());
+            columnInfoPO.setUniqueKey(column.uniqueKey());
             
             if (existing != null) {
                 String dbComment = column.comment();
@@ -233,6 +238,7 @@ public class ColumnService {
                     .build();
         }).toList();
         semanticIndexService.saveBatch(docs);
+        tableStructureSyncService.syncForeignKeys(datasourceId, tableId, tableInfo.getSchema(), tableInfo.getName());
     }
 
     /**

@@ -22,6 +22,7 @@ export interface TableRelationRecommendationVO {
   dimension_table_name?: string;
   dimension_column: string;
   cardinality: string;
+  source?: string;
   score?: number;
   confidence?: string;
   evidence?: string[];

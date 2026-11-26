@@ -6,6 +6,8 @@ import com.dati.base.RequestContext;
 import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
 import com.dati.datasource.repository.dao.DataSourceDAO;
+import com.dati.datasource.repository.dao.TableForeignKeyDAO;
+import com.dati.datasource.repository.po.TableForeignKeyPO;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
 import com.dati.datasource.repository.po.DataSourcePO;
 import com.dati.db.DbType;
@@ -53,6 +55,7 @@ class TableRelationRecommendationServiceTest {
     @Mock private ColumnInfoDAO columnInfoDAO;
     @Mock private SemanticIndexService semanticIndexService;
     @Mock private DataSourceDAO dataSourceDAO;
+    @Mock private TableForeignKeyDAO tableForeignKeyDAO;
     @Mock private PermissionService permissionService;
     @InjectMocks private TableRelationRecommendationService service;
 
@@ -70,6 +73,7 @@ class TableRelationRecommendationServiceTest {
         dataSource.setId("ds-1");
         dataSource.setType(DbType.MYSQL);
         lenient().when(dataSourceDAO.findById("ds-1")).thenReturn(Optional.of(dataSource));
+        lenient().when(tableForeignKeyDAO.findByTableIdIn(org.mockito.ArgumentMatchers.any())).thenReturn(java.util.List.of());
         lenient().when(subjectDAO.findById("subject-1")).thenReturn(Optional.of(subject));
         lenient().doAnswer(inv -> null).when(permissionService).requireCurrentUser(any(), anyString(), any(), anyString());
         lenient().when(tableRelationDAO.findBySubjectId("subject-1")).thenReturn(List.of());
@@ -249,6 +253,7 @@ class TableRelationRecommendationServiceTest {
         TableInfoPO table = new TableInfoPO();
         table.setId(id);
         table.setName(name);
+        table.setSchema("mes");
         table.setAliases(List.of(alias));
         return table;
     }
@@ -266,4 +271,57 @@ class TableRelationRecommendationServiceTest {
     private SemanticSearchDocument valueDoc(String value) {
         return SemanticSearchDocument.builder().keywords(List.of(value)).build();
     }
+    @Test
+    @DisplayName("recommends physical foreign keys without naming evidence")
+    void recommendsPhysicalForeignKeys() {
+        mockTables(table("fact-1", "t_mes_passstaion", ""), table("dim-1", "t_mo", ""));
+        when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(column("fact-col-1", "fact-1", "FMoID", "INT", "")));
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "F_id", "INT", "")));
+        TableForeignKeyPO key = new TableForeignKeyPO();
+        key.setTableId("fact-1");
+        key.setName("fk_pass_mo");
+        key.setColumnName("FMoID");
+        key.setRefSchema("mes");
+        key.setRefTable("t_mo");
+        key.setRefColumn("F_id");
+        key.setKeySeq((short) 1);
+        when(tableForeignKeyDAO.findByTableIdIn(org.mockito.ArgumentMatchers.any())).thenReturn(java.util.List.of(key));
+
+        List<TableRelationRecommendation> result = service.recommendRelations("subject-1", 10);
+
+        assertThat(result).anySatisfy(item -> {
+            assertThat(item.getSource()).isEqualTo("FOREIGN_KEY");
+            assertThat(item.getFactColumn()).isEqualTo("FMoID");
+            assertThat(item.getDimensionColumn()).isEqualTo("F_id");
+            assertThat(item.getCardinality()).isEqualTo("MANY_TO_ONE");
+            assertThat(item.getEvidence()).contains("FOREIGN_KEY_CONSTRAINT");
+        });
+    }
+
+    @Test
+    @DisplayName("physical foreign key uses one-to-one for unique source columns")
+    void physicalForeignKeyUsesOneToOneForUniqueSource() {
+        mockTables(table("fact-1", "t_mes_passstaion", ""), table("dim-1", "t_mo", ""));
+        ColumnInfoPO factColumn = column("fact-col-1", "fact-1", "FMoID", "INT", "");
+        factColumn.setUniqueKey(true);
+        when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(factColumn));
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "F_id", "INT", "")));
+        TableForeignKeyPO key = new TableForeignKeyPO();
+        key.setTableId("fact-1");
+        key.setName("fk_pass_mo");
+        key.setColumnName("FMoID");
+        key.setRefSchema("mes");
+        key.setRefTable("t_mo");
+        key.setRefColumn("F_id");
+        key.setKeySeq((short) 1);
+        when(tableForeignKeyDAO.findByTableIdIn(org.mockito.ArgumentMatchers.any())).thenReturn(java.util.List.of(key));
+
+        List<TableRelationRecommendation> result = service.recommendRelations("subject-1", 10);
+
+        assertThat(result).filteredOn(item -> "FOREIGN_KEY".equals(item.getSource()))
+            .first()
+            .extracting(TableRelationRecommendation::getCardinality)
+            .isEqualTo("ONE_TO_ONE");
+    }
+
 }
