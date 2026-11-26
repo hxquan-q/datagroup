@@ -58,8 +58,16 @@ public class SemanticSearchService {
                                 List<String> datasourceIds,
                                 List<String> subjectIds,
                                 List<String> tableIds) {
+        return search(keywords, datasourceIds, subjectIds, tableIds, MAX_RESULTS);
+    }
+
+    public SearchResult search(List<String> keywords,
+                                List<String> datasourceIds,
+                                List<String> subjectIds,
+                                List<String> tableIds,
+                                int maxResults) {
         List<SemanticSearchDocument> docs = semanticIndexService.searchMetadata(
-                keywords, datasourceIds, subjectIds, tableIds, MAX_RESULTS);
+                keywords, datasourceIds, subjectIds, tableIds, maxResults);
 
         Set<String> tableIdSet = new LinkedHashSet<>();
         Set<String> termIdSet = new LinkedHashSet<>();

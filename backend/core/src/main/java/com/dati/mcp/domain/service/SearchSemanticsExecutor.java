@@ -86,11 +86,11 @@ public class SearchSemanticsExecutor implements ToolExecutor {
             .distinct()
             .toList();
         mergeSemanticTables(tablesByDataSource,
-            semanticSearchService.search(rawKeywords, List.of(), subjectIds, List.of()), endpointTableIds);
-        for (String tableId : endpointTableIds) {
-            mergeSemanticTables(tablesByDataSource,
-                semanticSearchService.search(rawKeywords, List.of(), List.of(), List.of(tableId)), endpointTableIds);
-        }
+            semanticSearchService.search(rawKeywords, List.of(), subjectIds, List.of(), 100), endpointTableIds);
+        int endpointSearchLimit = Math.min(1000, Math.max(200, endpointTableIds.size() * 20));
+        mergeSemanticTables(tablesByDataSource,
+            semanticSearchService.search(rawKeywords, List.of(), List.of(), List.copyOf(endpointTableIds), endpointSearchLimit),
+            endpointTableIds);
         return tablesByDataSource.entrySet().stream()
             .map(entry -> new DataSourceDef(entry.getKey(), entry.getKey(), null, null, null,
                 List.copyOf(entry.getValue().values())))
