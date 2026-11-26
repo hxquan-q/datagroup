@@ -28,6 +28,7 @@ const recommendVisible = ref(false);
 const recommending = ref(false);
 const confirmingKey = ref("");
 const recommendations = ref<TableRelationRecommendationVO[]>([]);
+const viewMode = ref<"graph" | "table">("graph");
 const selectedRecommendations = ref<TableRelationRecommendationVO[]>([]);
 const batchConfirming = ref(false);
 const tableOptions = computed(() => tables.value.map((table) => ({ label: table.name, value: table.id })));
@@ -130,14 +131,18 @@ function evidenceLabel(code: string) {
   return t(`relation.evidenceLabels.${code}`);
 }
 
-async function openRecommendations() {
-  recommendVisible.value = true;
+async function loadRecommendations() {
   recommending.value = true;
   try {
-    selectedRecommendations.value = [];
     recommendations.value = await listTableRelationRecommendations(props.subjectId, 50);
   } catch (error) { notifyError(error, t("common.loadFailed")); }
   finally { recommending.value = false; }
+}
+
+async function openRecommendations() {
+  recommendVisible.value = true;
+  selectedRecommendations.value = [];
+  await loadRecommendations();
 }
 
 async function confirmRecommendation(item: TableRelationRecommendationVO) {
@@ -184,6 +189,11 @@ async function confirmSelectedRecommendations() {
   if (failed) ElMessage.warning(t("relation.batchConfirmPartial", { count: failed }));
 }
 
+async function confirmGraphBatch(items: TableRelationRecommendationVO[]) {
+  selectedRecommendations.value = items;
+  await confirmSelectedRecommendations();
+}
+
 async function remove(row: TableRelationVO) {
   try {
     await ElMessageBox.confirm(t("relation.deleteConfirm"), t("common.warning"), { type: "warning" });
@@ -193,7 +203,7 @@ async function remove(row: TableRelationVO) {
   } catch (error) { if (error !== "cancel") notifyError(error, t("common.operationFailed")); }
 }
 
-onMounted(() => { loadTables(); loadRelations(); });
+onMounted(() => { loadTables(); loadRelations(); loadRecommendations(); });
 </script>
 
 <template>
@@ -210,7 +220,24 @@ onMounted(() => { loadTables(); loadRelations(); });
       </div>
     </div>
 
-    <el-table v-loading="loading" :data="relations" border stripe class="w-full">
+    <div class="flex items-center justify-between gap-3">
+      <el-radio-group v-model="viewMode" size="small">
+        <el-radio-button value="graph">{{ t("relation.graphView") }}</el-radio-button>
+        <el-radio-button value="table">{{ t("relation.tableView") }}</el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <TableRelationGraph
+      v-if="viewMode === 'graph'"
+      :tables="tables"
+      :relations="relations"
+      :recommendations="recommendations"
+      :loading="loading || recommending"
+      @confirm="confirmRecommendation"
+      @batch-confirm="confirmGraphBatch"
+    />
+
+    <el-table v-show="viewMode === 'table'" v-loading="loading" :data="relations" border stripe class="w-full">
       <el-table-column :label="t('relation.factTable')" min-width="170">
         <template #default="{ row }">{{ row.fact_table_name || row.fact_table_id }}</template>
       </el-table-column>
@@ -238,7 +265,7 @@ onMounted(() => { loadTables(); loadRelations(); });
       <template #empty><el-empty :description="t('relation.emptyList')" :image-size="88" /></template>
     </el-table>
 
-    <div class="flex justify-end">
+    <div v-show="viewMode === 'table'" class="flex justify-end">
       <el-pagination v-model:current-page="page" v-model:page-size="size" :total="total" layout="total, prev, pager, next" background @current-change="loadRelations" />
     </div>
 
