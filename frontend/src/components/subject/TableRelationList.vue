@@ -35,6 +35,13 @@ const batchConfirming = ref(false);
 const tableOptions = computed(() => tables.value.map((table) => ({ label: table.name, value: table.id })));
 const cardinalityOptions = ["MANY_TO_ONE", "ONE_TO_ONE", "ONE_TO_MANY", "MANY_TO_MANY"];
 
+
+function refreshAll() {
+  loadRelations();
+  loadGraphRelations();
+  loadRecommendations();
+}
+
 async function loadRelations() {
   loading.value = true;
   try {
@@ -228,7 +235,7 @@ onMounted(() => { loadTables(); loadRelations(); loadGraphRelations(); loadRecom
         <div class="mt-1 text-xs text-[var(--ep-text-color-secondary)]">{{ t("relation.subtitle") }}</div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <el-button :icon="Refresh" @click="loadRelations">{{ t("common.refresh") }}</el-button>
+        <el-button :icon="Refresh" @click="refreshAll">{{ t("common.refresh") }}</el-button>
         <el-button :icon="WandSparkles" @click="openRecommendations">{{ t("relation.recommendButton") }}</el-button>
         <el-button type="primary" :icon="Plus" @click="openCreate">{{ t("relation.createButton") }}</el-button>
       </div>
