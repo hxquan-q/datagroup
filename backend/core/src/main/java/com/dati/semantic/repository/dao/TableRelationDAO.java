@@ -11,11 +11,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TableRelationDAO extends JpaRepository<TableRelationPO, String> {
     Page<TableRelationPO> findBySubjectId(String subjectId, Pageable pageable);
     List<TableRelationPO> findBySubjectId(String subjectId);
+    Optional<TableRelationPO> findBySubjectIdAndFactTableIdAndFactColumnAndDimensionTableIdAndDimensionColumn(String subjectId, String factTableId, String factColumn, String dimensionTableId, String dimensionColumn);
     void deleteBySubjectId(String subjectId);
     @Modifying
     @Query("delete from TableRelationPO r where r.factTableId in :tableIds or r.dimensionTableId in :tableIds")

@@ -49,6 +49,7 @@ public enum ErrorCode {
     SM_METRIC_NOT_FOUND("SM007", 404, "Metric not found: {0}"),
     SM_METRIC_CODE_EXISTS("SM008", 409, "Metric code already exists in this subject: {0}"),
     SM_METRIC_CODE_INVALID("SM009", 400, "Metric code must be 1-128 chars, lowercase letters, digits and underscores only, starting with a letter"),
+    SM_RELATION_EXISTS("SM010", 409, "Table relation already exists for the same fact and dimension columns"),
 
     FIELD_REQUIRED("VAL002", 400, "Field {0} is required"),
 

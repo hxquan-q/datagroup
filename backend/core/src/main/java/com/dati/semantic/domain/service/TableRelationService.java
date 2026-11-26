@@ -50,6 +50,7 @@ public class TableRelationService {
         requireTableInSubject(subjectId, item.getDimensionTableId());
         requireColumn(item.getFactTableId(), item.getFactColumn());
         requireColumn(item.getDimensionTableId(), item.getDimensionColumn());
+        requireUniqueJoin(subjectId, item.getFactTableId(), item.getFactColumn(), item.getDimensionTableId(), item.getDimensionColumn(), null);
         item.setSubjectId(subjectId);
         item.setRevision(1);
         if (item.getCardinality() == null || item.getCardinality().isBlank()) item.setCardinality("MANY_TO_ONE");
@@ -83,6 +84,7 @@ public class TableRelationService {
         if (patch.getOwner() != null) po.setOwner(patch.getOwner());
         if (patch.getDescription() != null) po.setDescription(patch.getDescription());
         if (patch.getUpdatedBy() != null) po.setUpdatedBy(patch.getUpdatedBy());
+        requireUniqueJoin(po.getSubjectId(), po.getFactTableId(), po.getFactColumn(), po.getDimensionTableId(), po.getDimensionColumn(), po.getId());
         po.setName(po.getFactColumn() + " -> " + po.getDimensionColumn());
         po.setRevision((po.getRevision() == null ? 1 : po.getRevision()) + 1);
         return TableRelationMapper.toModel(tableRelationDAO.save(po));
@@ -125,6 +127,17 @@ public class TableRelationService {
         if (!columnInfoDAO.existsByTableIdAndName(tableId, column)) {
             throw new DatiException(ErrorCode.INVALID_PARAMETER, "column does not exist in table: " + column);
         }
+    }
+
+    private void requireUniqueJoin(String subjectId, String factTableId, String factColumn,
+                                   String dimensionTableId, String dimensionColumn, String excludeId) {
+        tableRelationDAO.findBySubjectIdAndFactTableIdAndFactColumnAndDimensionTableIdAndDimensionColumn(
+                subjectId, factTableId, factColumn, dimensionTableId, dimensionColumn)
+            .ifPresent(existing -> {
+                if (excludeId == null || !excludeId.equals(existing.getId())) {
+                    throw new DatiException(ErrorCode.SM_RELATION_EXISTS);
+                }
+            });
     }
 
     private void requireTableInSubject(String subjectId, String tableId) {

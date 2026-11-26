@@ -80,6 +80,19 @@ class TableRelationServiceTest {
     }
 
     @Test
+    @DisplayName("create rejects a duplicate fact-to-dimension join")
+    void createRejectsDuplicateJoin() {
+        TableRelation item = relation();
+        TableRelationPO existing = new TableRelationPO();
+        existing.setId("rel-existing");
+        when(tableRelationDAO.findBySubjectIdAndFactTableIdAndFactColumnAndDimensionTableIdAndDimensionColumn(
+            "subject-1", "fact-1", "wo_id", "dim-1", "id")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> service.createRelation("subject-1", item))
+            .isInstanceOf(DatiException.class);
+    }
+
+    @Test
     @DisplayName("update increments revision and rejects unsupported cardinality")
     void updateValidatesCardinality() {
         TableRelationPO po = new TableRelationPO();

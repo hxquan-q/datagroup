@@ -241,6 +241,13 @@ onMounted(() => { loadTables(); loadRelations(); });
             </div>
           </template>
         </el-table-column>
+        <el-table-column :label="t('relation.cardinality')" width="155">
+          <template #default="{ row }">
+            <el-select v-model="row.cardinality" size="small" class="w-full">
+              <el-option v-for="item in cardinalityOptions" :key="item" :label="item" :value="item" />
+            </el-select>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('common.actions')" width="105" align="center">
           <template #default="{ row }">
             <el-button type="primary" link :loading="confirmingKey === recommendationKey(row)" @click="confirmRecommendation(row)">{{ t("relation.confirm") }}</el-button>

@@ -3,9 +3,12 @@ package com.dati.semantic.domain.service;
 import com.dati.TestFixtures;
 import com.dati.auth.authentication.User;
 import com.dati.base.RequestContext;
+import com.dati.base.exception.DatiException;
+import com.dati.base.exception.ErrorCode;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
 import com.dati.datasource.repository.po.ColumnInfoPO;
 import com.dati.datasource.repository.po.TableInfoPO;
+import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.SemanticEntityType;
 import com.dati.semantic.domain.model.TableRelationRecommendation;
@@ -33,7 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,6 +60,7 @@ class TableRelationRecommendationServiceTest {
         RequestContext.setUser(user);
         SubjectPO subject = new SubjectPO();
         subject.setId("subject-1");
+        subject.setDatasourceId("ds-1");
         subject.setCreatedBy(TestFixtures.TEST_USER_ID);
         lenient().when(subjectDAO.findById("subject-1")).thenReturn(Optional.of(subject));
         lenient().doAnswer(inv -> null).when(permissionService).requireCurrentUser(any(), anyString(), any(), anyString());
@@ -157,6 +163,55 @@ class TableRelationRecommendationServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().getScore()).isLessThan(85);
         assertThat(result.getFirst().getConfidence()).isNotEqualTo("HIGH");
+        assertThat(result.getFirst().getCardinality()).isEqualTo("MANY_TO_MANY");
+    }
+
+    @Test
+    @DisplayName("uses dictionary overlap only with data source view permission")
+    void hidesDictionaryOverlapWithoutDataSourceView() {
+        doThrow(new DatiException(ErrorCode.PERMISSION_DENIED)).when(permissionService).requireDataSource("ds-1", Permission.VIEW);
+        TableInfoPO fact = table("fact-1", "t_mes_passstaion", "过站记录");
+        TableInfoPO dimension = table("dim-1", "t_mes_workshop", "车间");
+        mockTables(fact, dimension);
+        when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(column("fact-col-1", "fact-1", "FWorkShopID", "INT", "车间")));
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "F_id", "INT", "")));
+
+        List<TableRelationRecommendation> result = service.recommendRelations("subject-1", 20);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getEvidence()).doesNotContain("VALUE_OVERLAP");
+        verifyNoInteractions(semanticIndexService);
+    }
+
+    @Test
+    @DisplayName("dictionary overlap can qualify a borderline table-level match")
+    void dictionaryOverlapRaisesBorderlineMatch() {
+        TableInfoPO fact = table("fact-1", "t_fact", "事实");
+        TableInfoPO dimension = table("dim-1", "t_dimension", "workshop");
+        mockTables(fact, dimension);
+        when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(column("fact-col-1", "fact-1", "FWorkShopID", "INT", "")));
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "F_id", "INT", "")));
+        when(semanticIndexService.findByTableFieldAndType("fact-1", "FWorkShopID", SemanticEntityType.FIELD_VALUE))
+            .thenReturn(List.of(valueDoc("42"), valueDoc("43")));
+        when(semanticIndexService.findByTableFieldAndType("dim-1", "F_id", SemanticEntityType.FIELD_VALUE))
+            .thenReturn(List.of(valueDoc("42"), valueDoc("43")));
+
+        List<TableRelationRecommendation> result = service.recommendRelations("subject-1", 20);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getEvidence()).contains("VALUE_OVERLAP");
+    }
+
+    @Test
+    @DisplayName("does not treat PostgreSQL uuid and varchar keys as compatible")
+    void rejectsUuidVarcharMismatch() {
+        TableInfoPO fact = table("fact-1", "t_order", "订单");
+        TableInfoPO dimension = table("dim-1", "t_sys_user", "用户");
+        mockTables(fact, dimension);
+        when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(column("fact-col-1", "fact-1", "FUserID", "UUID", "")));
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "FUserID", "VARCHAR", "")));
+
+        assertThat(service.recommendRelations("subject-1", 20)).isEmpty();
     }
 
     private void mockTables(TableInfoPO... tables) {

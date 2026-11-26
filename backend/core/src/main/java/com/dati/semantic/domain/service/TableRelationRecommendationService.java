@@ -58,6 +58,7 @@ public class TableRelationRecommendationService {
     public List<TableRelationRecommendation> recommendRelations(String subjectId, Integer limit) {
         SubjectPO subject = requireSubject(subjectId);
         permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.EDIT, subject.getCreatedBy());
+        boolean canUseDictionaryValues = canUseDictionaryValues(subject);
         List<TableInfoPO> tables = subjectTableDAO.findTablesBySubjectId(subjectId, PageRequest.of(0, MAX_TABLES)).getContent();
         if (tables.size() < 2) return List.of();
 
@@ -77,7 +78,7 @@ public class TableRelationRecommendationService {
                 if (factTable.getId().equals(dimensionTable.getId())) continue;
                 for (ColumnInfoPO factColumn : columnsByTable.getOrDefault(factTable.getId(), List.of())) {
                     for (ColumnInfoPO dimensionColumn : columnsByTable.getOrDefault(dimensionTable.getId(), List.of())) {
-                        TableRelationRecommendation candidate = evaluate(factTable, factColumn, dimensionTable, dimensionColumn, valueCache);
+                        TableRelationRecommendation candidate = evaluate(factTable, factColumn, dimensionTable, dimensionColumn, valueCache, canUseDictionaryValues);
                         if (candidate == null) continue;
                         if (existing.contains(relationKey(candidate.getFactTableId(), candidate.getFactColumn(), candidate.getDimensionTableId(), candidate.getDimensionColumn()))) continue;
                         candidates.add(candidate);
@@ -95,7 +96,7 @@ public class TableRelationRecommendationService {
 
     private TableRelationRecommendation evaluate(TableInfoPO factTable, ColumnInfoPO factColumn,
                                                  TableInfoPO dimensionTable, ColumnInfoPO dimensionColumn,
-                                                 Map<String, Set<String>> valueCache) {
+                                                 Map<String, Set<String>> valueCache, boolean canUseDictionaryValues) {
         if (!isKeyLike(factColumn.getName()) || !isKeyLike(dimensionColumn.getName())) return null;
         if (!typesCompatible(factColumn.getColumnType(), dimensionColumn.getColumnType())) return null;
 
@@ -138,13 +139,12 @@ public class TableRelationRecommendationService {
             evidence.add("DESCRIPTION_TERM_MATCH");
         }
 
-        if (score < MIN_SCORE) return null;
-
-        double overlap = dictionaryOverlap(factColumn, dimensionColumn, valueCache);
+        double overlap = canUseDictionaryValues ? dictionaryOverlap(factColumn, dimensionColumn, valueCache) : 0;
         if (overlap >= 0.6) {
             score += 15;
             evidence.add("VALUE_OVERLAP");
         }
+        if (score < MIN_SCORE) return null;
         if (!dimensionPrimaryKey && overlap < 0.6) {
             score = Math.min(score, 84);
         }
@@ -156,7 +156,7 @@ public class TableRelationRecommendationService {
         candidate.setDimensionTableId(dimensionTable.getId());
         candidate.setDimensionTableName(dimensionTable.getName());
         candidate.setDimensionColumn(dimensionColumn.getName());
-        candidate.setCardinality("MANY_TO_ONE");
+        candidate.setCardinality(dimensionPrimaryKey ? "MANY_TO_ONE" : "MANY_TO_MANY");
         candidate.setScore(score);
         candidate.setConfidence(score >= 85 ? "HIGH" : score >= 70 ? "MEDIUM" : "LOW");
         candidate.setEvidence(List.copyOf(evidence));
@@ -212,6 +212,7 @@ public class TableRelationRecommendationService {
         if (value.contains("int") || value.contains("decimal") || value.contains("numeric") || value.contains("double") || value.contains("float") || value.contains("bigint")) return "number";
         if (value.contains("date") || value.contains("time")) return "time";
         if (value.contains("bit") || value.contains("bool")) return "boolean";
+        if (value.contains("uuid")) return "uuid";
         return "text";
     }
 
@@ -288,6 +289,16 @@ public class TableRelationRecommendationService {
 
     private static String relationKey(String factTableId, String factColumn, String dimensionTableId, String dimensionColumn) {
         return factTableId + "|" + factColumn + "|" + dimensionTableId + "|" + dimensionColumn;
+    }
+
+    private boolean canUseDictionaryValues(SubjectPO subject) {
+        try {
+            permissionService.requireDataSource(subject.getDatasourceId(), Permission.VIEW);
+            return true;
+        } catch (DatiException e) {
+            if (e.getCode() == ErrorCode.PERMISSION_DENIED) return false;
+            throw e;
+        }
     }
 
     private SubjectPO requireSubject(String subjectId) {
