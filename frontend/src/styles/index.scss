@@ -105,7 +105,7 @@ body {
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', sans-serif;
+    'Hiragino Sans GB', 'Noto Sans CJK SC', 'Microsoft YaHei', '微软雅黑', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
@@ -302,6 +302,7 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 
 
 /* ============ Dialogs and form feedback ============ */
+.ep-dialog,
 .el-dialog {
   max-width: calc(100vw - 32px);
 }
@@ -314,22 +315,26 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 }
 
 @media (max-width: 768px) {
+  .ep-dialog,
   .el-dialog {
     width: calc(100vw - 24px) !important;
     margin-top: 5vh !important;
     margin-bottom: 12px;
   }
 
+  .ep-dialog__body,
   .el-dialog__body {
     max-height: calc(100dvh - 160px);
     overflow-y: auto;
   }
 
+  .ep-dialog .ep-form-item,
   .el-dialog .el-form-item {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .ep-dialog .ep-form-item__label,
   .el-dialog .el-form-item__label {
     width: auto !important;
     height: auto;
@@ -338,15 +343,19 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
     text-align: left;
   }
 
+  .ep-dialog .ep-form-item__content,
   .el-dialog .el-form-item__content {
     margin-left: 0 !important;
   }
 
+  .ep-dialog .dialog-footer,
+  .ep-dialog__footer,
   .el-dialog .dialog-footer,
   .el-dialog__footer {
     flex-wrap: wrap;
   }
 
+  .ep-message-box,
   .el-message-box {
     width: calc(100vw - 32px) !important;
   }
