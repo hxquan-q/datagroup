@@ -16,10 +16,10 @@ const highlights = [
   <div class="auth-page">
     <section class="auth-panel">
       <div class="auth-brand">
-        <RouterLink to="/" class="auth-logo" aria-label="XIAOAI">
+        <div class="auth-logo" aria-label="XIAOAI">
           <img src="/xiaoai.svg" alt="" />
           <span>XIAOAI</span>
-        </RouterLink>
+        </div>
         <h1>{{ t("home.heroTitle") }}</h1>
         <p>{{ t("home.heroDesc") }}</p>
         <div class="auth-highlights">
