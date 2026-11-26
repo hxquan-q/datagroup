@@ -832,6 +832,7 @@ export default {
       metricStatusEmpty: "指标已执行，但没有返回行数据",
       metricStatusFailed: "指标执行失败，请检查 SQL 证据和执行详情",
       keywords: "关键词",
+      matchMetrics: "匹配指标",
       matchTerms: "匹配术语",
       matchSources: "匹配数据源",
       listTablesTitle: "服务数据范围表清单",

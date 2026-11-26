@@ -33,13 +33,15 @@ public class McpToolTestService {
     private final PermissionService permissionService;
     private final McpScopeResolver scopeResolver;
     private final MetricService metricService;
+    private final McpTableRelationSnapshotService relationSnapshotService;
 
     public McpToolTestService(ToolResolver toolResolver, McpServiceDataScopeDAO scopeDAO,
                               List<ToolExecutor> toolExecutorList,
                               ToolParameterBinder parameterBinder,
                               PermissionService permissionService,
                               McpScopeResolver scopeResolver,
-                              MetricService metricService) {
+                              MetricService metricService,
+                              McpTableRelationSnapshotService relationSnapshotService) {
         this.toolResolver = toolResolver;
         this.scopeDAO = scopeDAO;
         this.parameterBinder = parameterBinder;
@@ -47,6 +49,7 @@ public class McpToolTestService {
         this.permissionService = permissionService;
         this.scopeResolver = scopeResolver;
         this.metricService = metricService;
+        this.relationSnapshotService = relationSnapshotService;
     }
 
     public ToolTestResponse test(String serviceId, String toolId, ToolTestRequest request) {
@@ -62,17 +65,24 @@ public class McpToolTestService {
                 .distinct()
                 .toList();
             List<com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft> metrics = List.of();
-            if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC) {
+            if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC
+                    || tool.toolType() == McpToolType.SEARCH_METADATA) {
                 subjectIds.forEach(this::requireSubjectIfExists);
                 metrics = metricService.getMetricsBySubjectIds(subjectIds).stream()
                     .map(McpServiceSnapshotMapper::toMetricDraft)
                     .toList();
             }
+            List<com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft> relations = List.of();
+            if (tool.toolType() == McpToolType.SEARCH_METADATA || tool.toolType() == McpToolType.LIST_TABLES
+                    || tool.toolType() == McpToolType.GET_TABLE_INFO || tool.toolType() == McpToolType.SEARCH_SEMANTICS) {
+                relations = relationSnapshotService.buildRelationDrafts(subjectIds, scopeItems);
+            }
             ToolExecutionContext ctx = new ToolExecutionContext(
                 serviceId, tool.toolType(), tool.config(),
                 parameterBinder.bind(tool.toolType().getParameterType(), request.arguments()),
                 scopeItems,
-                metrics);
+                metrics,
+                relations);
             ToolExecutor executor = executorMap.get(tool.toolType());
             if (executor == null) {
                 throw new IllegalStateException(

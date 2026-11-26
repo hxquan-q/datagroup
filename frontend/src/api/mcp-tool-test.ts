@@ -103,6 +103,38 @@ export interface SearchHit {
   keywords: string[];
   data_sources: DataSourceDef[];
   terms: TermDef[];
+  metrics?: SemanticMetric[];
+  relations?: TableRelationPath[];
+}
+
+export interface SemanticMetric {
+  metric_id: string;
+  subject_id: string;
+  code: string;
+  name: string;
+  description?: string;
+  aliases?: string[];
+  owner?: string;
+  grain?: string;
+  time_field?: string;
+  time_zone?: string;
+  allowed_dimensions?: string[];
+  revision?: number;
+  call_example?: {
+    metric: string;
+    arguments: Record<string, unknown>;
+    dimensions: string[];
+  };
+}
+
+export interface TableRelationPath {
+  fact_table_name: string;
+  fact_schema?: string;
+  fact_column: string;
+  dimension_table_name: string;
+  dimension_schema?: string;
+  dimension_column: string;
+  cardinality: string;
 }
 
 export interface TableListData {

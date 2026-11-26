@@ -832,6 +832,7 @@ export default {
       metricStatusEmpty: "Metric executed but returned no row data",
       metricStatusFailed: "Metric execution failed; inspect SQL evidence and execution details",
       keywords: "Keywords",
+      matchMetrics: "Matched metrics",
       matchTerms: "Matching Terms",
       matchSources: "Matching Sources",
       listTablesTitle: "Tables in Service Data Scope",
