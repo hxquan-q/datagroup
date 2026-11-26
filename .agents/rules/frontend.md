@@ -128,7 +128,7 @@ const pageSize = ref(10)
 
 const queryClient = useQueryClient()
 const queryKey = computed(() => fooKeys.list(page.value, pageSize.value, appliedKeyword.value))
-const { data, isFetching } = useQuery({
+const { data, isFetching, refetch } = useQuery({
   queryKey,
   queryFn: ({ signal }) => listFoos(page.value, pageSize.value, appliedKeyword.value, signal),
   placeholderData: keepPreviousData,
@@ -138,7 +138,12 @@ const loading = computed(() => isFetching.value)
 const list = computed(() => data.value?.data || [])
 const total = computed(() => data.value?.total ?? 0)
 
-const handleSearch = () => { appliedKeyword.value = searchKeyword.value; page.value = 1 }
+const handleSearch = () => {
+  const isSameQuery = appliedKeyword.value === searchKeyword.value && page.value === 1
+  appliedKeyword.value = searchKeyword.value
+  page.value = 1
+  if (isSameQuery) void refetch()
+}
 const handleCreate = () => { currentItem.value = null; dialogVisible.value = true }
 const handleEdit = (item: T) => { currentItem.value = { ...item }; dialogVisible.value = true }
 const handleDialogSuccess = () => {

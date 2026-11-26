@@ -29,7 +29,7 @@ const datasourceQueryKey = computed(() =>
   datasourceKeys.list(page.value, pageSize.value, appliedKeyword.value),
 );
 
-const { data: datasourcePage, isFetching } = useQuery({
+const { data: datasourcePage, isFetching, refetch } = useQuery({
   queryKey: datasourceQueryKey,
   queryFn: ({ signal }) =>
     listDataSources(
@@ -54,8 +54,13 @@ const handleAuthorize = (datasource: DatasourceVO) => {
 };
 
 const handleSearch = () => {
+  const isSameQuery =
+    appliedKeyword.value === searchKeyword.value && page.value === 1;
   appliedKeyword.value = searchKeyword.value;
   page.value = 1;
+  if (isSameQuery) {
+    void refetch();
+  }
 };
 
 const handleClearSearch = () => {
@@ -74,9 +79,6 @@ const handlePageSizeChange = (ps: number) => {
 };
 
 const handleRefresh = () => {
-  searchKeyword.value = "";
-  appliedKeyword.value = "";
-  page.value = 1;
   invalidateDatasourceLists();
 };
 
