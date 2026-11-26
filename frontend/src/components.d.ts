@@ -108,6 +108,7 @@ declare module 'vue' {
     UpdateTableInfoParams: typeof import('./components/mcp-service/tool-test/params/UpdateTableInfoParams.vue')['default']
     UpsertTermParams: typeof import('./components/mcp-service/tool-test/params/UpsertTermParams.vue')['default']
     UsageStatsTab: typeof import('./components/mcp-service/UsageStatsTab.vue')['default']
+    ValidationCaseList: typeof import('./components/subject/ValidationCaseList.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']
