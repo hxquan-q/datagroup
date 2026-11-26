@@ -27,6 +27,8 @@ export default {
       subjects: "主题",
       mcpServices: "MCP 服务",
       creationTrend: "15 日新增趋势",
+      trendDate: "日期",
+      trendCount: "新增",
       trendCaption: "15 日新增",
     },
     features: {

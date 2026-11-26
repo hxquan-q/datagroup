@@ -223,16 +223,43 @@ function go(path: string) {
             <span v-if="loadingStats" class="count-skeleton"></span>
             <template v-else>{{ module.count }}</template>
           </div>
-          <div
-            v-if="!loadingStats && module.trend.length"
-            class="module-sparkline-wrap"
-            role="img"
-            :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
-          >
-            <div class="module-sparkline">
+          <div v-if="!loadingStats && module.trend.length" class="module-sparkline-wrap">
+            <div
+              class="module-sparkline"
+              role="img"
+              :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
+            >
               <BaseChart :option="sparklineOption(module.trend, module.color)" height="42px" />
             </div>
-            <span class="module-trend-caption">{{ t("home.stats.trendCaption") }}</span>
+            <div @click.stop @keydown.enter.stop @keydown.space.stop>
+              <el-popover placement="bottom-end" :width="230" trigger="click">
+                <template #reference>
+                  <button
+                    type="button"
+                    class="module-trend-caption"
+                    :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
+                  >
+                    {{ t("home.stats.trendCaption") }}
+                  </button>
+                </template>
+                <div class="module-trend-table-wrap">
+                  <table class="module-trend-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">{{ t("home.stats.trendDate") }}</th>
+                        <th scope="col">{{ t("home.stats.trendCount") }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="point in module.trend" :key="point.date">
+                        <td>{{ point.date }}</td>
+                        <td>{{ point.count }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </el-popover>
+            </div>
           </div>
         </div>
         <h2>{{ module.statLabel }}</h2>
@@ -582,9 +609,52 @@ function go(path: string) {
 }
 
 .module-trend-caption {
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--ep-text-color-placeholder);
+  cursor: pointer;
   font-size: 10px;
   line-height: 1.2;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.module-trend-caption:focus-visible {
+  outline: 2px solid var(--ep-color-primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.module-trend-table-wrap {
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.module-trend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.module-trend-table th,
+.module-trend-table td {
+  padding: 5px 6px;
+  text-align: left;
+}
+
+.module-trend-table th {
+  color: var(--ep-text-color-secondary);
+  font-weight: 650;
+}
+
+.module-trend-table td {
+  color: var(--ep-text-color-regular);
+}
+
+.module-trend-table th:last-child,
+.module-trend-table td:last-child {
+  text-align: right;
 }
 
 .module-count {

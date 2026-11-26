@@ -27,6 +27,8 @@ export default {
       subjects: "Data Subjects",
       mcpServices: "MCP Services",
       creationTrend: "15-day creation trend",
+      trendDate: "Date",
+      trendCount: "New",
       trendCaption: "15d new",
     },
     features: {
