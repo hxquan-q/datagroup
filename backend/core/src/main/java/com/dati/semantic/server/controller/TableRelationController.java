@@ -8,10 +8,13 @@ import com.dati.datasource.server.assembler.ColumnAssembler;
 import com.dati.datasource.server.pojo.ColumnInfoVO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.semantic.domain.model.TableRelation;
+import com.dati.semantic.domain.model.TableRelationRecommendation;
+import com.dati.semantic.domain.service.TableRelationRecommendationService;
 import com.dati.semantic.domain.service.TableRelationService;
 import com.dati.semantic.server.assembler.TableRelationAssembler;
 import com.dati.semantic.server.pojo.request.CreateTableRelationRequest;
 import com.dati.semantic.server.pojo.request.UpdateTableRelationRequest;
+import com.dati.semantic.server.pojo.vo.TableRelationRecommendationVO;
 import com.dati.semantic.server.pojo.vo.TableRelationVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TableRelationController {
     private final TableRelationService service;
+    private final TableRelationRecommendationService recommendationService;
     private final TableRelationAssembler assembler;
     private final TableInfoDAO tableInfoDAO;
     private final ColumnAssembler columnAssembler;
@@ -51,6 +55,14 @@ public class TableRelationController {
         return assembler.toPageResponse(page, tableNames(page.getContent()));
     }
 
+    @GetMapping("/v1/subjects/{subjectId}/relations/recommendations")
+    public List<TableRelationRecommendationVO> recommendations(@PathVariable String subjectId,
+                                                               @RequestParam(required = false) Integer limit) {
+        return recommendationService.recommendRelations(subjectId, limit).stream()
+            .map(TableRelationController::toRecommendationVO)
+            .toList();
+    }
+
     @GetMapping("/v1/subjects/{subjectId}/tables/{tableId}/relation-columns")
     public List<ColumnInfoVO> relationColumns(@PathVariable String subjectId, @PathVariable String tableId) {
         return service.getRelationColumns(subjectId, tableId).stream().map(columnAssembler::toColumnInfoVO).toList();
@@ -73,6 +85,21 @@ public class TableRelationController {
     public IdResponse delete(@PathVariable String id) {
         service.deleteRelation(id);
         return new IdResponse(id);
+    }
+
+    private static TableRelationRecommendationVO toRecommendationVO(TableRelationRecommendation item) {
+        TableRelationRecommendationVO vo = new TableRelationRecommendationVO();
+        vo.setFactTableId(item.getFactTableId());
+        vo.setFactTableName(item.getFactTableName());
+        vo.setFactColumn(item.getFactColumn());
+        vo.setDimensionTableId(item.getDimensionTableId());
+        vo.setDimensionTableName(item.getDimensionTableName());
+        vo.setDimensionColumn(item.getDimensionColumn());
+        vo.setCardinality(item.getCardinality());
+        vo.setScore(item.getScore());
+        vo.setConfidence(item.getConfidence());
+        vo.setEvidence(item.getEvidence());
+        return vo;
     }
 
     private Map<String, String> tableNames(List<TableRelation> relations) {

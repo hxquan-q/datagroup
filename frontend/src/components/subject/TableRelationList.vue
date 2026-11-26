@@ -2,11 +2,11 @@
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, RefreshCw as Refresh } from "@lucide/vue";
+import { Plus, RefreshCw as Refresh, WandSparkles } from "@lucide/vue";
 import { getSubjectTables, type TableInfoVO } from "~/api/subject";
 import type { TableColumnVO } from "~/api/column";
-import type { TableRelationPayload, TableRelationVO } from "~/api/table-relation";
-import { createTableRelation, deleteTableRelation, listRelationColumns, listTableRelations, updateTableRelation } from "~/api/table-relation";
+import type { TableRelationPayload, TableRelationRecommendationVO, TableRelationVO } from "~/api/table-relation";
+import { createTableRelation, deleteTableRelation, listRelationColumns, listTableRelationRecommendations, listTableRelations, updateTableRelation } from "~/api/table-relation";
 import { notifyError } from "~/api/http";
 import { formatDateTime } from "~/composables";
 
@@ -24,6 +24,10 @@ const editing = ref<TableRelationVO | null>(null);
 const factColumns = ref<TableColumnVO[]>([]);
 const dimensionColumns = ref<TableColumnVO[]>([]);
 const form = ref<TableRelationPayload>({ cardinality: "MANY_TO_ONE" });
+const recommendVisible = ref(false);
+const recommending = ref(false);
+const confirmingKey = ref("");
+const recommendations = ref<TableRelationRecommendationVO[]>([]);
 const tableOptions = computed(() => tables.value.map((table) => ({ label: table.name, value: table.id })));
 const cardinalityOptions = ["MANY_TO_ONE", "ONE_TO_ONE", "ONE_TO_MANY", "MANY_TO_MANY"];
 
@@ -110,6 +114,47 @@ async function save() {
   finally { saving.value = false; }
 }
 
+function recommendationKey(item: TableRelationRecommendationVO) {
+  return `${item.fact_table_id}|${item.fact_column}|${item.dimension_table_id}|${item.dimension_column}`;
+}
+
+function confidenceType(confidence?: string) {
+  if (confidence === "HIGH") return "success";
+  if (confidence === "MEDIUM") return "warning";
+  return "info";
+}
+
+function evidenceLabel(code: string) {
+  return t(`relation.evidenceLabels.${code}`);
+}
+
+async function openRecommendations() {
+  recommendVisible.value = true;
+  recommending.value = true;
+  try {
+    recommendations.value = await listTableRelationRecommendations(props.subjectId, 50);
+  } catch (error) { notifyError(error, t("common.loadFailed")); }
+  finally { recommending.value = false; }
+}
+
+async function confirmRecommendation(item: TableRelationRecommendationVO) {
+  const key = recommendationKey(item);
+  confirmingKey.value = key;
+  try {
+    await createTableRelation(props.subjectId, {
+      fact_table_id: item.fact_table_id,
+      fact_column: item.fact_column,
+      dimension_table_id: item.dimension_table_id,
+      dimension_column: item.dimension_column,
+      cardinality: item.cardinality || "MANY_TO_ONE",
+    });
+    recommendations.value = recommendations.value.filter((candidate) => recommendationKey(candidate) !== key);
+    ElMessage.success(t("relation.confirmSuccess"));
+    await loadRelations();
+  } catch (error) { notifyError(error, t("common.operationFailed")); }
+  finally { confirmingKey.value = ""; }
+}
+
 async function remove(row: TableRelationVO) {
   try {
     await ElMessageBox.confirm(t("relation.deleteConfirm"), t("common.warning"), { type: "warning" });
@@ -129,8 +174,9 @@ onMounted(() => { loadTables(); loadRelations(); });
         <div class="text-base font-semibold">{{ t("relation.title") }}</div>
         <div class="mt-1 text-xs text-[var(--ep-text-color-secondary)]">{{ t("relation.subtitle") }}</div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <el-button :icon="Refresh" @click="loadRelations">{{ t("common.refresh") }}</el-button>
+        <el-button :icon="WandSparkles" @click="openRecommendations">{{ t("relation.recommendButton") }}</el-button>
         <el-button type="primary" :icon="Plus" @click="openCreate">{{ t("relation.createButton") }}</el-button>
       </div>
     </div>
@@ -167,7 +213,44 @@ onMounted(() => { loadTables(); loadRelations(); });
       <el-pagination v-model:current-page="page" v-model:page-size="size" :total="total" layout="total, prev, pager, next" background @current-change="loadRelations" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? t('relation.editTitle') : t('relation.createTitle')" width="640px" destroy-on-close>
+    <el-dialog v-model="recommendVisible" :title="t('relation.recommendTitle')" width="min(920px, calc(100vw - 32px))" destroy-on-close>
+      <div class="mb-3 text-xs leading-5 text-[var(--ep-text-color-secondary)]">{{ t("relation.recommendSubtitle") }}</div>
+      <el-table v-loading="recommending" :data="recommendations" border stripe max-height="520" class="w-full">
+        <el-table-column :label="t('relation.factTable')" min-width="170">
+          <template #default="{ row }">
+            <div class="font-medium">{{ row.fact_table_name || row.fact_table_id }}</div>
+            <div class="font-mono text-xs text-[var(--ep-text-color-secondary)]">{{ row.fact_column }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('relation.dimensionTable')" min-width="170">
+          <template #default="{ row }">
+            <div class="font-medium">{{ row.dimension_table_name || row.dimension_table_id }}</div>
+            <div class="font-mono text-xs text-[var(--ep-text-color-secondary)]">{{ row.dimension_column }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('relation.confidence')" width="105" align="center">
+          <template #default="{ row }"><el-tag :type="confidenceType(row.confidence)" size="small">{{ row.confidence || "-" }}</el-tag></template>
+        </el-table-column>
+        <el-table-column :label="t('relation.score')" width="80" align="center">
+          <template #default="{ row }">{{ row.score ?? "-" }}</template>
+        </el-table-column>
+        <el-table-column :label="t('relation.evidence')" min-width="230">
+          <template #default="{ row }">
+            <div class="flex flex-wrap gap-1">
+              <el-tag v-for="code in row.evidence || []" :key="code" size="small" effect="plain">{{ evidenceLabel(code) }}</el-tag>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.actions')" width="105" align="center">
+          <template #default="{ row }">
+            <el-button type="primary" link :loading="confirmingKey === recommendationKey(row)" @click="confirmRecommendation(row)">{{ t("relation.confirm") }}</el-button>
+          </template>
+        </el-table-column>
+        <template #empty><el-empty :description="t('relation.emptyRecommendations')" :image-size="88" /></template>
+      </el-table>
+    </el-dialog>
+
+    <el-dialog v-model="dialogVisible" :title="editing ? t('relation.editTitle') : t('relation.createTitle')" width="min(640px, calc(100vw - 32px))" destroy-on-close>
       <el-form label-position="top">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <el-form-item :label="t('relation.factTable')" required>

@@ -14,6 +14,19 @@ export interface TableRelationVO extends BaseResourceVO {
   revision?: number;
 }
 
+export interface TableRelationRecommendationVO {
+  fact_table_id: string;
+  fact_table_name?: string;
+  fact_column: string;
+  dimension_table_id: string;
+  dimension_table_name?: string;
+  dimension_column: string;
+  cardinality: string;
+  score?: number;
+  confidence?: string;
+  evidence?: string[];
+}
+
 export interface TableRelationPayload {
   fact_table_id?: string;
   fact_column?: string;
@@ -26,6 +39,10 @@ export interface TableRelationPayload {
 
 export function listTableRelations(subjectId: string, page = 1, size = 20): Promise<PageResponse<TableRelationVO>> {
   return get<PageResponse<TableRelationVO>>(`/v1/subjects/${encodeURIComponent(subjectId)}/relations`, { page, size });
+}
+
+export function listTableRelationRecommendations(subjectId: string, limit = 50): Promise<TableRelationRecommendationVO[]> {
+  return get<TableRelationRecommendationVO[]>(`/v1/subjects/${encodeURIComponent(subjectId)}/relations/recommendations`, { limit });
 }
 
 export function createTableRelation(subjectId: string, body: TableRelationPayload): Promise<IdResponse> {
