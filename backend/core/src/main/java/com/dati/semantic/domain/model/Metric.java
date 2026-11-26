@@ -20,6 +20,10 @@ public class Metric extends BaseResource {
     private String timeField;
     private String timeZone;
     private List<String> allowedDimensions = new ArrayList<>();
+    private List<MetricDimension> dimensionMappings = new ArrayList<>();
+    private String measureExpression;
+    private String factSchema;
+    private String factTableName;
     private String sqlTemplate;
     private List<MetricParameter> parameters = new ArrayList<>();
     private Integer timeout = 30;

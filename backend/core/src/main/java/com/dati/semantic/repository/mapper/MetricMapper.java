@@ -25,6 +25,10 @@ public class MetricMapper {
         po.setTimeField(metric.getTimeField());
         po.setTimeZone(metric.getTimeZone());
         po.setAllowedDimensions(metric.getAllowedDimensions() != null ? metric.getAllowedDimensions() : new ArrayList<>());
+        po.setDimensionMappings(metric.getDimensionMappings() != null ? metric.getDimensionMappings() : new ArrayList<>());
+        po.setMeasureExpression(metric.getMeasureExpression());
+        po.setFactSchema(metric.getFactSchema());
+        po.setFactTableName(metric.getFactTableName());
         po.setSqlTemplate(metric.getSqlTemplate());
         po.setParameters(metric.getParameters() != null ? metric.getParameters() : new ArrayList<>());
         po.setTimeout(metric.getTimeout());
@@ -44,6 +48,10 @@ public class MetricMapper {
         metric.setTimeField(po.getTimeField());
         metric.setTimeZone(po.getTimeZone());
         metric.setAllowedDimensions(po.getAllowedDimensions() != null ? po.getAllowedDimensions() : new ArrayList<>());
+        metric.setDimensionMappings(po.getDimensionMappings() != null ? po.getDimensionMappings() : new ArrayList<>());
+        metric.setMeasureExpression(po.getMeasureExpression());
+        metric.setFactSchema(po.getFactSchema());
+        metric.setFactTableName(po.getFactTableName());
         metric.setSqlTemplate(po.getSqlTemplate());
         metric.setParameters(po.getParameters() != null ? po.getParameters() : new ArrayList<>());
         metric.setTimeout(po.getTimeout());

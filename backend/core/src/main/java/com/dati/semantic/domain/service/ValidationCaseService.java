@@ -16,8 +16,10 @@ import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 import com.dati.mcp.domain.model.ToolParameter;
-import com.dati.mcp.domain.service.ParameterizedSqlExecutor;
+import com.dati.mcp.domain.service.McpTableRelationSnapshotService;
+import com.dati.mcp.domain.service.QueryMetricExecutor;
 import com.dati.mcp.domain.service.ToolExecutionContext;
+import com.dati.mcp.server.pojo.MetricExecution;
 import com.dati.mcp.server.pojo.SqlExecution;
 import com.dati.mcp.server.pojo.StatementResult;
 import com.dati.permission.domain.service.PermissionService;
@@ -26,6 +28,8 @@ import com.dati.semantic.repository.dao.MetricDAO;
 import com.dati.semantic.repository.dao.SubjectDAO;
 import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.semantic.repository.dao.ValidationCaseDAO;
+import com.dati.mcp.repository.mapper.McpServiceSnapshotMapper;
+import com.dati.semantic.repository.mapper.MetricMapper;
 import com.dati.semantic.repository.mapper.ValidationCaseMapper;
 import com.dati.semantic.repository.po.MetricPO;
 import com.dati.semantic.repository.po.SubjectPO;
@@ -49,13 +53,15 @@ public class ValidationCaseService {
     private final SubjectTableDAO subjectTableDAO;
     private final TableInfoDAO tableInfoDAO;
     private final DataSourceDAO dataSourceDAO;
-    private final ParameterizedSqlExecutor parameterizedSqlExecutor;
+    private final QueryMetricExecutor queryMetricExecutor;
+    private final McpTableRelationSnapshotService relationSnapshotService;
     private final PermissionService permissionService;
 
     public ValidationCaseService(ValidationCaseDAO validationCaseDAO, SubjectDAO subjectDAO,
                                  MetricDAO metricDAO, SubjectTableDAO subjectTableDAO,
                                  TableInfoDAO tableInfoDAO, DataSourceDAO dataSourceDAO,
-                                 ParameterizedSqlExecutor parameterizedSqlExecutor,
+                                 QueryMetricExecutor queryMetricExecutor,
+                                 McpTableRelationSnapshotService relationSnapshotService,
                                  PermissionService permissionService) {
         this.validationCaseDAO = validationCaseDAO;
         this.subjectDAO = subjectDAO;
@@ -63,7 +69,8 @@ public class ValidationCaseService {
         this.subjectTableDAO = subjectTableDAO;
         this.tableInfoDAO = tableInfoDAO;
         this.dataSourceDAO = dataSourceDAO;
-        this.parameterizedSqlExecutor = parameterizedSqlExecutor;
+        this.queryMetricExecutor = queryMetricExecutor;
+        this.relationSnapshotService = relationSnapshotService;
         this.permissionService = permissionService;
     }
 
@@ -233,22 +240,19 @@ public class ValidationCaseService {
     }
 
     private SqlExecution executeMetric(ValidationCasePO po, MetricPO metric) {
-        ToolConfig.ParamSqlConfig config = new ToolConfig.ParamSqlConfig();
-        config.setDataSourceId(metric.getDataSourceId());
-        config.setSqlTemplate(metric.getSqlTemplate());
-        config.setParameters(metric.getParameters().stream()
-            .map(parameter -> new ToolParameter(parameter.getName(), parameter.getType(), parameter.isRequired(),
-                parameter.getDefaultValue(), parameter.getDescription()))
-            .toList());
-        config.setTimeout(metric.getTimeout());
-        config.setMaxRows(metric.getMaxRows());
         Map<String, Object> arguments = new HashMap<>(po.getArguments() != null ? po.getArguments() : Map.of());
-        if (po.getDimensions() != null && !po.getDimensions().isEmpty()) {
-            arguments.put("dimensions", po.getDimensions());
-        }
-        ToolExecutionContext ctx = new ToolExecutionContext("validation-case", McpToolType.PARAMETERIZED_SQL,
-            config, arguments, List.of(subjectScope(po.getSubjectId())));
-        return (SqlExecution) parameterizedSqlExecutor.execute(ctx);
+        List<String> dimensions = po.getDimensions() != null ? po.getDimensions() : List.of();
+        McpServiceDataScope scope = subjectScope(po.getSubjectId());
+        com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft draft = McpServiceSnapshotMapper.toMetricDraft(
+            MetricMapper.toMetric(metric));
+        List<com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft> relations =
+            relationSnapshotService.buildRelationDrafts(List.of(po.getSubjectId()), List.of(scope));
+        ToolExecutionContext ctx = new ToolExecutionContext("validation-case", McpToolType.QUERY_METRIC,
+            new ToolConfig.QueryMetricConfig(),
+            new com.dati.mcp.domain.model.param.QueryMetricArgs(metric.getId(), arguments, dimensions),
+            List.of(scope), List.of(draft), relations);
+        MetricExecution execution = (MetricExecution) queryMetricExecutor.execute(ctx);
+        return execution.execution();
     }
 
     private McpServiceDataScope subjectScope(String subjectId) {

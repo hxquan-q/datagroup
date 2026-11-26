@@ -1,6 +1,7 @@
 package com.dati.semantic.server.pojo.vo;
 
 import com.dati.base.pojo.BaseResourceVO;
+import com.dati.semantic.domain.model.MetricDimension;
 import com.dati.semantic.domain.model.MetricParameter;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,6 +21,10 @@ public class MetricVO extends BaseResourceVO {
     private String timeField;
     private String timeZone;
     private List<String> allowedDimensions = new ArrayList<>();
+    private List<MetricDimension> dimensionMappings = new ArrayList<>();
+    private String measureExpression;
+    private String factSchema;
+    private String factTableName;
     private String sqlTemplate;
     private List<MetricParameter> parameters = new ArrayList<>();
     private Integer timeout;

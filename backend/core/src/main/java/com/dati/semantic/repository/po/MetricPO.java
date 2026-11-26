@@ -1,6 +1,7 @@
 package com.dati.semantic.repository.po;
 
 import com.dati.base.pojo.BaseResourcePO;
+import com.dati.semantic.domain.model.MetricDimension;
 import com.dati.semantic.domain.model.MetricParameter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,7 +58,20 @@ public class MetricPO extends BaseResourcePO {
     @Column(name = "allowed_dimensions", columnDefinition = "json")
     private List<String> allowedDimensions = new ArrayList<>();
 
-    @Column(name = "sql_template", nullable = false, columnDefinition = "text")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "dimension_mappings", columnDefinition = "json")
+    private List<MetricDimension> dimensionMappings = new ArrayList<>();
+
+    @Column(name = "measure_expression", columnDefinition = "text")
+    private String measureExpression;
+
+    @Column(name = "fact_schema", length = 128)
+    private String factSchema;
+
+    @Column(name = "fact_table_name", length = 128)
+    private String factTableName;
+
+    @Column(name = "sql_template", columnDefinition = "text")
     private String sqlTemplate;
 
     @JdbcTypeCode(SqlTypes.JSON)

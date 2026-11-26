@@ -71,6 +71,10 @@ public class MetricService {
         if (patch.getTimeField() != null) po.setTimeField(patch.getTimeField());
         if (patch.getTimeZone() != null) po.setTimeZone(patch.getTimeZone());
         if (patch.getAllowedDimensions() != null) po.setAllowedDimensions(patch.getAllowedDimensions());
+        if (patch.getDimensionMappings() != null) po.setDimensionMappings(patch.getDimensionMappings());
+        if (patch.getMeasureExpression() != null) po.setMeasureExpression(patch.getMeasureExpression());
+        if (patch.getFactSchema() != null) po.setFactSchema(patch.getFactSchema());
+        if (patch.getFactTableName() != null) po.setFactTableName(patch.getFactTableName());
         if (patch.getSqlTemplate() != null) {
             if (patch.getSqlTemplate().isBlank()) {
                 throw new DatiException(ErrorCode.INVALID_PARAMETER, "sqlTemplate must not be blank");
@@ -82,6 +86,8 @@ public class MetricService {
         if (patch.getMaxRows() != null) po.setMaxRows(patch.getMaxRows());
         if (patch.getUpdatedBy() != null) po.setUpdatedBy(patch.getUpdatedBy());
         validateBudget(po.getTimeout(), po.getMaxRows());
+        validateDefinition(po.getSqlTemplate(), po.getMeasureExpression(), po.getFactSchema(),
+            po.getFactTableName(), po.getTimeField(), po.getDimensionMappings());
         po.setRevision((po.getRevision() == null ? 1 : po.getRevision()) + 1);
         return MetricMapper.toMetric(metricDAO.save(po));
     }
@@ -132,10 +138,59 @@ public class MetricService {
         if (metric.getCode() == null || !CODE_PATTERN.matcher(metric.getCode()).matches()) {
             throw new DatiException(ErrorCode.SM_METRIC_CODE_INVALID, metric.getCode());
         }
-        if (metric.getSqlTemplate() == null || metric.getSqlTemplate().isBlank()) {
-            throw new DatiException(ErrorCode.INVALID_PARAMETER, "sqlTemplate is required");
-        }
+        validateDefinition(metric.getSqlTemplate(), metric.getMeasureExpression(), metric.getFactSchema(),
+            metric.getFactTableName(), metric.getTimeField(), metric.getDimensionMappings());
         validateBudget(metric.getTimeout(), metric.getMaxRows());
+    }
+
+    private void validateDefinition(String sqlTemplate, String measureExpression, String factSchema,
+                                    String factTableName, String timeField,
+                                    List<com.dati.semantic.domain.model.MetricDimension> dimensionMappings) {
+        boolean hasSql = sqlTemplate != null && !sqlTemplate.isBlank();
+        boolean hasStructured = measureExpression != null && !measureExpression.isBlank()
+            || factSchema != null && !factSchema.isBlank()
+            || factTableName != null && !factTableName.isBlank()
+            || dimensionMappings != null && !dimensionMappings.isEmpty();
+        if (!hasSql && !hasStructured) {
+            throw new DatiException(ErrorCode.INVALID_PARAMETER, "sqlTemplate or structured metric definition is required");
+        }
+        if (!hasStructured) {
+            return;
+        }
+        if (measureExpression == null || measureExpression.isBlank() || factTableName == null || factTableName.isBlank()) {
+            throw new DatiException(ErrorCode.INVALID_PARAMETER,
+                "structured metrics require measureExpression and factTableName");
+        }
+        if (measureExpression.contains(";") || measureExpression.contains("--")
+            || measureExpression.contains("/*") || measureExpression.contains("*/")) {
+            throw new DatiException(ErrorCode.INVALID_PARAMETER, "measureExpression must be a single SQL expression");
+        }
+        validateIdentifier(factSchema, "factSchema");
+        validateIdentifier(factTableName, "factTableName");
+        validateIdentifier(timeField, "timeField");
+        if (dimensionMappings != null) {
+            for (com.dati.semantic.domain.model.MetricDimension dimension : dimensionMappings) {
+                if (dimension == null || dimension.getName() == null || dimension.getName().isBlank()
+                    || dimension.getTableName() == null || dimension.getTableName().isBlank()
+                    || dimension.getColumn() == null || dimension.getColumn().isBlank()) {
+                    throw new DatiException(ErrorCode.INVALID_PARAMETER,
+                        "dimension mappings require name, tableName, and column");
+                }
+                validateIdentifier(dimension.getName(), "dimension name");
+                validateIdentifier(dimension.getSchema(), "dimension schema");
+                validateIdentifier(dimension.getTableName(), "dimension tableName");
+                validateIdentifier(dimension.getColumn(), "dimension column");
+            }
+        }
+    }
+
+    private void validateIdentifier(String value, String label) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        if (!value.matches("[\\p{L}_][\\p{L}\\p{N}_]*")) {
+            throw new DatiException(ErrorCode.INVALID_PARAMETER, label + " must be an unquoted SQL identifier");
+        }
     }
 
     private void validateBudget(Integer timeout, Integer maxRows) {

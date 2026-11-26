@@ -220,7 +220,8 @@ public class McpServiceSnapshotMapper {
                 metric.getId(), metric.getSubjectId(), metric.getDataSourceId(), metric.getCode(),
                 metric.getName(), metric.getDescription(), metric.getAliases(), metric.getOwner(),
                 metric.getGrain(), metric.getTimeField(), metric.getTimeZone(),
-                metric.getAllowedDimensions(), metric.getSqlTemplate(), metric.getParameters(),
+                metric.getAllowedDimensions(), metric.getDimensionMappings(), metric.getMeasureExpression(),
+                metric.getFactSchema(), metric.getFactTableName(), metric.getSqlTemplate(), metric.getParameters(),
                 metric.getTimeout(), metric.getMaxRows(), metric.getRevision());
     }
 
