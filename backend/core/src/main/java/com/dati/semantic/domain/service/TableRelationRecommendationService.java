@@ -142,7 +142,9 @@ public class TableRelationRecommendationService {
             candidate.setDimensionTableId(dimensionTable.getId());
             candidate.setDimensionTableName(dimensionTable.getName());
             candidate.setDimensionColumn(dimensionColumn.getName());
-            candidate.setCardinality(factColumn.isPrimaryKey() && dimensionColumn.isPrimaryKey() ? "ONE_TO_ONE" : factColumn.isPrimaryKey() || dimensionColumn.isPrimaryKey() ? "MANY_TO_ONE" : "MANY_TO_MANY");
+            boolean factUnique = factColumn.isPrimaryKey() && factColumn.isUniqueKey();
+            boolean dimensionUnique = dimensionColumn.isPrimaryKey() && dimensionColumn.isUniqueKey();
+            candidate.setCardinality(factUnique && dimensionUnique ? "ONE_TO_ONE" : dimensionUnique ? "MANY_TO_ONE" : "MANY_TO_MANY");
             candidate.setScore(100);
             candidate.setConfidence("HIGH");
             candidate.setSource("FOREIGN_KEY");

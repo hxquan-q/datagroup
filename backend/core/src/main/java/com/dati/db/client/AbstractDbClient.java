@@ -76,6 +76,7 @@ public abstract class AbstractDbClient implements DbClient {
         }
         Set<String> primaryKeys = primaryKeyColumns(connection, actualCatalog, actualSchema, table);
         Set<String> uniqueColumns = singleColumnUniqueIndexes(connection, actualCatalog, actualSchema, table);
+        if (primaryKeys.size() == 1) uniqueColumns.addAll(primaryKeys);
         return columns.stream()
             .map(column -> new Column(column.name(), column.type(), column.comment(),
                 primaryKeys.contains(column.name()), uniqueColumns.contains(column.name())))
@@ -133,7 +134,7 @@ public abstract class AbstractDbClient implements DbClient {
         try (ResultSet rs = connection.getMetaData().getPrimaryKeys(catalog, schema, table)) {
             while (rs.next()) result.add(rs.getString("COLUMN_NAME"));
         }
-        return result.size() == 1 ? result : Set.of();
+        return result;
     }
 
     private static Set<String> singleColumnUniqueIndexes(Connection connection, String catalog, String schema, String table) throws SQLException {

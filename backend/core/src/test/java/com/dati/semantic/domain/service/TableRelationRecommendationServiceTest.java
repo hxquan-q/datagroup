@@ -278,6 +278,7 @@ class TableRelationRecommendationServiceTest {
         when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(column("fact-col-1", "fact-1", "FMoID", "INT", "")));
         ColumnInfoPO dimensionColumn = column("dim-col-1", "dim-1", "F_id", "INT", "");
         dimensionColumn.setPrimaryKey(true);
+        dimensionColumn.setUniqueKey(true);
         when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(dimensionColumn));
         TableForeignKeyPO key = new TableForeignKeyPO();
         key.setTableId("fact-1");
@@ -306,9 +307,11 @@ class TableRelationRecommendationServiceTest {
         mockTables(table("fact-1", "t_mes_passstaion", ""), table("dim-1", "t_mo", ""));
         ColumnInfoPO factColumn = column("fact-col-1", "fact-1", "FMoID", "INT", "");
         factColumn.setPrimaryKey(true);
+        factColumn.setUniqueKey(true);
         when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(factColumn));
         ColumnInfoPO dimensionColumn = column("dim-col-1", "dim-1", "F_id", "INT", "");
         dimensionColumn.setPrimaryKey(true);
+        dimensionColumn.setUniqueKey(true);
         when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(dimensionColumn));
         TableForeignKeyPO key = new TableForeignKeyPO();
         key.setTableId("fact-1");
