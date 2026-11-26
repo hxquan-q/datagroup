@@ -1,80 +1,243 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from "vue";
+import { computed, ref, watch } from "vue";
+import type { EChartsCoreOption } from "echarts/core";
 import { useI18n } from "vue-i18n";
 import { useMediaQuery } from "@vueuse/core";
+import { keepPreviousData, useQuery } from "@tanstack/vue-query";
 import { RefreshCw as Refresh, TriangleAlert as Warning, X as Close } from "@lucide/vue";
-import type { McpUsageStatsVO, McpInvocationLogVO } from "~/api/mcp-usage";
+import type { McpInvocationLogVO } from "~/api/mcp-usage";
 import { getMcpUsageStats, listMcpInvocationLogs } from "~/api/mcp-usage";
+import { mcpUsageKeys } from "~/api/query-keys";
+import BaseChart from "~/components/common/BaseChart.vue";
 import DataTableShell from "~/components/common/DataTableShell.vue";
-import { formatDateTime } from "~/composables";
+import { formatDateTime, useChartColors } from "~/composables";
+import { escapeHtml } from "~/utils/html";
 
 const { t } = useI18n();
 const props = defineProps<{ serviceId: string }>();
 
-const statsLoading = ref(false);
-const logsLoading = ref(false);
-
-const stats = ref<McpUsageStatsVO | null>(null);
-const logs = ref<McpInvocationLogVO[]>([]);
 const selectedLog = ref<McpInvocationLogVO | null>(null);
 const logDetailVisible = ref(false);
 const isPhoneDrawer = useMediaQuery("(max-width: 440px)");
 const logDetailDrawerSize = computed(() => (isPhoneDrawer.value ? "100%" : "440px"));
-const totalLogs = ref(0);
+const chartColors = useChartColors();
 
 const page = ref(1);
 const size = ref(10);
 const toolFilter = ref("");
+const appliedToolFilter = ref("");
 const statusFilter = ref<"all" | "true" | "false">("all");
+const successFilter = computed<boolean | null>(() =>
+  statusFilter.value === "all" ? null : statusFilter.value === "true",
+);
 
-const loadStats = async () => {
-  try {
-    statsLoading.value = true;
-    stats.value = await getMcpUsageStats(props.serviceId, 15);
-  } finally {
-    statsLoading.value = false;
-  }
-};
+const statsQueryKey = computed(() => mcpUsageKeys.stats(props.serviceId, 15));
+const { data: stats, isFetching: statsLoading, refetch: refetchStats } = useQuery({
+  queryKey: statsQueryKey,
+  queryFn: ({ signal }) => getMcpUsageStats(props.serviceId, 15, signal),
+});
 
-const loadLogs = async () => {
-  try {
-    logsLoading.value = true;
-    const successParam =
-      statusFilter.value === "all"
-        ? undefined
-        : statusFilter.value === "true";
-    const res = await listMcpInvocationLogs(
+const logsQueryKey = computed(() =>
+  mcpUsageKeys.logs(
+    props.serviceId,
+    page.value,
+    size.value,
+    appliedToolFilter.value,
+    successFilter.value,
+  ),
+);
+const { data: logsPage, isFetching: logsLoading, refetch: refetchLogs } = useQuery({
+  queryKey: logsQueryKey,
+  queryFn: ({ signal }) =>
+    listMcpInvocationLogs(
       props.serviceId,
       page.value,
       size.value,
-      toolFilter.value.trim(),
-      successParam,
-    );
-    logs.value = res.data;
-    totalLogs.value = res.total;
-  } finally {
-    logsLoading.value = false;
-  }
-};
+      appliedToolFilter.value || undefined,
+      successFilter.value ?? undefined,
+      signal,
+    ),
+  placeholderData: keepPreviousData,
+});
+
+const logs = computed(() => logsPage.value?.data || []);
+const totalLogs = computed(() => logsPage.value?.total ?? 0);
+
+const trendOption = computed<EChartsCoreOption>(() => {
+  const colors = chartColors.value;
+  const trend = stats.value?.daily_trend || [];
+  const successRateLabel = t("mcpService.stats.successRate");
+
+  return {
+    animationDuration: 300,
+    grid: { left: 8, right: 12, top: 38, bottom: 4, containLabel: true },
+    legend: {
+      top: 0,
+      right: 0,
+      textStyle: { color: colors.textSecondary, fontSize: 11 },
+      itemWidth: 10,
+      itemHeight: 10,
+    },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      textStyle: { color: colors.textPrimary, fontSize: 12 },
+      formatter: (params: any) => {
+        const items = Array.isArray(params) ? params : [params];
+        const lines = items.map((item) => {
+          const suffix = item.seriesType === "line" ? "%" : "";
+          return `${item.marker}${escapeHtml(String(item.seriesName ?? ""))}: ${item.value}${suffix}`;
+        });
+        return [escapeHtml(items[0]?.axisValue || ""), ...lines].join("<br/>");
+      },
+    },
+    xAxis: {
+      type: "category",
+      data: trend.map((item) => item.date),
+      axisLabel: {
+        color: colors.textSecondary,
+        formatter: (value: string) => value.slice(5),
+      },
+      axisLine: { lineStyle: { color: colors.border } },
+      axisTick: { show: false },
+    },
+    yAxis: [
+      {
+        type: "value",
+        minInterval: 1,
+        axisLabel: { color: colors.textSecondary },
+        splitLine: { lineStyle: { color: colors.border, opacity: 0.55 } },
+      },
+      {
+        type: "value",
+        min: 0,
+        max: 100,
+        axisLabel: { color: colors.textSecondary, formatter: "{value}%" },
+        splitLine: { show: false },
+      },
+    ],
+    series: [
+      {
+        name: t("mcpService.stats.successCount"),
+        type: "bar",
+        stack: "calls",
+        barMaxWidth: 18,
+        data: trend.map((item) => item.success_calls),
+        itemStyle: { color: colors.success },
+      },
+      {
+        name: t("mcpService.stats.failedCount"),
+        type: "bar",
+        stack: "calls",
+        barMaxWidth: 18,
+        data: trend.map((item) => item.failed_calls),
+        itemStyle: { color: colors.danger, borderRadius: [3, 3, 0, 0] },
+      },
+      {
+        name: successRateLabel,
+        type: "line",
+        yAxisIndex: 1,
+        smooth: true,
+        symbolSize: 5,
+        data: trend.map((item) => item.success_rate),
+        lineStyle: { width: 2, color: colors.primary },
+        itemStyle: { color: colors.primary },
+      },
+    ],
+  };
+});
+
+const toolDistributionOption = computed<EChartsCoreOption>(() => {
+  const colors = chartColors.value;
+  const tools = [...(stats.value?.tool_distribution || [])]
+    .sort((a, b) => b.call_count - a.call_count)
+    .slice(0, 8)
+    .reverse();
+
+  return {
+    animationDuration: 300,
+    grid: { left: 8, right: 44, top: 10, bottom: 4, containLabel: true },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      textStyle: { color: colors.textPrimary, fontSize: 12 },
+      formatter: (params: any) => {
+        const item = Array.isArray(params) ? params[0] : params;
+        const tool = tools[item?.dataIndex];
+        if (!tool) return "";
+        return [
+          `<strong>${escapeHtml(tool.tool_name)}</strong>`,
+          `${t("mcpService.stats.callCount")}: ${tool.call_count}`,
+          `${t("mcpService.stats.successRate")}: ${tool.success_rate}%`,
+        ].join("<br/>");
+      },
+    },
+    xAxis: {
+      type: "value",
+      minInterval: 1,
+      axisLabel: { color: colors.textSecondary },
+      splitLine: { lineStyle: { color: colors.border, opacity: 0.55 } },
+    },
+    yAxis: {
+      type: "category",
+      data: tools.map((tool) => tool.tool_name),
+      axisLabel: {
+        color: colors.textPrimary,
+        width: 112,
+        overflow: "truncate",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+      },
+      axisLine: { show: false },
+      axisTick: { show: false },
+    },
+    series: [
+      {
+        name: t("mcpService.stats.callCount"),
+        type: "bar",
+        data: tools.map((tool) => tool.call_count),
+        barMaxWidth: 16,
+        label: {
+          show: true,
+          position: "right",
+          color: colors.textSecondary,
+          fontSize: 11,
+          formatter: ({ dataIndex }: any) => `${tools[dataIndex]?.percentage ?? 0}%`,
+        },
+        itemStyle: { color: colors.primary, borderRadius: [0, 5, 5, 0] },
+      },
+    ],
+  };
+});
 
 const handleRefresh = async () => {
-  await Promise.all([loadStats(), loadLogs()]);
+  await Promise.all([refetchStats(), refetchLogs()]);
+};
+
+const handleStatusFilterChange = () => {
+  page.value = 1;
 };
 
 const handleFilterChange = () => {
+  const isSameQuery =
+    appliedToolFilter.value === toolFilter.value.trim() && page.value === 1;
+  appliedToolFilter.value = toolFilter.value.trim();
   page.value = 1;
-  loadLogs();
+  if (isSameQuery) {
+    void refetchLogs();
+  }
 };
 
 const handlePageChange = (newPage: number) => {
   page.value = newPage;
-  loadLogs();
 };
 
 const handleSizeChange = (newSize: number) => {
   size.value = newSize;
   page.value = 1;
-  loadLogs();
 };
 
 const openLogDetail = (log: McpInvocationLogVO) => {
@@ -82,12 +245,12 @@ const openLogDetail = (log: McpInvocationLogVO) => {
   logDetailVisible.value = true;
 };
 
-watch(() => props.serviceId, () => {
-  page.value = 1;
-  handleRefresh();
-});
-
-onMounted(handleRefresh);
+watch(
+  () => props.serviceId,
+  () => {
+    page.value = 1;
+  },
+);
 </script>
 
 <template>
@@ -145,27 +308,7 @@ onMounted(handleRefresh);
         <div v-if="!stats?.daily_trend?.length" class="py-6">
           <el-empty :description="t('mcpService.stats.emptyStats')" :image-size="60" />
         </div>
-        <div v-else class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
-          <div
-            v-for="item in stats.daily_trend"
-            :key="item.date"
-            class="flex items-center justify-between text-xs py-1.5 border-b border-[var(--ep-border-color-lighter)] last:border-none"
-          >
-            <span class="font-mono text-[var(--ep-text-color-regular)] w-24">{{ item.date }}</span>
-            <div class="flex-1 mx-3">
-              <el-progress
-                :percentage="item.success_rate"
-                :status="item.success_rate >= 95 ? 'success' : item.success_rate >= 90 ? 'warning' : 'exception'"
-                :stroke-width="8"
-                :show-text="false"
-              />
-            </div>
-            <div class="flex items-center gap-2 text-right">
-              <span class="font-medium text-[var(--ep-text-color-primary)]">{{ item.total_calls }} {{ t("mcpService.stats.times") }}</span>
-              <span class="text-[var(--ep-text-color-secondary)] text-[11px]">{{ item.avg_duration_ms }} ms</span>
-            </div>
-          </div>
-        </div>
+        <BaseChart v-else :option="trendOption" height="280px" />
       </div>
 
       <!-- Tool Distribution -->
@@ -178,27 +321,7 @@ onMounted(handleRefresh);
         <div v-if="!stats?.tool_distribution?.length" class="py-6">
           <el-empty :description="t('mcpService.stats.emptyStats')" :image-size="60" />
         </div>
-        <div v-else class="flex flex-col gap-3 max-h-72 overflow-y-auto pr-1">
-          <div
-            v-for="tool in stats.tool_distribution"
-            :key="tool.tool_name"
-            class="flex flex-col gap-1 text-xs"
-          >
-            <div class="flex items-center justify-between">
-              <span class="font-medium font-mono text-[var(--ep-text-color-primary)]">{{ tool.tool_name }}</span>
-              <div class="flex items-center gap-2 text-[var(--ep-text-color-secondary)]">
-                <span>{{ tool.call_count }} {{ t("mcpService.stats.times") }} ({{ tool.percentage }}%)</span>
-                <el-tag
-                  size="small"
-                  :type="tool.success_rate >= 95 ? 'success' : tool.success_rate >= 90 ? 'warning' : 'danger'"
-                >
-                  {{ tool.success_rate }}%
-                </el-tag>
-              </div>
-            </div>
-            <el-progress :percentage="tool.percentage" :stroke-width="6" :show-text="false" />
-          </div>
-        </div>
+        <BaseChart v-else :option="toolDistributionOption" height="280px" />
       </div>
     </div>
     <!-- Bottom Section: Invocation Logs Table -->
@@ -218,7 +341,7 @@ onMounted(handleRefresh);
           <el-select
             v-model="statusFilter"
             style="width: 120px"
-            @change="handleFilterChange"
+            @change="handleStatusFilterChange"
           >
             <el-option :label="t('mcpService.stats.statusAll')" value="all" />
             <el-option :label="t('mcpService.stats.statusSuccess')" value="true" />

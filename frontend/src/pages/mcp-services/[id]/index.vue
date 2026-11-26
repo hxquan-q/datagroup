@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, defineAsyncComponent } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
@@ -27,8 +27,11 @@ import DiffSummaryList from "~/components/mcp-service/DiffSummaryList.vue";
 import McpAccessConfigCard from "~/components/mcp-service/McpAccessConfigCard.vue";
 import PromptsTab from "~/components/mcp-service/PromptsTab.vue";
 import ToolsTab from "~/components/mcp-service/ToolsTab.vue";
-import UsageStatsTab from "~/components/mcp-service/UsageStatsTab.vue";
 import { formatDateTime } from "~/composables";
+
+const UsageStatsTab = defineAsyncComponent(() =>
+  import("~/components/mcp-service/UsageStatsTab.vue"),
+);
 
 const { t } = useI18n();
 const route = useRoute("/mcp-services/[id]/");
