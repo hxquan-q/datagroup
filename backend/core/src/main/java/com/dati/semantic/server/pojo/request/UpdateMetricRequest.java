@@ -1,5 +1,6 @@
 package com.dati.semantic.server.pojo.request;
 
+import com.dati.semantic.domain.model.MetricDimension;
 import com.dati.semantic.domain.model.MetricParameter;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -31,6 +32,16 @@ public class UpdateMetricRequest {
     private String timeZone;
 
     private List<String> allowedDimensions;
+
+    private List<MetricDimension> dimensionMappings;
+
+    private String measureExpression;
+
+    @Size(max = 128)
+    private String factSchema;
+
+    @Size(max = 128)
+    private String factTableName;
 
     private String sqlTemplate;
 

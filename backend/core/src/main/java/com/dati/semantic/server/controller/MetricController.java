@@ -40,6 +40,10 @@ public class MetricController {
         metric.setTimeField(request.getTimeField());
         metric.setTimeZone(request.getTimeZone());
         metric.setAllowedDimensions(request.getAllowedDimensions());
+        metric.setDimensionMappings(request.getDimensionMappings());
+        metric.setMeasureExpression(request.getMeasureExpression());
+        metric.setFactSchema(request.getFactSchema());
+        metric.setFactTableName(request.getFactTableName());
         metric.setSqlTemplate(request.getSqlTemplate());
         metric.setParameters(request.getParameters());
         metric.setTimeout(request.getTimeout());
@@ -72,6 +76,10 @@ public class MetricController {
         metric.setTimeField(request.getTimeField());
         metric.setTimeZone(request.getTimeZone());
         metric.setAllowedDimensions(request.getAllowedDimensions());
+        metric.setDimensionMappings(request.getDimensionMappings());
+        metric.setMeasureExpression(request.getMeasureExpression());
+        metric.setFactSchema(request.getFactSchema());
+        metric.setFactTableName(request.getFactTableName());
         metric.setSqlTemplate(request.getSqlTemplate());
         metric.setParameters(request.getParameters());
         metric.setTimeout(request.getTimeout());

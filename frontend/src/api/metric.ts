@@ -1,6 +1,15 @@
 import type { BaseResourceVO, IdResponse, PageResponse } from "~/api/types";
 import { del, get, post, put } from "./http";
 
+export interface MetricDimension {
+  name: string;
+  schema?: string;
+  table_name?: string;
+  tableName?: string;
+  column: string;
+  description?: string;
+}
+
 export interface MetricParameter {
   name: string;
   type?: string;
@@ -20,6 +29,10 @@ export interface MetricVO extends BaseResourceVO {
   time_field?: string;
   time_zone?: string;
   allowed_dimensions?: string[];
+  dimension_mappings?: MetricDimension[];
+  measure_expression?: string;
+  fact_schema?: string;
+  fact_table_name?: string;
   sql_template?: string;
   parameters?: MetricParameter[];
   timeout?: number;
@@ -37,6 +50,10 @@ export interface MetricPayload {
   time_field?: string;
   time_zone?: string;
   allowed_dimensions?: string[];
+  dimension_mappings?: MetricDimension[];
+  measure_expression?: string;
+  fact_schema?: string;
+  fact_table_name?: string;
   sql_template: string;
   parameters?: MetricParameter[];
   timeout?: number;

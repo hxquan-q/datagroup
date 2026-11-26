@@ -33,6 +33,10 @@ function emptyForm(): MetricPayload {
     time_field: "",
     time_zone: "Asia/Shanghai",
     allowed_dimensions: [],
+    dimension_mappings: [],
+    measure_expression: "",
+    fact_schema: "",
+    fact_table_name: "",
     sql_template: "",
     parameters: [],
     timeout: 30,
@@ -63,6 +67,10 @@ watch(
         time_field: metric.time_field || "",
         time_zone: metric.time_zone || "",
         allowed_dimensions: [...(metric.allowed_dimensions || [])],
+        dimension_mappings: (metric.dimension_mappings || []).map((item) => ({ ...item })),
+        measure_expression: metric.measure_expression || "",
+        fact_schema: metric.fact_schema || "",
+        fact_table_name: metric.fact_table_name || "",
         sql_template: metric.sql_template || "",
         parameters: metric.parameters || [],
         timeout: metric.timeout || 30,
@@ -108,9 +116,19 @@ function parseParameters(): MetricParameter[] | null {
 }
 
 function validateDefinition(): boolean {
-  if (!form.value.sql_template?.trim()) {
-    ElMessage.warning(t("metric.sqlRequired"));
+  const hasSql = Boolean(form.value.sql_template?.trim());
+  const hasStructured = Boolean(form.value.measure_expression?.trim() && form.value.fact_table_name?.trim());
+  if (!hasSql && !hasStructured) {
+    ElMessage.warning(t("metric.definitionRequired"));
     return false;
+  }
+  if (!hasSql && hasStructured) {
+    const invalid = (form.value.dimension_mappings || []).some((item) =>
+      !item.name?.trim() || !item.table_name?.trim() || !item.column?.trim());
+    if (invalid) {
+      ElMessage.warning(t("metric.dimensionMappingRequired"));
+      return false;
+    }
   }
   const parameters = parseParameters();
   if (!parameters) return false;
@@ -122,6 +140,20 @@ function next() {
   if (activeStep.value === 0 && !validateBasic()) return;
   if (activeStep.value === 1 && !validateDefinition()) return;
   activeStep.value += 1;
+}
+
+function addDimensionMapping() {
+  form.value.dimension_mappings = [...(form.value.dimension_mappings || []), {
+    name: "",
+    schema: "",
+    table_name: "",
+    column: "",
+    description: "",
+  }];
+}
+
+function removeDimensionMapping(index: number) {
+  form.value.dimension_mappings = (form.value.dimension_mappings || []).filter((_, itemIndex) => itemIndex !== index);
 }
 
 async function save() {
@@ -137,6 +169,10 @@ async function save() {
       grain: form.value.grain || "",
       time_field: form.value.time_field || "",
       time_zone: form.value.time_zone || "",
+      dimension_mappings: (form.value.dimension_mappings || []).filter((item) => item.name?.trim()),
+      measure_expression: form.value.measure_expression || "",
+      fact_schema: form.value.fact_schema || "",
+      fact_table_name: form.value.fact_table_name || "",
       sql_template: form.value.sql_template,
     };
     if (isEdit.value && props.metric?.id) {
@@ -208,7 +244,38 @@ async function save() {
           </el-form-item>
         </el-form>
       </div>
-      <SqlTemplateEditor v-model="form.sql_template" :label="t('metric.sqlTemplate')" required />
+      <div class="rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-fill-color-light)] p-4">
+        <div class="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <div class="text-sm font-semibold text-[var(--ep-text-color-primary)]">{{ t("metric.structuredTitle") }}</div>
+            <div class="mt-1 text-xs leading-5 text-[var(--ep-text-color-secondary)]">{{ t("metric.structuredHint") }}</div>
+          </div>
+          <el-button size="small" type="primary" plain @click="addDimensionMapping">{{ t("metric.addDimensionMapping") }}</el-button>
+        </div>
+        <div class="grid gap-3 md:grid-cols-3">
+          <el-form label-position="top" class="contents">
+            <el-form-item :label="t('metric.measureExpression')">
+              <el-input v-model="form.measure_expression" placeholder="COUNT(*) / SUM(amount)" />
+            </el-form-item>
+            <el-form-item :label="t('metric.factSchema')">
+              <el-input v-model="form.fact_schema" placeholder="public" />
+            </el-form-item>
+            <el-form-item :label="t('metric.factTable')">
+              <el-input v-model="form.fact_table_name" placeholder="orders" />
+            </el-form-item>
+          </el-form>
+        </div>
+        <div v-if="form.dimension_mappings?.length" class="mt-2 flex flex-col gap-2">
+          <div v-for="(dimension, index) in form.dimension_mappings" :key="index" class="grid items-end gap-2 rounded-lg bg-[var(--ep-bg-color)] p-3 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+            <el-input v-model="dimension.name" :placeholder="t('metric.dimensionName')" size="small" />
+            <el-input v-model="dimension.schema" :placeholder="t('metric.dimensionSchema')" size="small" />
+            <el-input v-model="dimension.table_name" :placeholder="t('metric.dimensionTable')" size="small" />
+            <el-input v-model="dimension.column" :placeholder="t('metric.dimensionColumn')" size="small" />
+            <el-button size="small" type="danger" link @click="removeDimensionMapping(index)">{{ t("common.delete") }}</el-button>
+          </div>
+        </div>
+      </div>
+      <SqlTemplateEditor v-model="form.sql_template" :label="t('metric.sqlTemplate')" />
       <el-form label-position="top">
         <el-form-item :label="t('metric.parametersJson')">
           <el-input v-model="parametersJson" type="textarea" :rows="7" spellcheck="false" />

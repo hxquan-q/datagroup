@@ -42,7 +42,12 @@ public class QueryMetricExecutor implements ToolExecutor {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,
                 "Pass dimensions in the top-level dimensions field, not inside arguments");
         }
-        if (containsRawPlaceholder(metric.sqlTemplate())) {
+        String sqlTemplate = metric.sqlTemplate();
+        boolean structured = StructuredMetricSqlBuilder.isStructured(metric);
+        if (structured) {
+            sqlTemplate = StructuredMetricSqlBuilder.build(metric, args.dimensions(), ctx.relations(), args.arguments());
+        }
+        if (containsRawPlaceholder(sqlTemplate)) {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,
                 "Metric SQL templates must use bound placeholders only; raw placeholders are not executable through query_metric");
         }
@@ -54,8 +59,14 @@ public class QueryMetricExecutor implements ToolExecutor {
 
         ToolConfig.ParamSqlConfig config = new ToolConfig.ParamSqlConfig();
         config.setDataSourceId(metric.dataSourceId());
-        config.setSqlTemplate(metric.sqlTemplate());
-        config.setParameters(metric.parameters().stream().map(this::toToolParameter).toList());
+        config.setSqlTemplate(sqlTemplate);
+        List<ToolParameter> toolParameters = new java.util.ArrayList<>(
+            metric.parameters().stream().map(this::toToolParameter).toList());
+        if (structured) {
+            addImplicitTimeParameter(toolParameters, "start_time");
+            addImplicitTimeParameter(toolParameters, "end_time");
+        }
+        config.setParameters(toolParameters);
         config.setTimeout(metric.timeout());
         config.setMaxRows(metric.maxRows());
 
@@ -105,6 +116,13 @@ public class QueryMetricExecutor implements ToolExecutor {
         if (!invalid.isEmpty()) {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,
                 "Dimensions are not allowed for metric " + metric.code() + ": " + String.join(", ", invalid));
+        }
+    }
+
+    private void addImplicitTimeParameter(List<ToolParameter> parameters, String name) {
+        boolean exists = parameters.stream().anyMatch(parameter -> name.equals(parameter.getName()));
+        if (!exists) {
+            parameters.add(new ToolParameter(name, "DateTime", false, null, "Structured metric time range bound"));
         }
     }
 

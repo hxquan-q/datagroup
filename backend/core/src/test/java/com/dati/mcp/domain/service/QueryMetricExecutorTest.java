@@ -1,9 +1,13 @@
 package com.dati.mcp.domain.service;
 
+import com.dati.common.template.HandlebarsStyleParser;
+import com.dati.common.template.PreparedSql;
+import com.dati.common.template.SqlRenderer;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 import com.dati.mcp.domain.model.ToolError;
+import com.dati.semantic.domain.model.MetricDimension;
 import com.dati.semantic.domain.model.MetricParameter;
 import com.dati.mcp.server.pojo.MetricExecution;
 import com.dati.mcp.server.pojo.SqlExecution;
@@ -160,4 +164,63 @@ class QueryMetricExecutorTest {
             .hasMessageContaining("bound placeholders");
         verifyNoInteractions(parameterizedSqlExecutor);
     }
+    @Test
+    @DisplayName("structured metrics generate grouped SQL through confirmed one-hop relations")
+    void structuredMetricGeneratesGroupedSql() {
+        McpServiceSnapshot.MetricDraft structured = new McpServiceSnapshot.MetricDraft(
+            "metric-structured", "subject-1", "ds-1", "order_count", "Order count", null,
+            List.of(), "owner", "day", "created_at", "Asia/Shanghai", List.of("customer"),
+            List.of(new MetricDimension("customer", "public", "customers", "name", null)),
+            "COUNT(*)", "public", "orders", null, List.of(), 30, 1000, 1);
+        McpServiceSnapshot.TableRelationDraft relation = new McpServiceSnapshot.TableRelationDraft(
+            "subject-1", "fact-id", "ds-1", "public", "orders", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        SqlExecution sqlExecution = new SqlExecution("SELECT", List.of(), List.of());
+        when(parameterizedSqlExecutor.execute(any())).thenReturn(sqlExecution);
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.QUERY_METRIC, new ToolConfig.QueryMetricConfig(),
+            new com.dati.mcp.domain.model.param.QueryMetricArgs(
+                "order_count", Map.of("start_time", "2026-01-01 00:00:00", "customer", "Alice"), List.of("customer")),
+            List.of(), List.of(structured), List.of(relation));
+
+        executor.execute(ctx);
+
+        ArgumentCaptor<ToolExecutionContext> captor = ArgumentCaptor.forClass(ToolExecutionContext.class);
+        verify(parameterizedSqlExecutor).execute(captor.capture());
+        ToolConfig.ParamSqlConfig config = (ToolConfig.ParamSqlConfig) captor.getValue().config();
+        assertThat(config.getSqlTemplate()).contains("d1.name AS customer");
+        assertThat(config.getSqlTemplate()).contains("COUNT(*) AS metric_value");
+        assertThat(config.getSqlTemplate()).contains("LEFT JOIN public.customers d1 ON f.customer_id = d1.id");
+        assertThat(config.getSqlTemplate()).contains("f.created_at >= {{start_time}}");
+        assertThat(config.getSqlTemplate()).contains("d1.name IN ({{customer}})");
+        assertThat(config.getSqlTemplate()).contains("GROUP BY d1.name");
+        assertThat(config.getParameters()).anyMatch(parameter -> "start_time".equals(parameter.getName())
+            && "DateTime".equals(parameter.getType()));
+        PreparedSql prepared = new SqlRenderer().render(new HandlebarsStyleParser().parse(config.getSqlTemplate()),
+            Map.of("start_time", "2026-01-01 00:00:00", "customer", "Alice"));
+        assertThat(prepared.sql()).contains("WHERE f.created_at >= ?");
+        assertThat(prepared.sql()).contains("AND d1.name IN (?)");
+        assertThat(prepared.bindings()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("structured dimensions require a confirmed relation")
+    void structuredMetricRejectsMissingRelation() {
+        McpServiceSnapshot.MetricDraft structured = new McpServiceSnapshot.MetricDraft(
+            "metric-structured", "subject-1", "ds-1", "order_count", "Order count", null,
+            List.of(), "owner", "day", "created_at", "Asia/Shanghai", List.of("customer"),
+            List.of(new MetricDimension("customer", "public", "customers", "name", null)),
+            "COUNT(*)", "public", "orders", null, List.of(), 30, 1000, 1);
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.QUERY_METRIC, new ToolConfig.QueryMetricConfig(),
+            new com.dati.mcp.domain.model.param.QueryMetricArgs(
+                "order_count", Map.of(), List.of("customer")),
+            List.of(), List.of(structured), List.of());
+
+        assertThatThrownBy(() -> executor.execute(ctx))
+            .isInstanceOf(ToolExecuteException.class)
+            .hasMessageContaining("No confirmed one-hop table relation");
+        verifyNoInteractions(parameterizedSqlExecutor);
+    }
+
 }

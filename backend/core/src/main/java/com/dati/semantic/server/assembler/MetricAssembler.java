@@ -40,6 +40,10 @@ public class MetricAssembler extends BaseAssembler {
         vo.setTimeField(metric.getTimeField());
         vo.setTimeZone(metric.getTimeZone());
         vo.setAllowedDimensions(metric.getAllowedDimensions() != null ? metric.getAllowedDimensions() : new ArrayList<>());
+        vo.setDimensionMappings(metric.getDimensionMappings() != null ? metric.getDimensionMappings() : new ArrayList<>());
+        vo.setMeasureExpression(metric.getMeasureExpression());
+        vo.setFactSchema(metric.getFactSchema());
+        vo.setFactTableName(metric.getFactTableName());
         vo.setSqlTemplate(metric.getSqlTemplate());
         vo.setParameters(metric.getParameters() != null ? metric.getParameters() : new ArrayList<>());
         vo.setTimeout(metric.getTimeout());

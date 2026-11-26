@@ -456,7 +456,9 @@ public class McpServicePublishService {
         return metric.code() + "|" + metric.name() + "|" + metric.description()
                 + "|" + JsonUtils.toJson(metric.aliases()) + "|" + metric.owner()
                 + "|" + metric.grain() + "|" + metric.timeField() + "|" + metric.timeZone()
-                + "|" + JsonUtils.toJson(metric.allowedDimensions()) + "|" + metric.sqlTemplate()
+                + "|" + JsonUtils.toJson(metric.allowedDimensions()) + "|" + JsonUtils.toJson(metric.dimensionMappings())
+                + "|" + metric.measureExpression() + "|" + metric.factSchema() + "|" + metric.factTableName()
+                + "|" + metric.sqlTemplate()
                 + "|" + JsonUtils.toJson(metric.parameters()) + "|" + metric.timeout()
                 + "|" + metric.maxRows() + "|" + metric.revision();
     }
