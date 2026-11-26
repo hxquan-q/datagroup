@@ -255,7 +255,7 @@ onMounted(() => {
 
       <!-- Tab 5: Validation Examples -->
       <div v-else-if="activeTab === 'validation'" class="scope-panel validation-panel p-[20px] shadow-sm">
-        <el-empty :description="t('subject.validationEmpty')" :image-size="96" />
+        <ValidationCaseList :subject-id="subjectId" />
       </div>
     </main>
 

@@ -16,6 +16,7 @@ import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.semantic.repository.dao.TermDAO;
 import com.dati.semantic.repository.dao.TermRelationDAO;
 import com.dati.semantic.repository.dao.TableRelationDAO;
+import com.dati.semantic.repository.dao.ValidationCaseDAO;
 import com.dati.semantic.repository.po.SemanticSearchDocument;
 import com.dati.semantic.repository.po.SubjectPO;
 import com.dati.semantic.repository.po.SubjectTablePO;
@@ -70,6 +71,9 @@ class SubjectServiceTest {
 
     @Mock
     private TableRelationDAO tableRelationDAO;
+
+    @Mock
+    private ValidationCaseDAO validationCaseDAO;
 
     @Mock
     private TableInfoDAO tableInfoDAO;
