@@ -1,9 +1,12 @@
 package com.dati.semantic.domain.service;
 
 import com.dati.base.exception.DatiException;
+import com.dati.base.RequestContext;
 import com.dati.base.exception.ErrorCode;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.model.ResourceType;
+import com.dati.auth.authentication.User;
+import com.dati.datasource.repository.dao.DataSourceDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.mcp.domain.model.McpDataScopeType;
@@ -35,6 +38,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class ValidationCaseService {
@@ -43,18 +47,21 @@ public class ValidationCaseService {
     private final MetricDAO metricDAO;
     private final SubjectTableDAO subjectTableDAO;
     private final TableInfoDAO tableInfoDAO;
+    private final DataSourceDAO dataSourceDAO;
     private final ParameterizedSqlExecutor parameterizedSqlExecutor;
     private final PermissionService permissionService;
 
     public ValidationCaseService(ValidationCaseDAO validationCaseDAO, SubjectDAO subjectDAO,
                                  MetricDAO metricDAO, SubjectTableDAO subjectTableDAO,
-                                 TableInfoDAO tableInfoDAO, ParameterizedSqlExecutor parameterizedSqlExecutor,
+                                 TableInfoDAO tableInfoDAO, DataSourceDAO dataSourceDAO,
+                                 ParameterizedSqlExecutor parameterizedSqlExecutor,
                                  PermissionService permissionService) {
         this.validationCaseDAO = validationCaseDAO;
         this.subjectDAO = subjectDAO;
         this.metricDAO = metricDAO;
         this.subjectTableDAO = subjectTableDAO;
         this.tableInfoDAO = tableInfoDAO;
+        this.dataSourceDAO = dataSourceDAO;
         this.parameterizedSqlExecutor = parameterizedSqlExecutor;
         this.permissionService = permissionService;
     }
@@ -76,8 +83,14 @@ public class ValidationCaseService {
         ValidationCasePO po = requireCase(id);
         SubjectPO subject = requireSubject(po.getSubjectId());
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.EDIT, subject.getCreatedBy());
+        boolean executableInputChanged = false;
         if (patch.getName() != null) po.setName(patch.getName());
         if (patch.getDescription() != null) po.setDescription(patch.getDescription());
+        if (patch.getQuestion() != null && !Objects.equals(po.getQuestion(), patch.getQuestion())) executableInputChanged = true;
+        if (patch.getArguments() != null && !Objects.equals(po.getArguments(), patch.getArguments())) executableInputChanged = true;
+        if (patch.getDimensions() != null && !Objects.equals(po.getDimensions(), patch.getDimensions())) executableInputChanged = true;
+        if (patch.getAssertionType() != null && !Objects.equals(po.getAssertionType(), patch.getAssertionType())) executableInputChanged = true;
+        if (patch.getExpectedValue() != null && !Objects.equals(po.getExpectedValue(), patch.getExpectedValue())) executableInputChanged = true;
         if (patch.getQuestion() != null) po.setQuestion(patch.getQuestion());
         if (patch.getArguments() != null) po.setArguments(patch.getArguments());
         if (patch.getDimensions() != null) po.setDimensions(patch.getDimensions());
@@ -86,6 +99,7 @@ public class ValidationCaseService {
         if (patch.getOwner() != null) po.setOwner(patch.getOwner());
         if (patch.getEnabled() != null) po.setEnabled(patch.getEnabled());
         if (patch.getUpdatedBy() != null) po.setUpdatedBy(patch.getUpdatedBy());
+        if (executableInputChanged) clearLastResult(po);
         return ValidationCaseMapper.toModel(validationCaseDAO.save(po));
     }
 
@@ -102,14 +116,16 @@ public class ValidationCaseService {
         ValidationCasePO po = requireCase(id);
         SubjectPO subject = requireSubject(po.getSubjectId());
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.VIEW, subject.getCreatedBy());
-        return ValidationCaseMapper.toModel(po);
+        return redactEvidenceIfNeeded(ValidationCaseMapper.toModel(po), subject);
     }
 
     @Transactional(readOnly = true)
     public Page<ValidationCase> getCases(String subjectId, Pageable pageable) {
         SubjectPO subject = requireSubject(subjectId);
         permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.VIEW, subject.getCreatedBy());
-        return validationCaseDAO.findBySubjectId(subjectId, pageable).map(ValidationCaseMapper::toModel);
+        return validationCaseDAO.findBySubjectId(subjectId, pageable)
+            .map(ValidationCaseMapper::toModel)
+            .map(item -> redactEvidenceIfNeeded(item, subject));
     }
 
 
@@ -126,6 +142,7 @@ public class ValidationCaseService {
         if (!po.getSubjectId().equals(metric.getSubjectId())) {
             throw new DatiException(ErrorCode.INVALID_PARAMETER, "metric does not belong to validation case subject");
         }
+        permissionService.requireDataSource(metric.getDataSourceId(), Permission.VIEW);
 
         long started = System.currentTimeMillis();
         po.setLastRunAt(Instant.now());
@@ -151,6 +168,42 @@ public class ValidationCaseService {
         }
         po.setLastDurationMs(System.currentTimeMillis() - started);
         return ValidationCaseMapper.toModel(validationCaseDAO.save(po));
+    }
+
+    private void clearLastResult(ValidationCasePO po) {
+        po.setLastStatus(null);
+        po.setLastMessage(null);
+        po.setLastRunAt(null);
+        po.setLastDurationMs(null);
+        po.setLastMetricRevision(null);
+        po.setLastEvidence(new HashMap<>());
+    }
+
+    private boolean isTruncated(SqlExecution execution) {
+        return execution.results() != null && execution.results().stream()
+            .anyMatch(result -> result instanceof StatementResult.SelectResult select && select.truncated());
+    }
+
+    private ValidationCase redactEvidenceIfNeeded(ValidationCase item, SubjectPO subject) {
+        if (item.getLastEvidence() == null || !item.getLastEvidence().containsKey("sample_rows")
+            || canViewDataSource(subject.getDatasourceId())) {
+            return item;
+        }
+        Map<String, Object> redacted = new HashMap<>(item.getLastEvidence());
+        redacted.remove("sample_rows");
+        redacted.put("sample_rows_redacted", true);
+        item.setLastEvidence(redacted);
+        return item;
+    }
+
+    private boolean canViewDataSource(String dataSourceId) {
+        return dataSourceDAO.findById(dataSourceId)
+            .map(dataSource -> {
+                User user = RequestContext.getUser();
+                return permissionService.can(user.getId(), user.getName(), ResourceType.DATA_SOURCE,
+                    dataSourceId, Permission.VIEW, dataSource.getCreatedBy());
+            })
+            .orElse(false);
     }
 
     private void validateDimensions(ValidationCasePO po, MetricPO metric) {
@@ -216,7 +269,10 @@ public class ValidationCaseService {
             }
             case "ROW_COUNT" -> {
                 int expected = Integer.parseInt(po.getExpectedValue());
-                if (returnedRows == expected) {
+                if (isTruncated(execution)) {
+                    po.setLastStatus("FAIL");
+                    po.setLastMessage("row count assertion cannot be trusted because the result was truncated");
+                } else if (returnedRows == expected) {
                     po.setLastStatus("PASS");
                     po.setLastMessage("row count matched");
                 } else {

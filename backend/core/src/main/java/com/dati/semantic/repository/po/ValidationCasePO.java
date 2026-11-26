@@ -4,6 +4,7 @@ import com.dati.base.pojo.BaseResourcePO;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
@@ -57,4 +58,7 @@ public class ValidationCasePO extends BaseResourcePO {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "last_evidence", columnDefinition = "json")
     private Map<String, Object> lastEvidence = new HashMap<>();
+    @Version
+    @Column(nullable = false)
+    private long version;
 }

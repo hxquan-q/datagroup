@@ -9,7 +9,9 @@ import com.dati.semantic.repository.dao.MetricDAO;
 import com.dati.semantic.repository.dao.SubjectDAO;
 import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.semantic.repository.dao.ValidationCaseDAO;
+import com.dati.datasource.repository.dao.DataSourceDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.datasource.repository.po.DataSourcePO;
 import com.dati.mcp.domain.service.ParameterizedSqlExecutor;
 import com.dati.mcp.server.pojo.SqlExecution;
 import com.dati.mcp.server.pojo.StatementResult;
@@ -42,6 +44,7 @@ class ValidationCaseServiceTest {
     @Mock private PermissionService permissionService;
     @Mock private SubjectTableDAO subjectTableDAO;
     @Mock private TableInfoDAO tableInfoDAO;
+    @Mock private DataSourceDAO dataSourceDAO;
     @Mock private ParameterizedSqlExecutor parameterizedSqlExecutor;
     @InjectMocks private ValidationCaseService service;
 
@@ -54,6 +57,7 @@ class ValidationCaseServiceTest {
         SubjectPO subject = new SubjectPO();
         subject.setId("subject-1");
         subject.setCreatedBy(TestFixtures.TEST_USER_ID);
+        subject.setDatasourceId("ds-1");
         MetricPO metric = new MetricPO();
         metric.setId("metric-1");
         metric.setSubjectId("subject-1");
@@ -140,6 +144,61 @@ class ValidationCaseServiceTest {
 
         assertThat(result.getLastStatus()).isEqualTo("ERROR");
         assertThat(result.getLastMessage()).contains("dimensions are not allowed");
+    }
+
+
+    @Test
+    @DisplayName("row count assertion fails when the query result is truncated")
+    void rowCountFailsWhenTruncated() {
+        ValidationCasePO existing = existingCase("ROW_COUNT");
+        existing.setExpectedValue("1");
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+        when(parameterizedSqlExecutor.execute(any())).thenReturn(new SqlExecution("SELECT 1",
+            java.util.List.of(StatementResult.select(java.util.List.of("close_rate"), java.util.List.of(java.util.List.of(28.16)), true)),
+            java.util.List.of()));
+
+        ValidationCase result = service.runCase("case-1");
+
+        assertThat(result.getLastStatus()).isEqualTo("FAIL");
+        assertThat(result.getLastMessage()).contains("truncated");
+    }
+
+    @Test
+    @DisplayName("editing executable inputs clears stale validation results")
+    void editingExecutableInputsClearsLastResult() {
+        ValidationCasePO existing = existingCase("NON_EMPTY");
+        existing.setLastStatus("PASS");
+        existing.setLastMessage("execution returned rows");
+        existing.setLastRunAt(java.time.Instant.now());
+        existing.setLastDurationMs(12L);
+        existing.setLastMetricRevision(1);
+        existing.setLastEvidence(java.util.Map.of("returned_rows", 1));
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+        ValidationCase patch = new ValidationCase();
+        patch.setArguments(java.util.Map.of("org_id", 4));
+
+        ValidationCase result = service.updateCase("case-1", patch);
+
+        assertThat(result.getLastStatus()).isNull();
+        assertThat(result.getLastRunAt()).isNull();
+        assertThat(result.getLastEvidence()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("stored sample rows are redacted from users without data source access")
+    void sampleRowsAreRedactedWithoutDataSourceAccess() {
+        ValidationCasePO existing = existingCase("NON_EMPTY");
+        existing.setLastEvidence(java.util.Map.of("returned_rows", 1, "sample_rows", java.util.List.of(java.util.List.of("secret"))));
+        DataSourcePO dataSource = new DataSourcePO();
+        dataSource.setId("ds-1");
+        dataSource.setCreatedBy("someone-else");
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+        when(dataSourceDAO.findById("ds-1")).thenReturn(Optional.of(dataSource));
+
+        ValidationCase result = service.getCase("case-1");
+
+        assertThat(result.getLastEvidence()).doesNotContainKey("sample_rows");
+        assertThat(result.getLastEvidence()).containsEntry("sample_rows_redacted", true);
     }
 
     private ValidationCasePO existingCase(String assertionType) {

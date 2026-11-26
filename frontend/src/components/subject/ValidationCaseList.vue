@@ -22,6 +22,7 @@ const { t } = useI18n();
 const loading = ref(false);
 const runningId = ref("");
 const cases = ref<ValidationCaseVO[]>([]);
+const healthCases = ref<ValidationCaseVO[]>([]);
 const metrics = ref<MetricVO[]>([]);
 const total = ref(0);
 const page = ref(1);
@@ -46,7 +47,7 @@ const emptyForm = (): ValidationCasePayload & { argumentsJson: string; dimension
 });
 
 const form = ref(emptyForm());
-const enabledCases = computed(() => cases.value.filter((item) => item.enabled !== false));
+const enabledCases = computed(() => healthCases.value.filter((item) => item.enabled !== false));
 const passCount = computed(() => enabledCases.value.filter((item) => item.last_status === "PASS").length);
 const failCount = computed(() => enabledCases.value.filter((item) => item.last_status === "FAIL").length);
 const errorCount = computed(() => enabledCases.value.filter((item) => item.last_status === "ERROR").length);
@@ -56,12 +57,30 @@ const healthScore = computed(() => {
 });
 const metricOptions = computed(() => metrics.value.map((metric) => ({ label: `${metric.name} (${metric.code})`, value: metric.id })));
 
+async function fetchAllPages<T>(fetchPage: (page: number, size: number) => Promise<{ data: T[]; total: number }>) {
+  const pageSize = 100;
+  const first = await fetchPage(1, pageSize);
+  const items = [...first.data];
+  const remainingPages = Math.ceil(first.total / pageSize) - 1;
+  if (remainingPages > 0) {
+    const responses = await Promise.all(
+      Array.from({ length: remainingPages }, (_, index) => fetchPage(index + 2, pageSize)),
+    );
+    responses.forEach((response) => items.push(...response.data));
+  }
+  return items;
+}
+
 async function loadCases() {
   loading.value = true;
   try {
-    const resp = await listValidationCases(props.subjectId, page.value, size.value);
+    const [resp, allCases] = await Promise.all([
+      listValidationCases(props.subjectId, page.value, size.value),
+      fetchAllPages((nextPage, nextSize) => listValidationCases(props.subjectId, nextPage, nextSize)),
+    ]);
     cases.value = resp.data;
     total.value = resp.total;
+    healthCases.value = allCases;
   } catch (error) {
     notifyError(error, t("common.loadFailed"));
   } finally {
@@ -71,8 +90,7 @@ async function loadCases() {
 
 async function loadMetrics() {
   try {
-    const resp = await listMetrics(props.subjectId, 1, 100);
-    metrics.value = resp.data;
+    metrics.value = await fetchAllPages((nextPage, nextSize) => listMetrics(props.subjectId, nextPage, nextSize));
   } catch (error) {
     notifyError(error, t("common.loadFailed"));
   }
