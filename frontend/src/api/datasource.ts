@@ -1,15 +1,19 @@
 import type { BaseResourceVO, IdResponse, PageResponse } from "~/api/types.ts";
+import type { components } from "~/api/openapi.types";
 import { del, get, post, put } from "./http";
 
-// 兼容 DataSource：创建/编辑时我们直接发 JSON
-export interface DatasourceVO extends BaseResourceVO {
+type OpenapiDatasourceVO = Omit<
+  components["schemas"]["DatasourceVO"],
+  "id" | "name" | "jdbc_url" | "username" | "type"
+>;
+
+export type DatasourceVO = OpenapiDatasourceVO & BaseResourceVO & {
   jdbc_url: string;
   username: string;
   type: string;
-  default_schema?: string;
-}
+};
 
-// 创建/更新的请求体（蛇形命名）；测试连接时编辑态带上 id，后端据此复用已存密码
+// Create/update payload; edit-mode connection tests include id so the backend can reuse the stored password
 export interface DataSourcePayload {
   id?: string;
   name?: string;
@@ -20,14 +24,14 @@ export interface DataSourcePayload {
   type: string;
 }
 
-// 表信息
+// Table metadata
 export interface TableVO {
   name: string;
   comment?: string;
 }
 
-// 数据源：测试连接（POST /v1/data-sources/test-connection）
-// 注意：请求体字段用蛇形（如 jdbc_url、username、password、type）
+// Test a datasource connection
+// Request fields use snake_case because they are serialized directly as API JSON
 export function testConnection(
   body: DataSourcePayload,
   signal?: AbortSignal,
@@ -39,7 +43,7 @@ export function testConnection(
   );
 }
 
-// 数据源：新增（POST /v1/data-sources）
+// Create a datasource
 export function addDataSource(
   body: DataSourcePayload,
   signal?: AbortSignal,
@@ -47,7 +51,7 @@ export function addDataSource(
   return post<IdResponse, DataSourcePayload>("/v1/data-sources", body, signal);
 }
 
-// 数据源：更新（PUT /v1/data-sources/{id}）
+// Update a datasource
 export function updateDataSource(
   id: string,
   body: DataSourcePayload,
@@ -60,7 +64,7 @@ export function updateDataSource(
   );
 }
 
-// 数据源：删除（DELETE /v1/data-sources/{id}）
+// Delete a datasource
 export function deleteDataSource(
   id: string,
   signal?: AbortSignal,
@@ -72,7 +76,7 @@ export function deleteDataSource(
   );
 }
 
-// 数据源：列表（GET /v1/data-sources）
+// List datasources with pagination
 export function listDataSources(
   page: number,
   size: number,
@@ -86,7 +90,7 @@ export function listDataSources(
   );
 }
 
-// 数据源：详情（GET /v1/data-sources/{id}）
+// Get datasource details
 export function getDataSource(
   id: string,
   signal?: AbortSignal,
@@ -98,7 +102,7 @@ export function getDataSource(
   );
 }
 
-// Schema 列表（GET /v1/data-sources/{id}/schemas）
+// List schemas
 export function getSchemas(
   id: string,
   signal?: AbortSignal,
@@ -110,7 +114,7 @@ export function getSchemas(
   );
 }
 
-// 表列表（GET /v1/data-sources/{id}/schemas/{schema}/tables）
+// List tables in a schema
 export function getTables(
   id: string,
   schema: string,
