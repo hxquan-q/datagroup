@@ -8,7 +8,7 @@ import { onMounted, ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { InfoFilled } from "@element-plus/icons-vue";
+import { Info as InfoFilled } from "@lucide/vue";
 import { Power, PowerOff, Rocket } from "@lucide/vue";
 import type { McpServiceDiffVO, McpServiceVO } from "~/api/mcp-service";
 import {

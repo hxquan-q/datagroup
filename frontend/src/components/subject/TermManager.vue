@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { MoreFilled, Plus, Search } from "@element-plus/icons-vue";
+import { MoreHorizontal as MoreFilled, Plus, Search } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import type {
   CreateTermRequest,

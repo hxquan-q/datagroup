@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
-import { DocumentCopy, MoreFilled } from "@element-plus/icons-vue";
+import { Copy as DocumentCopy, MoreHorizontal as MoreFilled } from "@lucide/vue";
 import type { McpServiceVO } from "~/api/mcp-service";
 import { formatDateTime } from "~/composables";
 import { copyToClipboard } from "~/utils/clipboard";
 import { useI18n } from "vue-i18n";
+import { useMediaQuery } from "@vueuse/core";
 
 const { t } = useI18n();
+const compactColumns = useMediaQuery("(max-width: 1100px)");
 
 interface Props {
   data: McpServiceVO[];
@@ -126,6 +128,7 @@ const handleCopy = async (endpointPath: string) => {
       </template>
     </el-table-column>
     <el-table-column
+      v-if="!compactColumns"
       prop="description"
       :label="t('common.description')"
       min-width="120"

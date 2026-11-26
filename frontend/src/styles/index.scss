@@ -55,7 +55,8 @@
   --ep-color-primary-light-8: #dbeafe;
   --ep-color-primary-light-9: #eff6ff;
   --ep-color-primary-dark-2: #1d4ed8;
-  --ep-border-radius-base: 9px;
+  --ep-border-radius-base: 10px;
+  --xiaoai-motion: 240ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 html.dark {
@@ -76,12 +77,29 @@ body {
 
 .ep-button,
 .el-button {
-  border-radius: 9px;
+  border-radius: 10px;
   font-weight: 580;
+  transition: all var(--xiaoai-motion);
 }
 
-.ep-button--primary,
-.el-button--primary {
+.ep-button--primary:not(.is-link):not(.is-text),
+.el-button--primary:not(.is-link):not(.is-text) {
+  border-radius: 999px;
+}
+
+.ep-button--primary:not(.is-link):not(.is-text):not(.is-disabled):hover,
+.el-button--primary:not(.is-link):not(.is-text):not(.is-disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
+}
+
+.ep-button--primary:not(.is-link):not(.is-text):not(.is-disabled):active,
+.el-button--primary:not(.is-link):not(.is-text):not(.is-disabled):active {
+  transform: scale(0.98);
+}
+
+.ep-button--primary:not(.is-link):not(.is-text),
+.el-button--primary:not(.is-link):not(.is-text) {
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.16);
 }
 
@@ -89,7 +107,7 @@ body {
 .el-input__wrapper,
 .ep-select__wrapper,
 .el-select__wrapper {
-  border-radius: 9px;
+  border-radius: 12px;
 }
 
 body {
@@ -219,7 +237,7 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 /* ============ Toolbar ============ */
 .toolbar {
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 14px;
+  border-radius: 16px;
   background: color-mix(in srgb, var(--ep-bg-color) 92%, transparent);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.04);
   padding: 16px;

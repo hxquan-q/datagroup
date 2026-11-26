@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
-import { InfoFilled } from "@element-plus/icons-vue";
+import { Info as InfoFilled } from "@lucide/vue";
 import { ArrowRight, Copy } from "@lucide/vue";
 import { copyToClipboard } from "~/utils/clipboard";
 import type { McpServiceVO } from "~/api/mcp-service";

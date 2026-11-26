@@ -2,13 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
-import {
-  CopyDocument,
-  Delete,
-  Edit,
-  Menu as IconMenu,
-  Plus,
-} from "@element-plus/icons-vue";
+import { Copy as CopyDocument, Trash2 as Delete, SquarePen as Edit, Menu as IconMenu, Plus } from "@lucide/vue";
 import type { DataScopeAccessMode, DataScopeItem } from "~/api/mcp-service";
 import { getDataScope, saveDataScope } from "~/api/mcp-service";
 import { notifyError } from "~/api/http";

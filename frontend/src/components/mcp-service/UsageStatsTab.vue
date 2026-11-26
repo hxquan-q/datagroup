@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useMediaQuery } from "@vueuse/core";
-import { Close, Refresh, Warning } from "@element-plus/icons-vue";
+import { RefreshCw as Refresh, TriangleAlert as Warning, X as Close } from "@lucide/vue";
 import type { McpUsageStatsVO, McpInvocationLogVO } from "~/api/mcp-usage";
 import { getMcpUsageStats, listMcpInvocationLogs } from "~/api/mcp-usage";
 import DataTableShell from "~/components/common/DataTableShell.vue";

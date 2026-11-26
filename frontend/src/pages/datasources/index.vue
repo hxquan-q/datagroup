@@ -5,7 +5,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { DatasourceVO } from "~/api/datasource";
 import { deleteDataSource, listDataSources } from "~/api/datasource";
-import { Plus, Search, Refresh } from "@element-plus/icons-vue";
+import { Plus, Search, RefreshCw as Refresh } from "@lucide/vue";
 import AuthDialog from "~/components/common/AuthDialog.vue";
 import { notifyError } from "~/api/http";
 

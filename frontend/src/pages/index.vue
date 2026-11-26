@@ -156,11 +156,6 @@ onMounted(fetchOverview);
             <div><b>{{ subjectCount }}</b><span>{{ t("home.stats.subjects") }}</span></div>
             <div><b>{{ mcpServiceCount }}</b><span>{{ t("home.stats.mcpServices") }}</span></div>
           </div>
-          <div class="signal-lines">
-            <span style="width: 82%"></span>
-            <span style="width: 64%"></span>
-            <span style="width: 73%"></span>
-          </div>
         </div>
       </div>
     </section>
@@ -185,7 +180,6 @@ onMounted(fetchOverview);
         </div>
         <h2>{{ module.statLabel }}</h2>
         <p>{{ module.desc }}</p>
-        <span class="module-link">{{ t("home.openModule") }}</span>
       </article>
     </section>
 
@@ -231,21 +225,21 @@ onMounted(fetchOverview);
 .home-page {
   width: min(1180px, 100%);
   margin: 0 auto;
-  padding: 32px 28px 48px;
+  padding: 24px 28px 40px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
 }
 
 .hero-panel {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-  gap: 32px;
+  gap: 28px;
   overflow: hidden;
-  padding: 36px;
+  padding: 28px;
   border: 1px solid rgba(37, 99, 235, 0.14);
-  border-radius: 28px;
+  border-radius: 24px;
   background:
     linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 42%),
     linear-gradient(180deg, var(--ep-bg-color), color-mix(in srgb, var(--ep-bg-color) 82%, var(--ep-color-primary-light-9)));
@@ -288,9 +282,9 @@ onMounted(fetchOverview);
 }
 
 .hero-copy h1 {
-  margin: 20px 0 14px;
+  margin: 16px 0 12px;
   color: var(--ep-text-color-primary);
-  font-size: clamp(32px, 4.6vw, 46px);
+  font-size: clamp(30px, 4vw, 40px);
   font-weight: 780;
   letter-spacing: -0.045em;
   line-height: 1.04;
@@ -308,20 +302,20 @@ onMounted(fetchOverview);
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 22px;
 }
 
 .hero-actions :deep(.el-button),
 .hero-actions :deep(.ep-button) {
   height: 42px;
   padding-inline: 18px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-weight: 650;
 }
 
 .hero-visual {
   position: relative;
-  min-height: 260px;
+  min-height: 216px;
   display: grid;
   place-items: center;
 }
@@ -451,18 +445,6 @@ onMounted(fetchOverview);
 .signal-grid b { color: var(--xiaoai-cyan-soft); font-size: 20px; }
 .signal-grid span { margin-top: 3px; color: var(--xiaoai-ink-muted); font-size: 11px; }
 
-.signal-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 18px;
-}
-
-.signal-lines span {
-  height: 7px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(37,99,235,.9), rgba(6,182,212,.32), transparent);
-}
 
 .module-grid {
   display: grid;
@@ -472,14 +454,14 @@ onMounted(fetchOverview);
 
 .module-card {
   position: relative;
-  min-height: 218px;
-  padding: 22px;
+  min-height: 188px;
+  padding: 20px;
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 22px;
+  border-radius: 24px;
   background: color-mix(in srgb, var(--ep-bg-color) 90%, transparent);
   box-shadow: 0 14px 40px rgba(15, 23, 42, 0.05);
   cursor: pointer;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  transition: transform var(--xiaoai-motion), border-color var(--xiaoai-motion), box-shadow var(--xiaoai-motion);
 }
 
 .module-card:hover {
@@ -516,7 +498,7 @@ onMounted(fetchOverview);
 
 .module-arrow {
   color: var(--ep-text-color-placeholder);
-  transition: transform 180ms ease, color 180ms ease;
+  transition: transform var(--xiaoai-motion), color var(--xiaoai-motion);
 }
 
 .module-card:hover .module-arrow {
@@ -525,9 +507,9 @@ onMounted(fetchOverview);
 }
 
 .module-count {
-  margin-top: 22px;
+  margin-top: 16px;
   color: var(--ep-text-color-primary);
-  font-size: 38px;
+  font-size: 32px;
   font-weight: 760;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -549,17 +531,12 @@ onMounted(fetchOverview);
 }
 
 .module-card p {
-  margin: 12px 0 18px;
+  margin: 10px 0 12px;
   color: var(--ep-text-color-regular);
   font-size: 13px;
   line-height: 1.65;
 }
 
-.module-link {
-  color: var(--ep-color-primary);
-  font-size: 13px;
-  font-weight: 700;
-}
 
 .workflow-panel {
   padding: 24px;
@@ -615,7 +592,7 @@ onMounted(fetchOverview);
   color: inherit;
   cursor: pointer;
   text-align: left;
-  transition: all 160ms ease;
+  transition: all var(--xiaoai-motion);
 }
 
 .workflow-step:hover {
@@ -663,7 +640,7 @@ onMounted(fetchOverview);
   gap: 12px;
   padding: 16px;
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 18px;
+  border-radius: 20px;
   background: color-mix(in srgb, var(--ep-bg-color) 84%, transparent);
 }
 
@@ -687,13 +664,23 @@ onMounted(fetchOverview);
   line-height: 1.55;
 }
 
+@media (max-width: 1180px) {
+  .hero-panel {
+    padding: 24px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(28px, 3.5vw, 36px);
+  }
+}
+
 @media (max-width: 980px) {
   .hero-panel {
     grid-template-columns: 1fr;
   }
 
   .hero-visual {
-    min-height: 260px;
+    min-height: 210px;
   }
 
   .module-grid,

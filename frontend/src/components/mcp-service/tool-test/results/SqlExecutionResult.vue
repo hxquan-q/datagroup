@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { CircleCheckFilled, CircleCloseFilled } from "@element-plus/icons-vue";
+import { CircleCheck as CircleCheckFilled, CircleX as CircleCloseFilled } from "@lucide/vue";
 import type {
   SqlExecution,
   SelectResult,

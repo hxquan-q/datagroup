@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { Coin } from "@element-plus/icons-vue";
+import { Coins as Coin } from "@lucide/vue";
 import { Pencil, Play, Plus, Search, Trash2 } from "@lucide/vue";
 import type { McpToolVO } from "~/api/mcp-tool";
 import { updateTool, deleteCustomTool } from "~/api/mcp-tool";

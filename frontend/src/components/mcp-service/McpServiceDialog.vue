@@ -2,7 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { Plus, Delete, Menu as IconMenu } from "@element-plus/icons-vue";
+import { Plus, Trash2 as Delete, Menu as IconMenu } from "@lucide/vue";
 import type { McpServicePayload, DataScopeItem } from "~/api/mcp-service";
 import { createMcpService } from "~/api/mcp-service";
 import { notifyError } from "~/api/http";

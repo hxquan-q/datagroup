@@ -2,7 +2,7 @@
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Search } from "@element-plus/icons-vue";
+import { Plus, Search } from "@lucide/vue";
 import type { MetricVO } from "~/api/metric";
 import { deleteMetric, listMetrics } from "~/api/metric";
 import { notifyError } from "~/api/http";

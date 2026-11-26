@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { WarningFilled, InfoFilled } from "@element-plus/icons-vue";
+import { TriangleAlert as WarningFilled, Info as InfoFilled } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();

@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { isDark, toggleDark } from "~/composables";
-import { CircleClose, Key } from "@element-plus/icons-vue";
-import { BookOpen, Moon, Sun } from "@lucide/vue";
+import { BookOpen, KeyRound, LogOut, Moon, Sun } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -89,18 +88,15 @@ function goToDocs() {
             {{ userDisplayName.charAt(0).toUpperCase() }}
           </el-avatar>
           <span class="user-name">{{ userDisplayName }}</span>
-          <el-tag v-if="authStore.isGuest" size="small" type="info" class="select-none">
-            {{ t("auth.guestBadge") }}
-          </el-tag>
         </button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="api-keys">
-              <el-icon><Key /></el-icon>
+              <el-icon><KeyRound :size="15" /></el-icon>
               <span>{{ t("apiKeys.title") }}</span>
             </el-dropdown-item>
             <el-dropdown-item command="logout">
-              <el-icon><CircleClose /></el-icon>
+              <el-icon><LogOut :size="15" /></el-icon>
               <span>{{ t("auth.logout") }}</span>
             </el-dropdown-item>
           </el-dropdown-menu>

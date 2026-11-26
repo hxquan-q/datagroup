@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { Menu as IconMenu, Search } from "@element-plus/icons-vue";
+import { Menu as IconMenu, Search } from "@lucide/vue";
 import type { DataScopeItem } from "~/api/mcp-service";
 import { listDataSources } from "~/api/datasource";
 import { listSubjects } from "~/api/subject";

@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import {
-  CircleCheckFilled,
-  Menu as IconMenu,
-  Coin,
-} from "@element-plus/icons-vue";
+import { CircleCheck as CircleCheckFilled, Menu as IconMenu, Coins as Coin } from "@lucide/vue";
 import type { SearchHit } from "~/api/mcp-tool-test";
 import { useSystemStore } from "~/stores/system";
 

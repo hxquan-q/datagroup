@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { Plus, Search, Edit, Delete } from "@element-plus/icons-vue";
+import { Plus, Search, SquarePen as Edit, Trash2 as Delete } from "@lucide/vue";
 import type { McpPromptVO } from "~/api/mcp-prompt";
 import { notifyError } from "~/api/http";
 import { updatePrompt, deletePrompt } from "~/api/mcp-prompt";

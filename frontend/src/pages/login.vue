@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Lock, User } from "@element-plus/icons-vue";
+import { Lock, User } from "@lucide/vue";
 import { ElMessage } from "element-plus";
 import { notifyError } from "~/api/http";
 import { useAuthStore } from "~/stores/auth";
@@ -36,17 +36,14 @@ async function handleGuestLogin() {
 </script>
 
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-[var(--ep-fill-color-light)]"
-  >
-    <el-card class="w-96">
-      <template #header>
-        <div class="text-center text-xl font-bold">
-          {{ t("auth.loginTitle") }}
-        </div>
-      </template>
+  <AuthShell>
+    <div class="auth-form">
+      <div class="auth-form-header">
+        <h2>{{ t("auth.loginTitle") }}</h2>
+        <p>{{ t("home.consoleLabel") }}</p>
+      </div>
 
-      <el-form :model="form" label-position="top" @submit.prevent="handleLogin">
+      <el-form :model="form" label-position="top" size="large" @submit.prevent="handleLogin">
         <el-form-item :label="t('common.username')">
           <el-input
             v-model="form.name"
@@ -65,11 +62,11 @@ async function handleGuestLogin() {
           />
         </el-form-item>
 
-        <el-form-item class="!mb-4">
+        <el-form-item class="!mb-3">
           <el-button
             type="primary"
             native-type="submit"
-            class="w-full"
+            class="auth-submit"
             :loading="authStore.loading"
           >
             {{ t("auth.login") }}
@@ -77,35 +74,81 @@ async function handleGuestLogin() {
         </el-form-item>
       </el-form>
 
-      <div class="text-center text-sm">
-        <span class="text-[var(--ep-text-color-regular)]">{{
-          t("auth.noAccount")
-        }}</span>
-        {{ " " }}
-        <RouterLink
-          to="/register"
-          class="text-[var(--ep-color-primary)] hover:underline"
-        >
+      <div class="auth-switch">
+        <span>{{ t("auth.noAccount") }}</span>
+        <RouterLink to="/register">
           {{ t("auth.toRegister") }}
         </RouterLink>
       </div>
 
-      <template #footer>
-        <div class="flex items-center justify-between py-0.5">
-          <span class="text-xs text-[var(--ep-text-color-secondary)]">
-            {{ t("auth.guestFooterHint") }}
-          </span>
-          <el-button
-            type="primary"
-            link
-            class="!p-0 !text-xs font-medium"
-            :loading="authStore.loading"
-            @click="handleGuestLogin"
-          >
-            {{ t("auth.guestLoginAction") }}
-          </el-button>
-        </div>
-      </template>
-    </el-card>
-  </div>
+      <el-divider class="auth-divider" />
+
+      <div class="auth-guest">
+        <span>{{ t("auth.guestFooterHint") }}</span>
+        <el-button
+          type="primary"
+          link
+          class="!p-0 font-medium"
+          :loading="authStore.loading"
+          @click="handleGuestLogin"
+        >
+          {{ t("auth.guestLoginAction") }}
+        </el-button>
+      </div>
+    </div>
+  </AuthShell>
 </template>
+
+<style scoped>
+.auth-form {
+  width: 100%;
+}
+
+.auth-form-header {
+  margin-bottom: 30px;
+}
+
+.auth-form-header h2 {
+  margin: 0;
+  color: var(--ep-text-color-primary);
+  font-size: 28px;
+  font-weight: 740;
+  letter-spacing: -0.03em;
+}
+
+.auth-form-header p {
+  margin: 8px 0 0;
+  color: var(--ep-text-color-secondary);
+  font-size: 13px;
+}
+
+.auth-submit {
+  width: 100%;
+  height: 44px;
+  margin-top: 4px;
+  font-weight: 650;
+}
+
+.auth-switch,
+.auth-guest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ep-text-color-secondary);
+  font-size: 13px;
+}
+
+.auth-switch a {
+  color: var(--ep-color-primary);
+  font-weight: 620;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.auth-divider {
+  margin: 18px 0 14px;
+}
+</style>
