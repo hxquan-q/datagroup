@@ -15,13 +15,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft;
-import com.dati.datasource.domain.service.TableMetadataService;
+import com.dati.datasource.repository.dao.ColumnInfoDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
-import com.dati.semantic.domain.service.SemanticSearchService;
+import com.dati.datasource.repository.po.ColumnInfoPO;
+import com.dati.datasource.repository.po.TableInfoPO;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,18 +30,16 @@ import static org.mockito.Mockito.when;
 class SearchSemanticsExecutorTest {
 
     @Mock
-    private SemanticSearchService semanticSearchService;
+    private TableInfoDAO tableInfoDAO;
 
     @Mock
-    private TableInfoDAO tableInfoDAO;
+    private ColumnInfoDAO columnInfoDAO;
 
     private SearchSemanticsExecutor executor;
 
     @BeforeEach
     void setUp() {
-        executor = new SearchSemanticsExecutor(semanticSearchService, tableInfoDAO);
-        lenient().when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList()))
-            .thenReturn(new SemanticSearchService.SearchResult(List.of(), List.of()));
+        executor = new SearchSemanticsExecutor(tableInfoDAO, columnInfoDAO);
     }
 
     private McpServiceSnapshot.MetricDraft metric() {
@@ -99,11 +98,17 @@ class SearchSemanticsExecutorTest {
         TableRelationDraft relation = new TableRelationDraft(
             "subject-1", "fact-id", "ds-1", "public", "orders", "customer_id",
             "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 2);
-        TableMetadataService.TableMeta customers = new TableMetadataService.TableMeta(
-            "dim-id", "public", "customers", null, List.of("client"), "ds-1", List.of());
-        when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList()))
-            .thenReturn(new SemanticSearchService.SearchResult(List.of(
-                new SemanticSearchService.DataSourceGroup("ds-1", "Warehouse", "MYSQL", "public", null, List.of(customers))), List.of()));
+        TableInfoPO customers = new TableInfoPO();
+        customers.setId("dim-id");
+        customers.setDataSourceId("ds-1");
+        customers.setSchema("public");
+        customers.setName("customers");
+        customers.setAliases(List.of("client"));
+        when(tableInfoDAO.findAllById(anyCollection())).thenReturn(List.of(customers));
+        ColumnInfoPO idColumn = new ColumnInfoPO();
+        idColumn.setTableId("dim-id");
+        idColumn.setName("id");
+        when(columnInfoDAO.findByTableIdIn(anyCollection())).thenReturn(List.of(idColumn));
         ToolExecutionContext ctx = new ToolExecutionContext(
             "svc-1", McpToolType.SEARCH_SEMANTICS, new ToolConfig.SearchSemanticsConfig(),
             new SearchSemanticsArgs(List.of("client")), List.of(), List.of(metric()), List.of(relation));
