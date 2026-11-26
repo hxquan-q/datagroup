@@ -3,8 +3,11 @@ package com.dati.semantic.domain.service;
 import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
+import com.dati.datasource.repository.dao.DataSourceDAO;
 import com.dati.datasource.repository.po.ColumnInfoPO;
+import com.dati.datasource.repository.po.DataSourcePO;
 import com.dati.datasource.repository.po.TableInfoPO;
+import com.dati.db.DbType;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.model.ResourceType;
 import com.dati.permission.domain.service.PermissionService;
@@ -41,16 +44,19 @@ public class TableRelationRecommendationService {
     private final TableRelationDAO tableRelationDAO;
     private final ColumnInfoDAO columnInfoDAO;
     private final SemanticIndexService semanticIndexService;
+    private final DataSourceDAO dataSourceDAO;
     private final PermissionService permissionService;
 
     public TableRelationRecommendationService(SubjectDAO subjectDAO, SubjectTableDAO subjectTableDAO,
                                               TableRelationDAO tableRelationDAO, ColumnInfoDAO columnInfoDAO,
-                                              SemanticIndexService semanticIndexService, PermissionService permissionService) {
+                                              SemanticIndexService semanticIndexService, DataSourceDAO dataSourceDAO,
+                                              PermissionService permissionService) {
         this.subjectDAO = subjectDAO;
         this.subjectTableDAO = subjectTableDAO;
         this.tableRelationDAO = tableRelationDAO;
         this.columnInfoDAO = columnInfoDAO;
         this.semanticIndexService = semanticIndexService;
+        this.dataSourceDAO = dataSourceDAO;
         this.permissionService = permissionService;
     }
 
@@ -59,6 +65,7 @@ public class TableRelationRecommendationService {
         SubjectPO subject = requireSubject(subjectId);
         permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.EDIT, subject.getCreatedBy());
         boolean canUseDictionaryValues = canUseDictionaryValues(subject);
+        boolean caseInsensitiveColumns = usesCaseInsensitiveColumns(subject);
         List<TableInfoPO> tables = subjectTableDAO.findTablesBySubjectId(subjectId, PageRequest.of(0, MAX_TABLES)).getContent();
         if (tables.size() < 2) return List.of();
 
@@ -68,7 +75,7 @@ public class TableRelationRecommendationService {
         }
         Set<String> existing = new HashSet<>();
         for (TableRelationPO relation : tableRelationDAO.findBySubjectId(subjectId)) {
-            existing.add(relationKey(relation.getFactTableId(), relation.getFactColumn(), relation.getDimensionTableId(), relation.getDimensionColumn()));
+            existing.add(relationKey(relation.getFactTableId(), relation.getFactColumn(), relation.getDimensionTableId(), relation.getDimensionColumn(), caseInsensitiveColumns));
         }
 
         Map<String, Set<String>> valueCache = new HashMap<>();
@@ -80,7 +87,7 @@ public class TableRelationRecommendationService {
                     for (ColumnInfoPO dimensionColumn : columnsByTable.getOrDefault(dimensionTable.getId(), List.of())) {
                         TableRelationRecommendation candidate = evaluate(factTable, factColumn, dimensionTable, dimensionColumn, valueCache, canUseDictionaryValues);
                         if (candidate == null) continue;
-                        if (existing.contains(relationKey(candidate.getFactTableId(), candidate.getFactColumn(), candidate.getDimensionTableId(), candidate.getDimensionColumn()))) continue;
+                        if (existing.contains(relationKey(candidate.getFactTableId(), candidate.getFactColumn(), candidate.getDimensionTableId(), candidate.getDimensionColumn(), caseInsensitiveColumns))) continue;
                         candidates.add(candidate);
                     }
                 }
@@ -287,8 +294,21 @@ public class TableRelationRecommendationService {
             .trim();
     }
 
-    private static String relationKey(String factTableId, String factColumn, String dimensionTableId, String dimensionColumn) {
-        return factTableId + "|" + factColumn.toLowerCase(Locale.ROOT) + "|" + dimensionTableId + "|" + dimensionColumn.toLowerCase(Locale.ROOT);
+    private static String relationKey(String factTableId, String factColumn, String dimensionTableId, String dimensionColumn,
+                                      boolean caseInsensitiveColumns) {
+        return factTableId + "|" + keyColumn(factColumn, caseInsensitiveColumns)
+            + "|" + dimensionTableId + "|" + keyColumn(dimensionColumn, caseInsensitiveColumns);
+    }
+
+    private static String keyColumn(String column, boolean caseInsensitiveColumns) {
+        return caseInsensitiveColumns ? column.toLowerCase(Locale.ROOT) : column;
+    }
+
+    private boolean usesCaseInsensitiveColumns(SubjectPO subject) {
+        return dataSourceDAO.findById(subject.getDatasourceId())
+            .map(DataSourcePO::getType)
+            .map(type -> type == DbType.MYSQL || type == DbType.MARIADB || type == DbType.DORIS)
+            .orElse(false);
     }
 
     private boolean canUseDictionaryValues(SubjectPO subject) {

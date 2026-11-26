@@ -5,7 +5,10 @@ import com.dati.auth.authentication.User;
 import com.dati.base.RequestContext;
 import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
+import com.dati.datasource.repository.dao.DataSourceDAO;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
+import com.dati.datasource.repository.po.DataSourcePO;
+import com.dati.db.DbType;
 import com.dati.datasource.repository.po.ColumnInfoPO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.permission.domain.model.Permission;
@@ -49,6 +52,7 @@ class TableRelationRecommendationServiceTest {
     @Mock private TableRelationDAO tableRelationDAO;
     @Mock private ColumnInfoDAO columnInfoDAO;
     @Mock private SemanticIndexService semanticIndexService;
+    @Mock private DataSourceDAO dataSourceDAO;
     @Mock private PermissionService permissionService;
     @InjectMocks private TableRelationRecommendationService service;
 
@@ -62,6 +66,10 @@ class TableRelationRecommendationServiceTest {
         subject.setId("subject-1");
         subject.setDatasourceId("ds-1");
         subject.setCreatedBy(TestFixtures.TEST_USER_ID);
+        DataSourcePO dataSource = new DataSourcePO();
+        dataSource.setId("ds-1");
+        dataSource.setType(DbType.MYSQL);
+        lenient().when(dataSourceDAO.findById("ds-1")).thenReturn(Optional.of(dataSource));
         lenient().when(subjectDAO.findById("subject-1")).thenReturn(Optional.of(subject));
         lenient().doAnswer(inv -> null).when(permissionService).requireCurrentUser(any(), anyString(), any(), anyString());
         lenient().when(tableRelationDAO.findBySubjectId("subject-1")).thenReturn(List.of());

@@ -5,6 +5,9 @@ import com.dati.auth.authentication.User;
 import com.dati.base.RequestContext;
 import com.dati.base.exception.DatiException;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
+import com.dati.datasource.repository.dao.DataSourceDAO;
+import com.dati.datasource.repository.po.DataSourcePO;
+import com.dati.db.DbType;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.model.TableRelation;
 import com.dati.semantic.repository.dao.SubjectDAO;
@@ -38,6 +41,7 @@ class TableRelationServiceTest {
     @Mock private SubjectDAO subjectDAO;
     @Mock private SubjectTableDAO subjectTableDAO;
     @Mock private ColumnInfoDAO columnInfoDAO;
+    @Mock private DataSourceDAO dataSourceDAO;
     @Mock private PermissionService permissionService;
     @InjectMocks private TableRelationService service;
 
@@ -49,7 +53,12 @@ class TableRelationServiceTest {
         RequestContext.setUser(user);
         SubjectPO subject = new SubjectPO();
         subject.setId("subject-1");
+        subject.setDatasourceId("ds-1");
         subject.setCreatedBy(TestFixtures.TEST_USER_ID);
+        DataSourcePO dataSource = new DataSourcePO();
+        dataSource.setId("ds-1");
+        dataSource.setType(DbType.MYSQL);
+        lenient().when(dataSourceDAO.findById("ds-1")).thenReturn(Optional.of(dataSource));
         lenient().when(subjectDAO.findById("subject-1")).thenReturn(Optional.of(subject));
         lenient().doAnswer(inv -> null).when(permissionService).requireCurrentUser(any(), anyString(), any(), anyString());
         lenient().when(tableRelationDAO.save(any(TableRelationPO.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -93,6 +102,26 @@ class TableRelationServiceTest {
 
         assertThatThrownBy(() -> service.createRelation("subject-1", item))
             .isInstanceOf(DatiException.class);
+    }
+
+    @Test
+    @DisplayName("create allows case-distinct columns on case-sensitive databases")
+    void createAllowsCaseDistinctColumnsOnPostgres() {
+        DataSourcePO postgres = new DataSourcePO();
+        postgres.setId("ds-1");
+        postgres.setType(DbType.POSTGRESQL);
+        when(dataSourceDAO.findById("ds-1")).thenReturn(Optional.of(postgres));
+        TableRelationPO existing = new TableRelationPO();
+        existing.setId("rel-existing");
+        existing.setFactTableId("fact-1");
+        existing.setFactColumn("WO_ID");
+        existing.setDimensionTableId("dim-1");
+        existing.setDimensionColumn("ID");
+        when(tableRelationDAO.findBySubjectId("subject-1")).thenReturn(java.util.List.of(existing));
+
+        TableRelation created = service.createRelation("subject-1", relation());
+
+        assertThat(created.getFactColumn()).isEqualTo("wo_id");
     }
 
     @Test
