@@ -253,7 +253,7 @@ onMounted(() => { loadTables(); loadRelations(); loadGraphRelations(); loadRecom
       :tables="tables"
       :relations="graphRelations"
       :recommendations="recommendations"
-      :loading="loading || recommending"
+      :loading="loading"
       @confirm="confirmRecommendation"
       @batch-confirm="confirmGraphBatch"
     />
