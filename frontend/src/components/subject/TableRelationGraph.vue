@@ -92,6 +92,7 @@ const visibleTableIds = computed(() => {
   for (const table of props.tables) {
     if (tableMatches(table.id)) directMatches.add(table.id);
   }
+  directMatches.forEach((id) => ids.add(id));
   for (const edge of relationEdges.value) {
     if (directMatches.has(edge.factTableId)) {
       ids.add(edge.factTableId);
