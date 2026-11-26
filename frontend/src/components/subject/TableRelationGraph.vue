@@ -99,6 +99,17 @@ const visibleTableIds = computed(() => {
 const visibleTables = computed(() => props.tables.filter((table) => visibleTableIds.value.has(table.id)));
 const displayEdges = computed(() => visibleEdges.value.filter((edge) => visibleTableIds.value.has(edge.factTableId) && visibleTableIds.value.has(edge.dimensionTableId)));
 
+const relationColumns = computed(() => {
+  const result = new Map<string, string[]>();
+  for (const edge of relationEdges.value) {
+    for (const [tableId, column] of [[edge.factTableId, edge.factColumn], [edge.dimensionTableId, edge.dimensionColumn]] as const) {
+      const list = result.get(tableId) || [];
+      if (!list.includes(column)) list.push(column);
+      result.set(tableId, list);
+    }
+  }
+  return result;
+});
 const tableColumns = computed(() => {
   const result = new Map<string, string[]>();
   for (const edge of displayEdges.value) {
@@ -124,7 +135,7 @@ function tableMatches(tableId: string) {
   if (!query) return true;
   const table = props.tables.find((item) => item.id === tableId);
   if (!table) return false;
-  const columns = tableColumns.value.get(tableId) || [];
+  const columns = relationColumns.value.get(tableId) || [];
   return table.name.toLowerCase().includes(query) || (table.description || "").toLowerCase().includes(query) || columns.some((column) => column.toLowerCase().includes(query));
 }
 function columnsFor(tableId: string) { return tableColumns.value.get(tableId) || []; }
