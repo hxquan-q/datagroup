@@ -8,6 +8,7 @@ import {
 } from "~/api/auth";
 import type { User } from "~/api/types";
 import { useRouter } from "vue-router";
+import { queryClient } from "~/plugins/query";
 
 export const useAuthStore = defineStore("auth", () => {
   const router = useRouter();
@@ -28,6 +29,7 @@ export const useAuthStore = defineStore("auth", () => {
     loading.value = true;
     try {
       const resp = await apiLogin("local", name, password);
+      queryClient.clear();
       token.value = resp.token;
       localStorage.setItem("access_token", resp.token);
       await fetchUser();
@@ -41,6 +43,7 @@ export const useAuthStore = defineStore("auth", () => {
     loading.value = true;
     try {
       const resp = await apiGuestLogin();
+      queryClient.clear();
       token.value = resp.token;
       localStorage.setItem("access_token", resp.token);
       await fetchUser();
@@ -78,6 +81,7 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function logout() {
+    queryClient.clear();
     token.value = null;
     user.value = null;
     localStorage.removeItem("access_token");

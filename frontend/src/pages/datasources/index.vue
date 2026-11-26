@@ -1,97 +1,92 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { DatasourceVO } from "~/api/datasource";
 import { deleteDataSource, listDataSources } from "~/api/datasource";
+import { datasourceKeys } from "~/api/query-keys";
 import { Plus, Search, RefreshCw as Refresh } from "@lucide/vue";
 import AuthDialog from "~/components/common/AuthDialog.vue";
 import { notifyError } from "~/api/http";
 
 const { t } = useI18n();
 const router = useRouter();
+const queryClient = useQueryClient();
 
-// 响应式数据
-const loading = ref(false);
-const datasourceList = ref<DatasourceVO[]>([]);
 const dialogVisible = ref(false);
 const currentDatasource = ref<DatasourceVO | null>(null);
 const searchKeyword = ref("");
-
-// 分页状态（由父组件统一管理）
+const appliedKeyword = ref("");
 const page = ref(1);
 const pageSize = ref(10);
-const total = ref(0);
 
-// 授权弹窗状态
 const authDialogVisible = ref(false);
 const authResourceId = ref("");
+
+const datasourceQueryKey = computed(() =>
+  datasourceKeys.list(page.value, pageSize.value, appliedKeyword.value),
+);
+
+const { data: datasourcePage, isFetching, refetch } = useQuery({
+  queryKey: datasourceQueryKey,
+  queryFn: ({ signal }) =>
+    listDataSources(
+      page.value,
+      pageSize.value,
+      appliedKeyword.value || undefined,
+      signal,
+    ),
+  placeholderData: keepPreviousData,
+});
+
+const loading = computed(() => isFetching.value);
+const datasourceList = computed(() => datasourcePage.value?.data || []);
+const total = computed(() => datasourcePage.value?.total ?? 0);
+
+const invalidateDatasourceLists = () =>
+  queryClient.invalidateQueries({ queryKey: datasourceKeys.lists() });
 
 const handleAuthorize = (datasource: DatasourceVO) => {
   authResourceId.value = datasource.id;
   authDialogVisible.value = true;
 };
 
-// 加载数据源列表（携带分页参数）
-const loadDatasources = async () => {
-  try {
-    loading.value = true;
-    const response = await listDataSources(
-      page.value,
-      pageSize.value,
-      searchKeyword.value,
-    );
-    // 假设后端返回 { data: DatasourceVO[], total: number }
-    datasourceList.value = response.data || [];
-    total.value = response.total ?? 0;
-  } catch (error) {
-    console.error("Failed to load data source:", error);
-    notifyError(error, t("common.loadFailed"));
-  } finally {
-    loading.value = false;
+const handleSearch = () => {
+  const isSameQuery =
+    appliedKeyword.value === searchKeyword.value && page.value === 1;
+  appliedKeyword.value = searchKeyword.value;
+  page.value = 1;
+  if (isSameQuery) {
+    void refetch();
   }
 };
 
-// 搜索处理
-const handleSearch = () => {
-  page.value = 1; // 搜索时回到第一页
-  loadDatasources();
-};
-
-// 清空搜索
 const handleClearSearch = () => {
   searchKeyword.value = "";
+  appliedKeyword.value = "";
   page.value = 1;
-  loadDatasources();
 };
 
-// 分页事件
 const handlePageChange = (p: number) => {
   page.value = p;
-  loadDatasources();
 };
 
 const handlePageSizeChange = (ps: number) => {
   pageSize.value = ps;
-  page.value = 1; // 切换每页数量时通常回到第1页
-  loadDatasources();
-};
-
-// 刷新
-const handleRefresh = () => {
-  searchKeyword.value = "";
   page.value = 1;
-  loadDatasources();
 };
 
-// 创建数据源
+const handleRefresh = () => {
+  invalidateDatasourceLists();
+};
+
 const handleCreate = () => {
   currentDatasource.value = null;
   dialogVisible.value = true;
 };
 
-// 编辑数据源
 const handleEdit = (datasource: DatasourceVO) => {
   currentDatasource.value = { ...datasource };
   dialogVisible.value = true;
@@ -103,7 +98,6 @@ const handleTableManage = (datasource: DatasourceVO) => {
   });
 };
 
-// 删除数据源
 const handleDelete = async (datasource: DatasourceVO) => {
   try {
     await ElMessageBox.confirm(
@@ -118,23 +112,19 @@ const handleDelete = async (datasource: DatasourceVO) => {
 
     await deleteDataSource(datasource.id);
     ElMessage.success(t("common.deleteSuccess"));
-    await loadDatasources();
+    await invalidateDatasourceLists();
   } catch (error) {
-    console.error("Failed to delete:", error);
-    notifyError(error, t("common.operationFailed"));
+    if (error !== "cancel" && error !== "close") {
+      console.error("Failed to delete:", error);
+      notifyError(error, t("common.operationFailed"));
+    }
   }
 };
 
-// 弹窗成功回调
 const handleDialogSuccess = () => {
   dialogVisible.value = false;
-  loadDatasources();
+  invalidateDatasourceLists();
 };
-
-// 页面加载时获取数据
-onMounted(() => {
-  loadDatasources();
-});
 </script>
 
 <template>
