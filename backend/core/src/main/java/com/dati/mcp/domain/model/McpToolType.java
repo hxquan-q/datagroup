@@ -4,6 +4,8 @@ import com.dati.mcp.domain.model.param.ExecuteSqlArgs;
 import com.dati.mcp.domain.model.param.GetTableInfoArgs;
 import com.dati.mcp.domain.model.param.ListTablesArgs;
 import com.dati.mcp.domain.model.param.SearchMetadataArgs;
+import com.dati.mcp.domain.model.param.SearchSemanticsArgs;
+import com.dati.mcp.domain.model.param.QueryMetricArgs;
 import com.dati.mcp.domain.model.param.UpdateColumnInfoArgs;
 import com.dati.mcp.domain.model.param.UpdateTableInfoArgs;
 import com.dati.mcp.domain.model.param.UpsertTermArgs;
@@ -32,6 +34,22 @@ public enum McpToolType {
         "List Tables and Terms",
         "List all available tables (with schema, name, and description; overview only, no columns) and business terms under the service scope. Use this tool when exploring the catalog or when keyword search returns no matches.",
         ListTablesArgs.class,
+        "{\"readOnlyHint\":true}",
+        true
+    ),
+    SEARCH_SEMANTICS(
+        "search_semantics",
+        "Search Semantic Metrics",
+        "Search published business metrics by keywords, aliases, or question fragments. Use this before query_metric to discover the exact governed metric code, owner, grain, time field, dimensions, and required parameters.",
+        SearchSemanticsArgs.class,
+        "{\"readOnlyHint\":true}",
+        true
+    ),
+    QUERY_METRIC(
+        "query_metric",
+        "Query Metric",
+        "Execute a published governed metric by metric ID, stable code, business name, or alias. Use search_semantics first; pass the metric-specific parameters in arguments.",
+        QueryMetricArgs.class,
         "{\"readOnlyHint\":true}",
         true
     ),
@@ -98,6 +116,8 @@ public enum McpToolType {
             case SEARCH_METADATA -> new ToolConfig.SearchMetadataConfig();
             case GET_TABLE_INFO -> new ToolConfig.GetTableInfoConfig();
             case LIST_TABLES -> new ToolConfig.ListTablesConfig();
+            case SEARCH_SEMANTICS -> new ToolConfig.SearchSemanticsConfig();
+            case QUERY_METRIC -> new ToolConfig.QueryMetricConfig();
             case EXECUTE_SQL -> new ToolConfig.ExecuteSqlConfig();
             case UPDATE_TABLE_INFO, UPDATE_COLUMN_INFO, UPSERT_TERM -> new ToolConfig.UpdateMetadataConfig();
             case PARAMETERIZED_SQL -> new ToolConfig.ParamSqlConfig();

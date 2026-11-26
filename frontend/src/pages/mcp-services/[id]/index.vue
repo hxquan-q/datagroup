@@ -276,8 +276,17 @@ const handleSave = async () => {
           {{ statusLabel(service.status) }}
         </span>
 
-        <span v-if="service?.active_version_number" class="text-xs font-mono text-[var(--ep-text-color-secondary)] bg-[var(--ep-fill-color-light)] px-2 py-0.5 rounded-md border border-[var(--ep-border-color-lighter)]">
-          v{{ service.active_version_number }}
+        <span
+          v-if="service?.active_version_number"
+          class="text-xs px-2 py-0.5 rounded-md border inline-flex items-center gap-1.5"
+          :class="diff?.has_changes
+            ? 'font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/35 border-amber-200 dark:border-amber-800/50'
+            : 'font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/35 border-emerald-200 dark:border-emerald-800/50'"
+        >
+          <span class="font-mono">{{ t("mcpService.activeVersionState", { version: service.active_version_number }) }}</span>
+          <span v-if="diff" class="text-[11px] opacity-90">
+            · {{ diff.has_changes ? t("mcpService.withUnpublishedChanges") : t("mcpService.noUnpublishedChanges") }}
+          </span>
         </span>
       </div>
 

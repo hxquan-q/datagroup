@@ -38,6 +38,8 @@ public class McpPrebuiltToolConfigMapper {
         return switch (type) {
             case SEARCH_METADATA -> JsonUtils.fromJson(json, ToolConfig.SearchMetadataConfig.class);
             case GET_TABLE_INFO  -> JsonUtils.fromJson(json, ToolConfig.GetTableInfoConfig.class);
+            case SEARCH_SEMANTICS -> JsonUtils.fromJson(json, ToolConfig.SearchSemanticsConfig.class);
+            case QUERY_METRIC    -> JsonUtils.fromJson(json, ToolConfig.QueryMetricConfig.class);
             case EXECUTE_SQL     -> JsonUtils.fromJson(json, ToolConfig.ExecuteSqlConfig.class);
             default -> type.getDefaultConfig();
         };

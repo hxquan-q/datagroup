@@ -34,6 +34,16 @@ public interface ToolConfig {
     class ListTablesConfig implements ToolConfig {
     }
 
+    /** SEARCH_SEMANTICS has no per-service config. */
+    @Data
+    class SearchSemanticsConfig implements ToolConfig {
+    }
+
+    /** QUERY_METRIC has no per-service config. */
+    @Data
+    class QueryMetricConfig implements ToolConfig {
+    }
+
     @Data
     class ExecuteSqlConfig implements ToolConfig {
         private SqlPolicy sqlPolicy = new SqlPolicy();

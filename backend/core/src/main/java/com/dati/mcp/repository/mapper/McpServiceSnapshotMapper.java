@@ -9,6 +9,7 @@ import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
+import com.dati.semantic.domain.model.Metric;
 import com.dati.mcp.repository.po.McpServiceSnapshotPO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -86,6 +87,15 @@ public class McpServiceSnapshotMapper {
             content.setCustomTools(tools);
         }
 
+        // metrics — Draft record
+        if (root.has("metrics")) {
+            List<McpServiceSnapshot.MetricDraft> metrics = new ArrayList<>();
+            for (JsonNode n : root.get("metrics")) {
+                metrics.add(JsonUtils.fromJson(n.toString(), McpServiceSnapshot.MetricDraft.class));
+            }
+            content.setMetrics(metrics);
+        }
+
         // prompts — Draft record
         if (root.has("prompts")) {
             List<McpServiceSnapshot.PromptDraft> prompts = new ArrayList<>();
@@ -138,6 +148,8 @@ public class McpServiceSnapshotMapper {
             case SEARCH_METADATA -> JsonUtils.fromJson(configJson, ToolConfig.SearchMetadataConfig.class);
             case GET_TABLE_INFO  -> JsonUtils.fromJson(configJson, ToolConfig.GetTableInfoConfig.class);
             case LIST_TABLES     -> JsonUtils.fromJson(configJson, ToolConfig.ListTablesConfig.class);
+            case SEARCH_SEMANTICS -> JsonUtils.fromJson(configJson, ToolConfig.SearchSemanticsConfig.class);
+            case QUERY_METRIC    -> JsonUtils.fromJson(configJson, ToolConfig.QueryMetricConfig.class);
             case EXECUTE_SQL     -> JsonUtils.fromJson(configJson, ToolConfig.ExecuteSqlConfig.class);
             case UPDATE_TABLE_INFO, UPDATE_COLUMN_INFO, UPSERT_TERM -> JsonUtils.fromJson(configJson, ToolConfig.UpdateMetadataConfig.class);
             case PARAMETERIZED_SQL -> JsonUtils.fromJson(configJson, ToolConfig.ParamSqlConfig.class);
@@ -190,6 +202,16 @@ public class McpServiceSnapshotMapper {
     }
 
     // ── Model → Draft（发布打包用；仅业务字段入快照）──
+
+
+    public static McpServiceSnapshot.MetricDraft toMetricDraft(Metric metric) {
+        return new McpServiceSnapshot.MetricDraft(
+                metric.getId(), metric.getSubjectId(), metric.getDataSourceId(), metric.getCode(),
+                metric.getName(), metric.getDescription(), metric.getAliases(), metric.getOwner(),
+                metric.getGrain(), metric.getTimeField(), metric.getTimeZone(),
+                metric.getAllowedDimensions(), metric.getSqlTemplate(), metric.getParameters(),
+                metric.getTimeout(), metric.getMaxRows(), metric.getRevision());
+    }
 
     public static McpServiceSnapshot.DataScopeDraft toDataScopeDraft(McpServiceDataScope scope) {
         return new McpServiceSnapshot.DataScopeDraft(scope.getServiceId(), scope.getScopeType(),

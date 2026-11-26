@@ -49,16 +49,18 @@ class ToolDefinitionConverterTest {
     }
 
     @Test
-    @DisplayName("prebuilt order is fixed: SEARCH_METADATA, GET_TABLE_INFO, LIST_TABLES, EXECUTE_SQL")
+    @DisplayName("prebuilt order is fixed: SEARCH_METADATA, SEARCH_SEMANTICS, GET_TABLE_INFO, LIST_TABLES, QUERY_METRIC, EXECUTE_SQL")
     void prebuiltOrderIsFixed() {
         var content = new McpServiceSnapshot.SnapshotContent();
         content.setPrebuiltTools(List.of(
             TestFixtures.createTestPrebuiltToolDraft(McpToolType.EXECUTE_SQL, true, new ToolConfig.ExecuteSqlConfig()),
             TestFixtures.createTestPrebuiltToolDraft(McpToolType.GET_TABLE_INFO, true, new ToolConfig.GetTableInfoConfig()),
             TestFixtures.createTestPrebuiltToolDraft(McpToolType.LIST_TABLES, true, new ToolConfig.ListTablesConfig()),
-            TestFixtures.createTestPrebuiltToolDraft(McpToolType.SEARCH_METADATA, true, new ToolConfig.SearchMetadataConfig())));
+            TestFixtures.createTestPrebuiltToolDraft(McpToolType.SEARCH_METADATA, true, new ToolConfig.SearchMetadataConfig()),
+            TestFixtures.createTestPrebuiltToolDraft(McpToolType.SEARCH_SEMANTICS, true, new ToolConfig.SearchSemanticsConfig()),
+            TestFixtures.createTestPrebuiltToolDraft(McpToolType.QUERY_METRIC, true, new ToolConfig.QueryMetricConfig())));
         List<McpSchema.Tool> tools = converter.convert(content);
-        assertEquals(List.of("search_tables_and_terms", "get_table_schema", "list_tables_and_terms", "execute_sql"),
+        assertEquals(List.of("search_tables_and_terms", "search_semantics", "get_table_schema", "list_tables_and_terms", "query_metric", "execute_sql"),
             tools.stream().map(McpSchema.Tool::name).toList());
     }
 
@@ -129,6 +131,26 @@ class ToolDefinitionConverterTest {
         assertTrue(props.containsKey("status"));
         assertEquals("string", ((java.util.Map<?, ?>) props.get("status")).get("type"));
         assertEquals(List.of("status"), tools.getFirst().inputSchema().get("required"));
+    }
+
+
+    @Test
+    @DisplayName("semantic tools expose read-only schemas generated from parameter records")
+    void semanticToolSchemas() {
+        var content = new McpServiceSnapshot.SnapshotContent();
+        content.setPrebuiltTools(List.of(
+            TestFixtures.createTestPrebuiltToolDraft(McpToolType.SEARCH_SEMANTICS, true, new ToolConfig.SearchSemanticsConfig()),
+            TestFixtures.createTestPrebuiltToolDraft(McpToolType.QUERY_METRIC, true, new ToolConfig.QueryMetricConfig())));
+        List<McpSchema.Tool> tools = converter.convert(content);
+
+        assertEquals(List.of("search_semantics", "query_metric"), tools.stream().map(McpSchema.Tool::name).toList());
+        assertTrue(tools.get(0).annotations().readOnlyHint());
+        assertTrue(tools.get(1).annotations().readOnlyHint());
+        assertEquals(List.of("metric"), tools.get(1).inputSchema().get("required"));
+        @SuppressWarnings("unchecked")
+        var queryProps = (java.util.Map<String, Object>) tools.get(1).inputSchema().get("properties");
+        assertTrue(queryProps.containsKey("arguments"));
+        assertTrue(queryProps.containsKey("dimensions"));
     }
 
     @Test

@@ -44,6 +44,9 @@ class McpToolTestServiceTest {
     @Mock
     private McpScopeResolver scopeResolver;
 
+    @Mock
+    private com.dati.semantic.domain.service.MetricService metricService;
+
     private McpToolTestService service;
 
     @BeforeEach
@@ -51,7 +54,7 @@ class McpToolTestServiceTest {
         when(toolExecutor.getToolType()).thenReturn(McpToolType.EXECUTE_SQL);
         when(scopeResolver.resolve(any())).thenAnswer(inv -> inv.getArgument(0));
         service = new McpToolTestService(toolResolver, scopeDAO, List.of(toolExecutor),
-            new ToolParameterBinder(), permissionService, scopeResolver);
+            new ToolParameterBinder(), permissionService, scopeResolver, metricService);
     }
 
     @Test
