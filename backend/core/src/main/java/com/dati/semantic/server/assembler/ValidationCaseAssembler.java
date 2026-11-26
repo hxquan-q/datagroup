@@ -40,6 +40,7 @@ public class ValidationCaseAssembler extends BaseAssembler {
         vo.setLastRunAt(item.getLastRunAt());
         vo.setLastDurationMs(item.getLastDurationMs());
         vo.setLastMetricRevision(item.getLastMetricRevision());
+        vo.setLastEvidence(item.getLastEvidence());
         return vo;
     }
 }

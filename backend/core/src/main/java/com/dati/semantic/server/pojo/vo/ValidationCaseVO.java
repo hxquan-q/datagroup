@@ -27,4 +27,5 @@ public class ValidationCaseVO extends BaseResourceVO {
     private Instant lastRunAt;
     private Long lastDurationMs;
     private Integer lastMetricRevision;
+    private Map<String, Object> lastEvidence = new HashMap<>();
 }

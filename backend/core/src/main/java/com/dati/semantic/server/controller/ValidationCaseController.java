@@ -71,6 +71,11 @@ public class ValidationCaseController {
         return new IdResponse(id);
     }
 
+    @PostMapping("/v1/validation-cases/{id}/run")
+    public ValidationCaseVO run(@PathVariable String id) {
+        return assembler.toVO(service.runCase(id));
+    }
+
     @DeleteMapping("/v1/validation-cases/{id}")
     public IdResponse delete(@PathVariable String id) {
         service.deleteCase(id);

@@ -29,6 +29,7 @@ public class ValidationCaseMapper {
         po.setLastRunAt(item.getLastRunAt());
         po.setLastDurationMs(item.getLastDurationMs());
         po.setLastMetricRevision(item.getLastMetricRevision());
+        po.setLastEvidence(item.getLastEvidence() != null ? item.getLastEvidence() : new HashMap<>());
     }
     public static ValidationCase toModel(ValidationCasePO po) {
         ValidationCase item = new ValidationCase();
@@ -47,6 +48,7 @@ public class ValidationCaseMapper {
         item.setLastRunAt(po.getLastRunAt());
         item.setLastDurationMs(po.getLastDurationMs());
         item.setLastMetricRevision(po.getLastMetricRevision());
+        item.setLastEvidence(po.getLastEvidence() != null ? po.getLastEvidence() : new HashMap<>());
         return item;
     }
 }

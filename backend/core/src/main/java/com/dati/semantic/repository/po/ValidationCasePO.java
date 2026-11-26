@@ -54,4 +54,7 @@ public class ValidationCasePO extends BaseResourcePO {
     private Long lastDurationMs;
     @Column(name = "last_metric_revision")
     private Integer lastMetricRevision;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "last_evidence", columnDefinition = "json")
+    private Map<String, Object> lastEvidence = new HashMap<>();
 }
