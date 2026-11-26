@@ -256,4 +256,24 @@ class GetTableInfoExecutorTest {
 
         assertThat(result.relations()).containsExactly(relation);
     }
+    @Test
+    @DisplayName("physical fallback matches relations by resolved table spelling")
+    void physicalFallbackMatchesRelationsByResolvedSpelling() {
+        when(tableMetadataService.getTableMeta("ds-1", "sandbox", "ORDERS"))
+            .thenReturn(Optional.empty());
+        when(tableMetadataService.getPhysicalTableMeta("ds-1", "sandbox", "ORDERS"))
+            .thenReturn(Optional.of(physicalMeta()));
+        McpServiceDataScope scope = schemaScope("sandbox");
+        McpServiceSnapshot.TableRelationDraft relation = new McpServiceSnapshot.TableRelationDraft(
+            "sub-1", "fact-1", "ds-1", "sandbox", "orders", "customer_id",
+            "dim-1", "ds-1", "sandbox", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        GetTableInfoArgs args = new GetTableInfoArgs(List.of(
+            new GetTableInfoArgs.TableRef("ds-1", "sandbox", "ORDERS", null)));
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.GET_TABLE_INFO,
+            new ToolConfig.GetTableInfoConfig(), args, List.of(scope), List.of(), List.of(relation));
+
+        TableMetadata result = (TableMetadata) executor.execute(context);
+
+        assertThat(result.relations()).containsExactly(relation);
+    }
 }

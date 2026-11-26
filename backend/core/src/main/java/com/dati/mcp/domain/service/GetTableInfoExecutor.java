@@ -70,7 +70,7 @@ public class GetTableInfoExecutor implements ToolExecutor {
             if (meta != null) {
                 entries.add(toTableDef(ref, meta, physical));
                 requestedTables.add(new TableKey(ref.dataSourceId(),
-                    meta.schema() != null ? meta.schema() : ref.schema(), ref.table()));
+                    meta.schema() != null ? meta.schema() : ref.schema(), meta.tableName() != null ? meta.tableName() : ref.table()));
             }
         }
         List<McpServiceSnapshot.TableRelationDraft> relations = ctx.relations().stream()
