@@ -61,6 +61,11 @@ const tabs = computed(() => [
   { key: "stats", label: t("mcpService.tab.usageStats") },
 ]);
 
+const breadcrumbs = computed(() => [
+  { label: t("mcpService.title"), to: "/mcp-services" },
+  { label: service.value?.name || serviceId },
+]);
+
 const statusLabel = (status?: string) => {
   switch (status) {
     case "DRAFT":
@@ -246,15 +251,12 @@ const handleSave = async () => {
 
 <template>
   <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-5 px-5 py-6 md:px-8 md:py-7 overflow-hidden">
-    <!-- Top Navigation Breadcrumbs & Action Bar -->
-    <div class="detail-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-2xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] px-5 py-4 detail-hero">
-      <div class="flex items-center gap-3 flex-wrap">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/mcp-services' }">
-            {{ t("mcpService.title") }}
-          </el-breadcrumb-item>
-          <el-breadcrumb-item>{{ service?.name || serviceId }}</el-breadcrumb-item>
-        </el-breadcrumb>
+    <DetailPageShell
+      :breadcrumbs="breadcrumbs"
+      :title="service?.name || serviceId"
+      :description="service?.description || undefined"
+    >
+      <template #badges>
 
         <span
           v-if="service"
@@ -288,9 +290,16 @@ const handleSave = async () => {
             · {{ diff.has_changes ? t("mcpService.withUnpublishedChanges") : t("mcpService.noUnpublishedChanges") }}
           </span>
         </span>
-      </div>
+      </template>
 
-      <div class="detail-actions flex items-center justify-end gap-2 flex-wrap">
+      <template #meta>
+        <span v-if="service?.endpoint_path">
+          {{ t("mcpService.endpointPath") }}: <code class="font-mono">{{ service.endpoint_path }}</code>
+        </span>
+        <span>ID: {{ serviceId }}</span>
+      </template>
+
+      <template #actions>
         <!-- DRAFT：首次发布 -->
         <el-button
           v-if="service?.status === 'DRAFT'"
@@ -349,8 +358,8 @@ const handleSave = async () => {
             {{ t("mcpService.publishChanges") }}
           </el-button>
         </template>
-      </div>
-    </div>
+      </template>
+    </DetailPageShell>
 
     <!-- Top Horizontal Underline Tabs -->
     <div class="border-b border-[var(--ep-border-color-lighter)] shrink-0">

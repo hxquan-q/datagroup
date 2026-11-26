@@ -23,6 +23,7 @@ import { useSystemStore } from "~/stores/system";
 import { formatDateTime } from "~/composables";
 import { notifyError } from "~/api/http";
 import { getDataSource } from "~/api/datasource";
+import { getTableInfo } from "~/api/tableinfo";
 
 const { t } = useI18n();
 const systemStore = useSystemStore();
@@ -39,7 +40,9 @@ const columnList = ref<TableColumnVO[]>([]);
 const page = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
-const tableName = computed(() => String(route.query.tableName || tableId.value));
+const fetchedTableName = ref("");
+const tableSchema = ref("");
+const tableName = computed(() => fetchedTableName.value || String(route.query.tableName || tableId.value));
 const breadcrumbs = computed(() => [
   { label: t("layout.side.dataSources"), to: "/datasources" },
   { label: datasourceName.value || datasourceId.value },
@@ -613,6 +616,11 @@ onMounted(async () => {
     const ds = await getDataSource(datasourceId.value);
     datasourceName.value = ds.name || "";
   } catch { /* ignore */ }
+  try {
+    const table = await getTableInfo(datasourceId.value, tableId.value);
+    fetchedTableName.value = table.name || "";
+    tableSchema.value = table.schema || "";
+  } catch { /* ignore */ }
   loadColumns();
 });
 </script>
@@ -625,7 +633,8 @@ onMounted(async () => {
       :description="tableName"
     >
       <template #meta>
-        <span>{{ t("layout.side.dataSources") }}: {{ datasourceName || datasourceId }}</span>
+        <span>{{ t("common.dataSource") }}: {{ datasourceName || datasourceId }}</span>
+        <span v-if="tableSchema">{{ t("common.schema") }}: {{ tableSchema }}</span>
       </template>
     </DetailPageShell>
 

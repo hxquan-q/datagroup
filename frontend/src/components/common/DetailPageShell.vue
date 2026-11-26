@@ -16,8 +16,8 @@ defineProps<{
     <div class="detail-shell-main">
       <el-breadcrumb separator="/" class="detail-shell-breadcrumb">
         <el-breadcrumb-item
-          v-for="item in breadcrumbs"
-          :key="item.label"
+          v-for="(item, index) in breadcrumbs"
+          :key="`${item.label}-${index}`"
           :to="item.to ? { path: item.to } : undefined"
         >
           {{ item.label }}
@@ -44,6 +44,7 @@ defineProps<{
 <style scoped>
 .detail-shell {
   display: flex;
+  flex-shrink: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -62,7 +63,17 @@ defineProps<{
 }
 
 .detail-shell-breadcrumb {
+  max-width: 100%;
   font-size: 12px;
+}
+
+.detail-shell-breadcrumb :deep(.el-breadcrumb__inner) {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
 }
 
 .detail-shell-title-row {
