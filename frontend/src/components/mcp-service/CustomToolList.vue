@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { Coins as Coin } from "@lucide/vue";
@@ -8,8 +8,9 @@ import type { McpToolVO } from "~/api/mcp-tool";
 import { updateTool, deleteCustomTool } from "~/api/mcp-tool";
 import { notifyError } from "~/api/http";
 import { getDataScope } from "~/api/mcp-service";
-import CustomToolDialog from "./CustomToolDialog.vue";
-import ToolTestDialog from "./ToolTestDialog.vue";
+
+const CustomToolDialog = defineAsyncComponent(() => import("./CustomToolDialog.vue"));
+const ToolTestDialog = defineAsyncComponent(() => import("./ToolTestDialog.vue"));
 
 const { t } = useI18n();
 
@@ -18,6 +19,7 @@ const emit = defineEmits<{ (e: "refresh"): void }>();
 
 const searchQuery = ref("");
 const dialogVisible = ref(false);
+const dialogActivated = ref(false);
 const editingTool = ref<McpToolVO | null>(null);
 const dsNameMap = ref<Record<string, string>>({});
 const testVisible = ref(false);
@@ -61,11 +63,13 @@ const handleToggle = async (tool: McpToolVO) => {
 
 const handleCreate = () => {
   editingTool.value = null;
+  dialogActivated.value = true;
   dialogVisible.value = true;
 };
 
 const handleEdit = (tool: McpToolVO) => {
   editingTool.value = { ...tool };
+  dialogActivated.value = true;
   dialogVisible.value = true;
 };
 
@@ -185,6 +189,7 @@ const handleDialogSaved = () => {
     </div>
 
     <CustomToolDialog
+      v-if="dialogActivated"
       v-model="dialogVisible"
       :service-id="props.serviceId"
       :tool="editingTool"
