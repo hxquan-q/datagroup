@@ -26,7 +26,9 @@ public class TableAssembler extends BaseAssembler {
     }
 
     public TableInfoVO toTableInfoVO(TableInfo tableInfo) {
-        return mapFields(tableInfo);
+        TableInfoVO vo = mapFields(tableInfo);
+        super.fillUserInfo(List.of(vo));
+        return vo;
     }
 
     public PageResponse<TableInfoVO> toPageResponse(Page<TableInfo> page) {
