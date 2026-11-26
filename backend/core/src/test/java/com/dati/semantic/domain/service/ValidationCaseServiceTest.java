@@ -71,6 +71,7 @@ class ValidationCaseServiceTest {
         lenient().when(metricDAO.findById("metric-1")).thenReturn(Optional.of(metric));
         lenient().doAnswer(inv -> null).when(permissionService).requireCurrentUser(any(), anyString(), any(), anyString());
         lenient().when(validationCaseDAO.save(any(ValidationCasePO.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(dataSourceDAO.existsById("ds-1")).thenReturn(true);
     }
 
     @AfterEach
@@ -199,6 +200,65 @@ class ValidationCaseServiceTest {
 
         assertThat(result.getLastEvidence()).doesNotContainKey("sample_rows");
         assertThat(result.getLastEvidence()).containsEntry("sample_rows_redacted", true);
+    }
+
+
+    @Test
+    @DisplayName("run records an error when the metric data source was deleted")
+    void runErrorsWhenDataSourceDeleted() {
+        ValidationCasePO existing = existingCase("EXECUTION_SUCCESS");
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+        when(dataSourceDAO.existsById("ds-1")).thenReturn(false);
+
+        ValidationCase result = service.runCase("case-1");
+
+        assertThat(result.getLastStatus()).isEqualTo("ERROR");
+        assertThat(result.getLastMessage()).contains("Data source not found");
+    }
+
+    @Test
+    @DisplayName("a deleted data source invalidates an older passing result in case reads")
+    void deletedDataSourceInvalidatesOldPass() {
+        ValidationCasePO existing = existingCase("EXECUTION_SUCCESS");
+        existing.setLastStatus("PASS");
+        existing.setLastMessage("execution succeeded");
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+        when(dataSourceDAO.findById("ds-1")).thenReturn(Optional.empty());
+
+        ValidationCase result = service.getCase("case-1");
+
+        assertThat(result.getLastStatus()).isEqualTo("ERROR");
+        assertThat(result.getLastMessage()).contains("data source is unavailable");
+    }
+
+    @Test
+    @DisplayName("question-only edits keep the existing validation result")
+    void questionOnlyEditKeepsLastResult() {
+        ValidationCasePO existing = existingCase("NON_EMPTY");
+        existing.setLastStatus("PASS");
+        existing.setLastMessage("execution returned rows");
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+        ValidationCase patch = new ValidationCase();
+        patch.setQuestion("修改后的业务问法");
+
+        ValidationCase result = service.updateCase("case-1", patch);
+
+        assertThat(result.getLastStatus()).isEqualTo("PASS");
+        assertThat(result.getLastMessage()).isEqualTo("execution returned rows");
+    }
+
+    @Test
+    @DisplayName("ignored expected values for non-row-count assertions do not clear results")
+    void ignoredExpectedValueKeepsLastResult() {
+        ValidationCasePO existing = existingCase("NON_EMPTY");
+        existing.setLastStatus("PASS");
+        when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
+        ValidationCase patch = new ValidationCase();
+        patch.setExpectedValue("");
+
+        ValidationCase result = service.updateCase("case-1", patch);
+
+        assertThat(result.getLastStatus()).isEqualTo("PASS");
     }
 
     private ValidationCasePO existingCase(String assertionType) {

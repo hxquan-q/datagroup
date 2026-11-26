@@ -5,8 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,16 +14,16 @@ public class ValidationCase extends BaseResource {
     private String subjectId;
     private String metricId;
     private String question;
-    private Map<String, Object> arguments = new HashMap<>();
-    private List<String> dimensions = new ArrayList<>();
-    private String assertionType = "EXECUTION_SUCCESS";
+    private Map<String, Object> arguments;
+    private List<String> dimensions;
+    private String assertionType;
     private String expectedValue;
     private String owner;
-    private Boolean enabled = true;
+    private Boolean enabled;
     private String lastStatus;
     private String lastMessage;
     private Instant lastRunAt;
     private Long lastDurationMs;
     private Integer lastMetricRevision;
-    private Map<String, Object> lastEvidence = new HashMap<>();
+    private Map<String, Object> lastEvidence;
 }

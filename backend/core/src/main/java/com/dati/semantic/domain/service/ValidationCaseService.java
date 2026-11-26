@@ -8,6 +8,7 @@ import com.dati.permission.domain.model.ResourceType;
 import com.dati.auth.authentication.User;
 import com.dati.datasource.repository.dao.DataSourceDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.datasource.repository.po.DataSourcePO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpResolvedTable;
@@ -84,13 +85,16 @@ public class ValidationCaseService {
         SubjectPO subject = requireSubject(po.getSubjectId());
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.EDIT, subject.getCreatedBy());
         boolean executableInputChanged = false;
+        String assertionBefore = po.getAssertionType() == null ? "EXECUTION_SUCCESS" : po.getAssertionType();
+        String assertionAfter = patch.getAssertionType() != null ? patch.getAssertionType() : assertionBefore;
         if (patch.getName() != null) po.setName(patch.getName());
         if (patch.getDescription() != null) po.setDescription(patch.getDescription());
-        if (patch.getQuestion() != null && !Objects.equals(po.getQuestion(), patch.getQuestion())) executableInputChanged = true;
         if (patch.getArguments() != null && !Objects.equals(po.getArguments(), patch.getArguments())) executableInputChanged = true;
         if (patch.getDimensions() != null && !Objects.equals(po.getDimensions(), patch.getDimensions())) executableInputChanged = true;
         if (patch.getAssertionType() != null && !Objects.equals(po.getAssertionType(), patch.getAssertionType())) executableInputChanged = true;
-        if (patch.getExpectedValue() != null && !Objects.equals(po.getExpectedValue(), patch.getExpectedValue())) executableInputChanged = true;
+        boolean expectedValueIsExecutable = "ROW_COUNT".equals(assertionBefore) || "ROW_COUNT".equals(assertionAfter);
+        if (patch.getExpectedValue() != null && expectedValueIsExecutable
+            && !Objects.equals(po.getExpectedValue(), patch.getExpectedValue())) executableInputChanged = true;
         if (patch.getQuestion() != null) po.setQuestion(patch.getQuestion());
         if (patch.getArguments() != null) po.setArguments(patch.getArguments());
         if (patch.getDimensions() != null) po.setDimensions(patch.getDimensions());
@@ -116,7 +120,7 @@ public class ValidationCaseService {
         ValidationCasePO po = requireCase(id);
         SubjectPO subject = requireSubject(po.getSubjectId());
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.VIEW, subject.getCreatedBy());
-        return redactEvidenceIfNeeded(ValidationCaseMapper.toModel(po), subject);
+        return prepareForView(ValidationCaseMapper.toModel(po), subject);
     }
 
     @Transactional(readOnly = true)
@@ -125,7 +129,7 @@ public class ValidationCaseService {
         permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.VIEW, subject.getCreatedBy());
         return validationCaseDAO.findBySubjectId(subjectId, pageable)
             .map(ValidationCaseMapper::toModel)
-            .map(item -> redactEvidenceIfNeeded(item, subject));
+            .map(item -> prepareForView(item, subject));
     }
 
 
@@ -142,12 +146,18 @@ public class ValidationCaseService {
         if (!po.getSubjectId().equals(metric.getSubjectId())) {
             throw new DatiException(ErrorCode.INVALID_PARAMETER, "metric does not belong to validation case subject");
         }
-        permissionService.requireDataSource(metric.getDataSourceId(), Permission.VIEW);
+        boolean dataSourceMissing = !dataSourceDAO.existsById(metric.getDataSourceId());
+        if (!dataSourceMissing) {
+            permissionService.requireDataSource(metric.getDataSourceId(), Permission.VIEW);
+        }
 
         long started = System.currentTimeMillis();
         po.setLastRunAt(Instant.now());
         po.setLastMetricRevision(metric.getRevision());
         try {
+            if (dataSourceMissing) {
+                throw new DatiException(ErrorCode.DS_NOT_FOUND, metric.getDataSourceId());
+            }
             validateDimensions(po, metric);
             SqlExecution execution = executeMetric(po, metric);
             int returnedRows = firstSelectRows(execution);
@@ -184,9 +194,16 @@ public class ValidationCaseService {
             .anyMatch(result -> result instanceof StatementResult.SelectResult select && select.truncated());
     }
 
-    private ValidationCase redactEvidenceIfNeeded(ValidationCase item, SubjectPO subject) {
+    private ValidationCase prepareForView(ValidationCase item, SubjectPO subject) {
+        DataSourcePO dataSource = dataSourceDAO.findById(subject.getDatasourceId()).orElse(null);
+        if (dataSource == null) {
+            item.setLastStatus("ERROR");
+            item.setLastMessage("data source is unavailable");
+            item.setLastEvidence(Map.of("error", "data source is unavailable"));
+            return item;
+        }
         if (item.getLastEvidence() == null || !item.getLastEvidence().containsKey("sample_rows")
-            || canViewDataSource(subject.getDatasourceId())) {
+            || canViewDataSource(dataSource)) {
             return item;
         }
         Map<String, Object> redacted = new HashMap<>(item.getLastEvidence());
@@ -196,14 +213,10 @@ public class ValidationCaseService {
         return item;
     }
 
-    private boolean canViewDataSource(String dataSourceId) {
-        return dataSourceDAO.findById(dataSourceId)
-            .map(dataSource -> {
-                User user = RequestContext.getUser();
-                return permissionService.can(user.getId(), user.getName(), ResourceType.DATA_SOURCE,
-                    dataSourceId, Permission.VIEW, dataSource.getCreatedBy());
-            })
-            .orElse(false);
+    private boolean canViewDataSource(DataSourcePO dataSource) {
+        User user = RequestContext.getUser();
+        return permissionService.can(user.getId(), user.getName(), ResourceType.DATA_SOURCE,
+            dataSource.getId(), Permission.VIEW, dataSource.getCreatedBy());
     }
 
     private void validateDimensions(ValidationCasePO po, MetricPO metric) {
