@@ -205,4 +205,31 @@ class McpServiceSnapshotMapperTest {
         assertThat(prebuilt.getToolType()).isEqualTo(McpToolType.SEARCH_METADATA);
         assertThat(prebuilt.getConfig()).isInstanceOf(ToolConfig.SearchMetadataConfig.class);
     }
+
+    @Test
+    @DisplayName("Metrics survive snapshot round-trip and null entries are filtered")
+    void metricsRoundTrip() {
+        java.util.List<String> aliases = new java.util.ArrayList<>();
+        aliases.add("FPY");
+        aliases.add(null);
+        java.util.List<com.dati.semantic.domain.model.MetricParameter> params = new java.util.ArrayList<>();
+        params.add(new com.dati.semantic.domain.model.MetricParameter("start_date", "String", true, null, null));
+        params.add(null);
+        McpServiceSnapshot.MetricDraft metric = new McpServiceSnapshot.MetricDraft(
+            "metric-1", "subject-1", "ds-1", "quality_daily_fpy", "Quality", null,
+            aliases, null, null, null, null, List.of("workshop"), "SELECT 1", params, 30, 1000, 3);
+        McpServiceSnapshot snapshot = new McpServiceSnapshot();
+        snapshot.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        snapshot.setVersionNumber(1);
+        McpServiceSnapshot.SnapshotContent content = sampleContent();
+        content.setMetrics(List.of(metric));
+        snapshot.setContent(content);
+
+        McpServiceSnapshot restored = McpServiceSnapshotMapper.toModel(McpServiceSnapshotMapper.toPO(snapshot));
+
+        assertThat(restored.getContent().getMetrics()).hasSize(1);
+        assertThat(restored.getContent().getMetrics().getFirst().code()).isEqualTo("quality_daily_fpy");
+        assertThat(restored.getContent().getMetrics().getFirst().aliases()).containsExactly("FPY");
+        assertThat(restored.getContent().getMetrics().getFirst().parameters()).hasSize(1);
+    }
 }

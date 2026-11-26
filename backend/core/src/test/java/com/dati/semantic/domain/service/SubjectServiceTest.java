@@ -65,6 +65,9 @@ class SubjectServiceTest {
     private SubjectTableDAO subjectTableDAO;
 
     @Mock
+    private com.dati.semantic.repository.dao.MetricDAO metricDAO;
+
+    @Mock
     private TableInfoDAO tableInfoDAO;
 
     @Mock
@@ -238,6 +241,7 @@ class SubjectServiceTest {
 
         verify(termDAO).deleteBySubjectId(id);
         verify(subjectTableDAO).deleteBySubjectId(id);
+        verify(metricDAO).deleteBySubjectId("subject-001");
         verify(subjectDAO).deleteById(id);
         verify(subjectDAO).flush();
         verify(semanticIndexService).deleteByEntity_SubjectId(id);

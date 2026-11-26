@@ -1,6 +1,7 @@
 package com.dati.mcp.domain.service;
 
 import com.dati.mcp.domain.model.McpServiceDataScope;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 
@@ -9,7 +10,14 @@ import java.util.Map;
 
 public record ToolExecutionContext(String serviceId, McpToolType toolType,
                                    ToolConfig config, Object arguments,
-                                   List<McpServiceDataScope> scopeItems) {
+                                   List<McpServiceDataScope> scopeItems,
+                                   List<McpServiceSnapshot.MetricDraft> metrics) {
+
+    public ToolExecutionContext(String serviceId, McpToolType toolType,
+                                ToolConfig config, Object arguments,
+                                List<McpServiceDataScope> scopeItems) {
+        this(serviceId, toolType, config, arguments, scopeItems, List.of());
+    }
 
     /** Returns the bound parameter record; dynamic tools (PARAMETERIZED_SQL) have none. */
     @SuppressWarnings("unchecked")

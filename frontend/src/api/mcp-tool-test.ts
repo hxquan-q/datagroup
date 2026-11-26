@@ -26,7 +26,48 @@ export type ToolTestData =
   | TableMetadata
   | SearchHit
   | MetadataUpdateData
-  | TableListData;
+  | TableListData
+  | SemanticCatalog
+  | MetricExecution;
+
+export interface SemanticCatalog {
+  type: "SEMANTIC_CATALOG";
+  metrics: SemanticMetric[];
+}
+
+export interface SemanticMetric {
+  metric_id: string;
+  subject_id: string;
+  code: string;
+  name: string;
+  description?: string;
+  aliases?: string[];
+  owner?: string;
+  grain?: string;
+  time_field?: string;
+  time_zone?: string;
+  allowed_dimensions?: string[];
+  revision?: number;
+}
+
+export interface MetricExecution {
+  type: "METRIC_EXECUTION";
+  metric: {
+    metric_id: string;
+    subject_id: string;
+    code: string;
+    name: string;
+    owner?: string;
+    grain?: string;
+    time_field?: string;
+    time_zone?: string;
+    allowed_dimensions?: string[];
+    revision?: number;
+  };
+  parameters: Record<string, any>;
+  dimensions: string[];
+  execution: SqlExecution;
+}
 
 // ── METADATA_UPDATE (UPDATE_TABLE_INFO / UPDATE_COLUMN_INFO / UPSERT_TERM) ──
 

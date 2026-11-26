@@ -1,6 +1,7 @@
 package com.dati.mcp.domain.model;
 
 import com.dati.base.pojo.BaseResource;
+import com.dati.semantic.domain.model.MetricParameter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,6 +34,7 @@ public class McpServiceSnapshot extends BaseResource {
         private List<PrebuiltToolDraft> prebuiltTools;
         private List<CustomToolDraft> customTools;
         private List<PromptDraft> prompts;
+        private List<MetricDraft> metrics;
     }
 
     @Data
@@ -86,6 +88,27 @@ public class McpServiceSnapshot extends BaseResource {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record CustomToolDraft(String serviceId, String name, McpToolType toolType, String title,
                                   String description, boolean enabled, ToolConfig config) {
+    }
+
+
+    /**
+     * Executable metric definition frozen into a published service snapshot.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record MetricDraft(String metricId, String subjectId, String dataSourceId, String code,
+                              String name, String description, List<String> aliases, String owner,
+                              String grain, String timeField, String timeZone,
+                              List<String> allowedDimensions, String sqlTemplate,
+                              List<MetricParameter> parameters, Integer timeout, Integer maxRows,
+                              Integer revision) {
+        public MetricDraft {
+            aliases = aliases == null ? List.of() : aliases.stream().filter(Objects::nonNull).toList();
+            allowedDimensions = allowedDimensions == null ? List.of() : allowedDimensions.stream().filter(Objects::nonNull).toList();
+            parameters = parameters == null ? List.of() : parameters.stream().filter(Objects::nonNull).toList();
+            timeout = timeout == null ? 30 : timeout;
+            maxRows = maxRows == null ? 1000 : maxRows;
+            revision = revision == null ? 1 : revision;
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -78,6 +78,9 @@ class McpServicePublishServiceTest {
     @Mock
     private SubjectTableDAO subjectTableDAO;
 
+    @Mock
+    private com.dati.semantic.domain.service.MetricService metricService;
+
     @InjectMocks
     private McpServicePublishService publishService;
 
@@ -90,6 +93,7 @@ class McpServicePublishServiceTest {
         user.setId(TestFixtures.TEST_USER_ID);
         user.setName(TestFixtures.TEST_USER_ID);
         RequestContext.setUser(user);
+        lenient().when(metricService.getMetricsBySubjectIds(any())).thenReturn(List.of());
         lenient().doAnswer(inv -> {
             String ownerId = inv.getArgument(3);
             if (!TestFixtures.TEST_USER_ID.equals(ownerId)) {
@@ -616,6 +620,53 @@ class McpServicePublishServiceTest {
             captor.getValue().getSnapshotContent(), McpServiceSnapshot.SnapshotContent.class);
         assertThat(saved.getDataScopes().getFirst().resolvedTables())
             .containsExactly(new McpResolvedTable("ds-1", "public", "orders"));
+    }
+
+
+    @Test
+    @DisplayName("Publish subject scope - freezes subject metrics into snapshot")
+    void publish_SubjectScope_FreezesMetrics() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        scope.setScopeType(McpDataScopeType.SUBJECT);
+        scope.setReferenceId("sub-1");
+
+        com.dati.semantic.domain.model.Metric metric = new com.dati.semantic.domain.model.Metric();
+        metric.setId("metric-1");
+        metric.setSubjectId("sub-1");
+        metric.setDataSourceId("ds-1");
+        metric.setCode("quality_daily_fpy");
+        metric.setName("Quality daily FPY");
+        metric.setSqlTemplate("SELECT * FROM quality_daily");
+        metric.setTimeout(30);
+        metric.setMaxRows(1000);
+        metric.setRevision(3);
+
+        when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
+        when(snapshotDAO.findMaxVersionNumberByServiceId(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(null);
+        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(scope));
+        when(subjectTableDAO.findTablesBySubjectId(eq("sub-1"), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of()));
+        when(metricService.getMetricsBySubjectIds(List.of("sub-1"))).thenReturn(List.of(metric));
+        when(toolService.listTools(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(new ToolsResult(Collections.emptyList(), Collections.emptyList()));
+        when(promptService.listPrompts(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Collections.emptyList());
+        when(snapshotDAO.save(any(McpServiceSnapshotPO.class))).thenAnswer(inv -> {
+            McpServiceSnapshotPO po = inv.getArgument(0);
+            po.setId("snap-001");
+            return po;
+        });
+        when(mcpServiceDAO.save(any(McpServicePO.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        publishService.publish(TestFixtures.TEST_MCP_SERVICE_ID, "freeze metrics");
+
+        org.mockito.ArgumentCaptor<McpServiceSnapshotPO> captor = org.mockito.ArgumentCaptor.forClass(McpServiceSnapshotPO.class);
+        verify(snapshotDAO).save(captor.capture());
+        McpServiceSnapshot.SnapshotContent saved = com.dati.common.JsonUtils.fromJson(
+            captor.getValue().getSnapshotContent(), McpServiceSnapshot.SnapshotContent.class);
+        assertThat(saved.getMetrics()).hasSize(1);
+        assertThat(saved.getMetrics().getFirst().code()).isEqualTo("quality_daily_fpy");
+        assertThat(saved.getMetrics().getFirst().sqlTemplate()).isEqualTo("SELECT * FROM quality_daily");
+        assertThat(saved.getMetrics().getFirst().revision()).isEqualTo(3);
     }
 
     // ── 回滚 ──

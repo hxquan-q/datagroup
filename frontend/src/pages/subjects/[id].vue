@@ -35,6 +35,8 @@ const tabs = computed(() => [
   { key: "basic", label: t("subject.basicInfo") },
   { key: "tables", label: t("subject.tableManagement") },
   { key: "terms", label: t("subject.termManagement") },
+  { key: "metrics", label: t("metric.title") },
+  { key: "validation", label: t("subject.validationTab") },
 ]);
 
 const isDirty = computed(() => {
@@ -128,7 +130,7 @@ onMounted(() => {
     </div>
 
     <!-- Top Horizontal Underline Tabs -->
-    <div class="tabs-bar flex items-center border-b border-[var(--ep-border-color-lighter)] gap-8 shrink-0">
+    <div class="tabs-bar flex flex-wrap items-center border-b border-[var(--ep-border-color-lighter)] gap-x-8 gap-y-0 shrink-0">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -240,6 +242,16 @@ onMounted(() => {
       <div v-else-if="activeTab === 'terms'" class="scope-panel p-[20px] shadow-sm">
         <TermManager :subject-id="subjectId" />
       </div>
+
+      <!-- Tab 4: Governed Metrics -->
+      <div v-else-if="activeTab === 'metrics'" class="scope-panel p-[20px] shadow-sm">
+        <MetricList :subject-id="subjectId" />
+      </div>
+
+      <!-- Tab 5: Validation Examples -->
+      <div v-else-if="activeTab === 'validation'" class="scope-panel validation-panel p-[20px] shadow-sm">
+        <el-empty :description="t('subject.validationEmpty')" :image-size="96" />
+      </div>
     </main>
 
     <AuthDialog
@@ -255,5 +267,10 @@ onMounted(() => {
   border: 1px solid var(--ep-border-color-lighter);
   border-radius: 12px;
   background: var(--ep-bg-color);
+}
+.validation-panel {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
 }
 </style>
