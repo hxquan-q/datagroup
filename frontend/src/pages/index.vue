@@ -209,14 +209,18 @@ function go(path: string) {
         v-for="module in modules"
         :key="module.id"
         class="module-card"
-        role="link"
-        tabindex="0"
         @click="go(module.path)"
-        @keydown.enter.prevent="go(module.path)"
       >
         <div class="module-topline">
           <span class="module-icon"><component :is="module.icon" :size="20" /></span>
-          <ArrowUpRight class="module-arrow" :size="17" />
+          <button
+            type="button"
+            class="module-arrow"
+            :aria-label="`${t('home.openModule')}: ${module.statLabel}`"
+            @click.stop="go(module.path)"
+          >
+            <ArrowUpRight :size="17" />
+          </button>
         </div>
         <div class="module-stat-row">
           <div class="module-count">
@@ -581,8 +585,20 @@ function go(path: string) {
 }
 
 .module-arrow {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--ep-text-color-placeholder);
+  cursor: pointer;
   transition: transform var(--xiaoai-motion), color var(--xiaoai-motion);
+}
+
+.module-arrow:focus-visible {
+  outline: 2px solid var(--ep-color-primary);
+  outline-offset: 2px;
 }
 
 .module-card:hover .module-arrow {
