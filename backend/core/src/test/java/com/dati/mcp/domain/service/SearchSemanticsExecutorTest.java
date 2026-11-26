@@ -23,6 +23,7 @@ import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.semantic.domain.service.SemanticSearchService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.lenient;
@@ -46,7 +47,7 @@ class SearchSemanticsExecutorTest {
     @BeforeEach
     void setUp() {
         executor = new SearchSemanticsExecutor(semanticSearchService, tableInfoDAO, columnInfoDAO);
-        lenient().when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList()))
+        lenient().when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList(), anyInt()))
             .thenReturn(new SemanticSearchService.SearchResult(List.of(), List.of()));
     }
 
@@ -134,7 +135,7 @@ class SearchSemanticsExecutorTest {
             "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 2);
         TableMetadataService.TableMeta customers = new TableMetadataService.TableMeta(
             "dim-id", "public", "customers", null, List.of(), "ds-1", List.of());
-        when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList()))
+        when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList(), anyInt()))
             .thenReturn(new SemanticSearchService.SearchResult(List.of(
                 new SemanticSearchService.DataSourceGroup("ds-1", "Warehouse", "MYSQL", "public", null, List.of(customers))), List.of()));
         ToolExecutionContext ctx = new ToolExecutionContext(
