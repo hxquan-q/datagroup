@@ -577,6 +577,8 @@ export default {
       emptyLogs: "暂无调用日志",
       emptyStats: "暂无统计数据",
       refresh: "刷新",
+      chartData: "查看图表数据",
+      share: "占比",
       callCount: "调用量",
       ms: "ms",
       times: "次",

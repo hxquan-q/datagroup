@@ -336,6 +336,27 @@ watch(
           <el-empty :description="t('mcpService.stats.emptyStats')" :image-size="60" />
         </div>
         <BaseChart v-else :option="toolDistributionOption" height="280px" />
+        <details v-if="stats?.tool_distribution?.length" class="chart-data-details">
+          <summary>{{ t("mcpService.stats.chartData") }}</summary>
+          <table>
+            <thead>
+              <tr>
+                <th>{{ t("mcpService.stats.toolName") }}</th>
+                <th>{{ t("mcpService.stats.callCount") }}</th>
+                <th>{{ t("mcpService.stats.successRate") }}</th>
+                <th>{{ t("mcpService.stats.share") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tool in topTools" :key="tool.tool_name">
+                <td class="font-mono">{{ tool.tool_name }}</td>
+                <td>{{ tool.call_count }}</td>
+                <td>{{ tool.success_rate }}%</td>
+                <td>{{ tool.percentage }}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
       </div>
     </div>
     <!-- Bottom Section: Invocation Logs Table -->
@@ -596,6 +617,36 @@ watch(
 </template>
 
 <style scoped>
+.chart-data-details {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ep-text-color-secondary);
+}
+
+.chart-data-details summary {
+  cursor: pointer;
+  color: var(--ep-color-primary);
+  outline-offset: 2px;
+}
+
+.chart-data-details table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+
+.chart-data-details th,
+.chart-data-details td {
+  padding: 6px 8px;
+  border-top: 1px solid var(--ep-border-color-lighter);
+  text-align: left;
+}
+
+.chart-data-details th {
+  color: var(--ep-text-color-primary);
+  font-weight: 600;
+}
+
 .metric-card {
   padding: 16px 20px;
   background: var(--ep-bg-color);

@@ -577,6 +577,8 @@ export default {
       emptyLogs: "No invocation logs found",
       emptyStats: "No usage statistics available",
       refresh: "Refresh",
+      chartData: "View chart data",
+      share: "Share",
       callCount: "Calls",
       ms: "ms",
       times: "calls",
