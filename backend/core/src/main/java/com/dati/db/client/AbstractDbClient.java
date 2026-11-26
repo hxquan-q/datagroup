@@ -133,7 +133,7 @@ public abstract class AbstractDbClient implements DbClient {
         try (ResultSet rs = connection.getMetaData().getPrimaryKeys(catalog, schema, table)) {
             while (rs.next()) result.add(rs.getString("COLUMN_NAME"));
         }
-        return result;
+        return result.size() == 1 ? result : Set.of();
     }
 
     private static Set<String> singleColumnUniqueIndexes(Connection connection, String catalog, String schema, String table) throws SQLException {

@@ -276,7 +276,9 @@ class TableRelationRecommendationServiceTest {
     void recommendsPhysicalForeignKeys() {
         mockTables(table("fact-1", "t_mes_passstaion", ""), table("dim-1", "t_mo", ""));
         when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(column("fact-col-1", "fact-1", "FMoID", "INT", "")));
-        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "F_id", "INT", "")));
+        ColumnInfoPO dimensionColumn = column("dim-col-1", "dim-1", "F_id", "INT", "");
+        dimensionColumn.setPrimaryKey(true);
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(dimensionColumn));
         TableForeignKeyPO key = new TableForeignKeyPO();
         key.setTableId("fact-1");
         key.setName("fk_pass_mo");
@@ -303,9 +305,11 @@ class TableRelationRecommendationServiceTest {
     void physicalForeignKeyUsesOneToOneForUniqueSource() {
         mockTables(table("fact-1", "t_mes_passstaion", ""), table("dim-1", "t_mo", ""));
         ColumnInfoPO factColumn = column("fact-col-1", "fact-1", "FMoID", "INT", "");
-        factColumn.setUniqueKey(true);
+        factColumn.setPrimaryKey(true);
         when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(factColumn));
-        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "F_id", "INT", "")));
+        ColumnInfoPO dimensionColumn = column("dim-col-1", "dim-1", "F_id", "INT", "");
+        dimensionColumn.setPrimaryKey(true);
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(dimensionColumn));
         TableForeignKeyPO key = new TableForeignKeyPO();
         key.setTableId("fact-1");
         key.setName("fk_pass_mo");

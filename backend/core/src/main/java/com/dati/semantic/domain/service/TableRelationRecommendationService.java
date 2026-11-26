@@ -142,7 +142,7 @@ public class TableRelationRecommendationService {
             candidate.setDimensionTableId(dimensionTable.getId());
             candidate.setDimensionTableName(dimensionTable.getName());
             candidate.setDimensionColumn(dimensionColumn.getName());
-            candidate.setCardinality(factColumn.isPrimaryKey() || factColumn.isUniqueKey() ? "ONE_TO_ONE" : "MANY_TO_ONE");
+            candidate.setCardinality(factColumn.isPrimaryKey() && dimensionColumn.isPrimaryKey() ? "ONE_TO_ONE" : factColumn.isPrimaryKey() || dimensionColumn.isPrimaryKey() ? "MANY_TO_ONE" : "MANY_TO_MANY");
             candidate.setScore(100);
             candidate.setConfidence("HIGH");
             candidate.setSource("FOREIGN_KEY");
@@ -156,8 +156,8 @@ public class TableRelationRecommendationService {
 
     private static TableInfoPO resolveReferencedTable(List<TableInfoPO> tables, TableForeignKeyPO key, boolean caseInsensitive) {
         List<TableInfoPO> matches = tables.stream()
-            .filter(table -> namesEqual(table.getName(), key.getRefTable(), caseInsensitive))
-            .filter(table -> key.getRefSchema() == null || namesEqual(table.getSchema(), key.getRefSchema(), caseInsensitive))
+            .filter(table -> namesEqual(table.getName(), key.getRefTable(), false))
+            .filter(table -> key.getRefSchema() == null || namesEqual(table.getSchema(), key.getRefSchema(), false))
             .toList();
         if (matches.size() == 1) return matches.getFirst();
         if (key.getRefSchema() != null) return null;
