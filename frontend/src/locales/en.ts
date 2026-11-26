@@ -923,6 +923,7 @@ export default {
     usageGuideDesc: "Include the Authorization header in your HTTP requests:",
     guestCreateDisabled: "Guests cannot create API Keys",
     guestCreateHint: "API Keys are bound to registered accounts. Register or sign in with a formal account first.",
+    guestRegisterWarning: "Registering ends the current guest session. Private data created as a guest will no longer be accessible. Continue?",
     registerAction: "Register",
     emptyList: "No API keys yet. Create one from the top right.",
   },

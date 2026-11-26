@@ -923,6 +923,7 @@ export default {
     usageGuideDesc: "在 HTTP 请求头中添加 Authorization Header 即可完成认证：",
     guestCreateDisabled: "游客身份不能创建 API Key",
     guestCreateHint: "API Key 会绑定到正式注册账号。请先注册或登录正式账号。",
+    guestRegisterWarning: "注册正式账号会结束当前访客会话，访客期间创建的私有数据将无法继续访问。确认继续吗？",
     registerAction: "去注册",
     emptyList: "暂无 API Key，点击右上角创建",
   },

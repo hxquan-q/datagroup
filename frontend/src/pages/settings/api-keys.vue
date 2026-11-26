@@ -62,7 +62,16 @@ function openCreate() {
   dialogVisible.value = true;
 }
 
-function goToRegister() {
+async function goToRegister() {
+  try {
+    await ElMessageBox.confirm(t("apiKeys.guestRegisterWarning"), t("common.warning"), {
+      confirmButtonText: t("apiKeys.registerAction"),
+      cancelButtonText: t("common.cancel"),
+      type: "warning",
+    });
+  } catch {
+    return;
+  }
   authStore.logout("/register");
 }
 
