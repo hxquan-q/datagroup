@@ -19,7 +19,10 @@ const { t } = useI18n();
 const selectedKey = ref("");
 const focusedTableId = ref("");
 const batchKeys = ref<Set<string>>(new Set());
+const MIN_ZOOM = 0.35;
+const MAX_ZOOM = 2.2;
 const zoom = ref(1);
+const svgRef = ref<SVGSVGElement | null>(null);
 const panning = ref(false);
 let panStart = { x: 0, y: 0, panX: 0, panY: 0 };
 const panX = ref(0);
@@ -180,27 +183,32 @@ function toggleBatch(edge: GraphEdge) { if (!edge.recommendation) return; const 
 function clearBatch() { batchKeys.value = new Set(); }
 function confirm(edge: GraphEdge) { if (edge.recommendation) emit("confirm", edge.recommendation); }
 function confirmBatch() { emit("batchConfirm", batchEdges.value.map((edge) => edge.recommendation!)); clearBatch(); }
-function zoomIn() { zoom.value = Math.min(1.8, zoom.value + 0.15); }
-function zoomOut() { zoom.value = Math.max(0.35, zoom.value - 0.15); }
+function zoomIn() { zoom.value = Math.min(MAX_ZOOM, zoom.value + 0.15); }
+function zoomOut() { zoom.value = Math.max(MIN_ZOOM, zoom.value - 0.15); }
 function resetView() { zoom.value = 1; panX.value = 0; panY.value = 0; }
 function relayout() { layoutVersion.value += 1; resetView(); }
-function wheel(event: WheelEvent) { if (!event.ctrlKey && !event.metaKey) return; event.preventDefault(); zoom.value = Math.max(0.55, Math.min(2.2, zoom.value + (event.deltaY < 0 ? 0.08 : -0.08))); }
-function startPan(event: MouseEvent) {
+function wheel(event: WheelEvent) { if (!event.ctrlKey && !event.metaKey) return; event.preventDefault(); zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom.value + (event.deltaY < 0 ? 0.08 : -0.08))); }
+function startPan(event: PointerEvent) {
   const target = event.target as Element;
   if (target.closest("g.cursor-pointer") || target.closest(".graph-node")) return;
   panning.value = true;
   panStart = { x: event.clientX, y: event.clientY, panX: panX.value, panY: panY.value };
-  window.addEventListener("mousemove", movePan);
-  window.addEventListener("mouseup", endPan, { once: true });
+  window.addEventListener("pointermove", movePan);
+  window.addEventListener("pointerup", endPan, { once: true });
+  window.addEventListener("pointercancel", endPan, { once: true });
 }
-function movePan(event: MouseEvent) {
+function movePan(event: PointerEvent) {
   if (!panning.value) return;
-  panX.value = panStart.panX + (event.clientX - panStart.x) / zoom.value;
-  panY.value = panStart.panY + (event.clientY - panStart.y) / zoom.value;
+  const rect = svgRef.value?.getBoundingClientRect();
+  const fitScale = rect ? Math.min(rect.width / layout.value.width, rect.height / layout.value.height) : 1;
+  panX.value = panStart.panX + (event.clientX - panStart.x) / fitScale;
+  panY.value = panStart.panY + (event.clientY - panStart.y) / fitScale;
 }
 function endPan() {
   panning.value = false;
-  window.removeEventListener("mousemove", movePan);
+  window.removeEventListener("pointermove", movePan);
+  window.removeEventListener("pointerup", endPan);
+  window.removeEventListener("pointercancel", endPan);
 }
 </script>
 
@@ -233,7 +241,7 @@ function endPan() {
           </button>
         </div>
         <div class="h-full w-full overflow-auto">
-          <svg width="100%" height="100%" :viewBox="`0 0 ${layout.width} ${layout.height}`" preserveAspectRatio="xMidYMid meet" class="block h-full min-h-[560px] w-full cursor-grab" @mousedown="startPan">
+          <svg ref="svgRef" width="100%" height="100%" :viewBox="`0 0 ${layout.width} ${layout.height}`" preserveAspectRatio="xMidYMid meet" class="block h-full min-h-[560px] w-full cursor-grab" :class="{ 'graph-zoomed': zoom > 1.01 }" @pointerdown="startPan">
             <g :transform="`translate(${panX} ${panY}) scale(${zoom})`">
               <g v-for="edge in edges" :key="edge.key" class="cursor-pointer" @click="selectEdge(edge)">
                 <path :d="edgePath(edge)" fill="none" stroke="transparent" stroke-width="18" />
@@ -244,7 +252,7 @@ function endPan() {
                   <text text-anchor="middle" dominant-baseline="middle" class="graph-edge-label">{{ edge.factColumn }} → {{ edge.dimensionColumn }}</text>
                 </g>
               </g>
-              <g v-for="(table, index) in tables" :key="table.id" class="graph-node" :opacity="tableOpacity(table.id)" @click.stop="toggleFocusTable(table.id)">
+              <g v-for="(table, index) in tables" :key="table.id" class="graph-node" :opacity="tableOpacity(table.id)" tabindex="0" role="button" :aria-label="`${tableName(table.id)} ${t('relation.graphTableNode')}`" @click.stop="toggleFocusTable(table.id)" @keydown.enter.prevent.stop="toggleFocusTable(table.id)" @keydown.space.prevent.stop="toggleFocusTable(table.id)">
                 <rect :x="layout.boxes.get(table.id)?.x" :y="layout.boxes.get(table.id)?.y" :width="nodeWidth" :height="heightFor(table.id)" rx="12" fill="var(--ep-bg-color)" stroke="var(--ep-border-color)" stroke-width="1.1" filter="drop-shadow(0 8px 18px rgb(15 23 42 / 0.08))" />
                 <path :d="`M ${(layout.boxes.get(table.id)?.x || 0) + 12} ${layout.boxes.get(table.id)?.y} h ${nodeWidth - 24} a 12 12 0 0 1 12 12 v 22 h -${nodeWidth} v -22 a 12 12 0 0 1 12 -12 z`" :fill="tableAccent(index)" opacity="0.1" />
                 <circle :cx="(layout.boxes.get(table.id)?.x || 0) + 17" :cy="(layout.boxes.get(table.id)?.y || 0) + 18" r="4" :fill="tableAccent(index)" />
@@ -306,6 +314,9 @@ function endPan() {
   background-image: radial-gradient(circle, var(--ep-border-color) 1px, transparent 1px);
   background-size: 18px 18px;
 }
+svg.graph-zoomed { touch-action: none; }
+.graph-node { cursor: pointer; outline: none; }
+.graph-node:focus-visible rect { stroke: var(--ep-color-primary); stroke-width: 2; }
 .graph-table-title { fill: var(--ep-text-color-primary); font-size: 13px; font-weight: 700; }
 .graph-table-subtitle { fill: var(--ep-text-color-secondary); font-size: 10px; }
 .graph-column { fill: var(--ep-text-color-regular); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
