@@ -197,7 +197,7 @@ async function rebuildLayout() {
     layoutLoading.value = false;
     return;
   }
-  if ((!focusedTableId.value || !visibleTableIds.value.has(focusedTableId.value)) && edges.length && !userClearedFocus) {
+  if ((!focusedTableId.value || !visibleTableIds.value.has(focusedTableId.value)) && edges.length && !userClearedFocus && !searchQuery.value.trim()) {
     focusedTableId.value = highestDegreeTable(edges);
   }
   try {
