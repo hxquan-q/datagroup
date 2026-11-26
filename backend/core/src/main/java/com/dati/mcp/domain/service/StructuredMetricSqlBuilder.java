@@ -127,13 +127,10 @@ final class StructuredMetricSqlBuilder {
 
     private static String buildJoin(McpServiceSnapshot.MetricDraft metric, Endpoint fact, Endpoint dimension,
                                     String dimensionAlias, List<McpServiceSnapshot.TableRelationDraft> relations) {
-        List<McpServiceSnapshot.TableRelationDraft> matches = relations.stream()
+        List<JoinMatch> matches = relations.stream()
             .filter(relation -> Objects.equals(metric.subjectId(), relation.subjectId()))
-            .filter(relation -> {
-                Endpoint relationFact = new Endpoint(relation.factDataSourceId(), relation.factSchema(), relation.factTableName());
-                Endpoint relationDimension = new Endpoint(relation.dimensionDataSourceId(), relation.dimensionSchema(), relation.dimensionTableName());
-                return fact.matches(relationFact) && dimension.matches(relationDimension);
-            })
+            .map(relation -> joinMatch(relation, fact, dimension))
+            .filter(Objects::nonNull)
             .toList();
         if (matches.isEmpty()) {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,
@@ -145,16 +142,37 @@ final class StructuredMetricSqlBuilder {
                 "Multiple confirmed relations connect " + metric.factTableName() + " to " + dimension.tableName()
                     + " for metric " + metric.code() + "; keep one governed join path");
         }
-        McpServiceSnapshot.TableRelationDraft relation = matches.getFirst();
-        if ("ONE_TO_MANY".equals(relation.cardinality()) || "MANY_TO_MANY".equals(relation.cardinality())) {
+        JoinMatch match = matches.getFirst();
+        McpServiceSnapshot.TableRelationDraft relation = match.relation();
+        boolean duplicatesFactRows = match.reverse()
+            ? "MANY_TO_ONE".equals(relation.cardinality()) || "MANY_TO_MANY".equals(relation.cardinality())
+            : "ONE_TO_MANY".equals(relation.cardinality()) || "MANY_TO_MANY".equals(relation.cardinality());
+        if (duplicatesFactRows) {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,
                 "Relation " + metric.factTableName() + " to " + dimension.tableName()
                     + " can duplicate fact rows and cannot be used for metric aggregation");
         }
-        validateIdentifier(relation.factColumn(), "fact join column");
-        validateIdentifier(relation.dimensionColumn(), "dimension join column");
+        String factJoinColumn = match.reverse() ? relation.dimensionColumn() : relation.factColumn();
+        String dimensionJoinColumn = match.reverse() ? relation.factColumn() : relation.dimensionColumn();
+        validateIdentifier(factJoinColumn, "fact join column");
+        validateIdentifier(dimensionJoinColumn, "dimension join column");
         return "LEFT JOIN " + qualified(dimension.schema(), dimension.tableName()) + " " + dimensionAlias
-            + " ON f." + relation.factColumn() + " = " + dimensionAlias + "." + relation.dimensionColumn();
+            + " ON f." + factJoinColumn + " = " + dimensionAlias + "." + dimensionJoinColumn;
+    }
+
+    private static JoinMatch joinMatch(McpServiceSnapshot.TableRelationDraft relation, Endpoint fact, Endpoint dimension) {
+        Endpoint relationFact = new Endpoint(relation.factDataSourceId(), relation.factSchema(), relation.factTableName());
+        Endpoint relationDimension = new Endpoint(relation.dimensionDataSourceId(), relation.dimensionSchema(), relation.dimensionTableName());
+        if (fact.matches(relationFact) && dimension.matches(relationDimension)) {
+            return new JoinMatch(relation, false);
+        }
+        if (fact.matches(relationDimension) && dimension.matches(relationFact)) {
+            return new JoinMatch(relation, true);
+        }
+        return null;
+    }
+
+    private record JoinMatch(McpServiceSnapshot.TableRelationDraft relation, boolean reverse) {
     }
 
     private static String qualified(String schema, String table) {
@@ -174,7 +192,7 @@ final class StructuredMetricSqlBuilder {
 
     private record Endpoint(String dataSourceId, String schema, String tableName) {
         String key() {
-            return lower(schema) + "\u0000" + lower(tableName);
+            return lower(schema) + "|" + lower(tableName);
         }
 
         boolean matches(Endpoint other) {
