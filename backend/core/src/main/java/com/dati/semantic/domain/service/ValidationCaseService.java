@@ -333,6 +333,32 @@ public class ValidationCaseService {
         return evidence;
     }
 
+    @Transactional(readOnly = true)
+    public List<String> publishBlockingMessages(List<String> subjectIds) {
+        if (subjectIds == null || subjectIds.isEmpty()) {
+            return List.of();
+        }
+        return validationCaseDAO.findBySubjectIdIn(subjectIds).stream()
+            .filter(item -> Boolean.TRUE.equals(item.getEnabled()))
+            .map(this::publishBlockingMessage)
+            .filter(message -> message != null)
+            .toList();
+    }
+
+    private String publishBlockingMessage(ValidationCasePO item) {
+        MetricPO metric = metricDAO.findById(item.getMetricId()).orElse(null);
+        if (metric == null) {
+            return item.getName() + ": metric is missing";
+        }
+        if (!"PASS".equals(item.getLastStatus())) {
+            return item.getName() + ": latest validation did not pass";
+        }
+        if (!Objects.equals(item.getLastMetricRevision(), metric.getRevision())) {
+            return item.getName() + ": metric changed after validation";
+        }
+        return null;
+    }
+
     private void validate(ValidationCase item) {
         if (item.getMetricId() == null || item.getMetricId().isBlank()
             || item.getQuestion() == null || item.getQuestion().isBlank()

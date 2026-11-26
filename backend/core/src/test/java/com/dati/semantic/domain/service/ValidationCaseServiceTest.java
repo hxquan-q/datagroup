@@ -96,6 +96,35 @@ class ValidationCaseServiceTest {
         assertThat(created.getEnabled()).isTrue();
     }
     @Test
+    @DisplayName("publish gate passes only current passing validation cases")
+    void publishGatePassesCurrentPassingCases() {
+        ValidationCasePO item = new ValidationCasePO();
+        item.setName("FPY regression");
+        item.setMetricId("metric-1");
+        item.setEnabled(true);
+        item.setLastStatus("PASS");
+        item.setLastMetricRevision(1);
+        when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
+
+        assertThat(service.publishBlockingMessages(java.util.List.of("subject-1"))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("publish gate blocks stale validation results")
+    void publishGateBlocksStaleResults() {
+        ValidationCasePO item = new ValidationCasePO();
+        item.setName("FPY regression");
+        item.setMetricId("metric-1");
+        item.setEnabled(true);
+        item.setLastStatus("PASS");
+        item.setLastMetricRevision(0);
+        when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
+
+        assertThat(service.publishBlockingMessages(java.util.List.of("subject-1")))
+            .containsExactly("FPY regression: metric changed after validation");
+    }
+
+    @Test
     @DisplayName("run passes when execution succeeds and rows are returned for NON_EMPTY")
     void runPassesNonEmpty() {
         ValidationCasePO existing = existingCase("NON_EMPTY");

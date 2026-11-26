@@ -84,6 +84,9 @@ class McpServicePublishServiceTest {
     @Mock
     private McpTableRelationSnapshotService relationSnapshotService;
 
+    @Mock
+    private com.dati.semantic.domain.service.ValidationCaseService validationCaseService;
+
     @InjectMocks
     private McpServicePublishService publishService;
 
@@ -163,6 +166,22 @@ class McpServicePublishServiceTest {
         assertThat(snapshot.getVersionNumber()).isEqualTo(2);
         assertThat(testServicePO.getActiveVersionNumber()).isEqualTo(2);
         assertThat(testServicePO.getActiveVersionId()).isEqualTo("snap-002");
+    }
+
+    @Test
+    @DisplayName("Publish service - blocks publish when validation cases are not passing")
+    void publish_ValidationCaseFailing_BlocksPublish() {
+        McpServiceDataScope subjectScope = TestFixtures.createTestDataScope();
+        subjectScope.setScopeType(McpDataScopeType.SUBJECT);
+        subjectScope.setReferenceId("subject-1");
+        when(mcpServiceDAO.findById(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(Optional.of(testServicePO));
+        when(dataScopeService.getDataScope(TestFixtures.TEST_MCP_SERVICE_ID)).thenReturn(List.of(subjectScope));
+        when(validationCaseService.publishBlockingMessages(List.of("subject-1")))
+            .thenReturn(List.of("FPY regression: latest validation did not pass"));
+
+        assertThatThrownBy(() -> publishService.publish(TestFixtures.TEST_MCP_SERVICE_ID, "blocked"))
+            .isInstanceOf(DatiException.class)
+            .hasMessageContaining("FPY regression");
     }
 
     @Test
