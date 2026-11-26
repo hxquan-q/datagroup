@@ -151,12 +151,16 @@ const trendOption = computed<EChartsCoreOption>(() => {
   };
 });
 
-const toolDistributionOption = computed<EChartsCoreOption>(() => {
-  const colors = chartColors.value;
-  const tools = [...(stats.value?.tool_distribution || [])]
+const topTools = computed(() =>
+  [...(stats.value?.tool_distribution || [])]
     .sort((a, b) => b.call_count - a.call_count)
     .slice(0, 8)
-    .reverse();
+    .reverse(),
+);
+
+const toolDistributionOption = computed<EChartsCoreOption>(() => {
+  const colors = chartColors.value;
+  const tools = topTools.value;
 
   return {
     animationDuration: 300,
@@ -215,20 +219,28 @@ const toolDistributionOption = computed<EChartsCoreOption>(() => {
   };
 });
 
-const handleRefresh = async () => {
-  await Promise.all([refetchStats(), refetchLogs()]);
-};
-
-const handleStatusFilterChange = () => {
-  page.value = 1;
-};
-
-const handleFilterChange = () => {
+const applyToolFilter = () => {
   const isSameQuery =
     appliedToolFilter.value === toolFilter.value.trim() && page.value === 1;
   appliedToolFilter.value = toolFilter.value.trim();
   page.value = 1;
-  if (isSameQuery) {
+  return isSameQuery;
+};
+
+const handleRefresh = async () => {
+  const needsManualRefetch = applyToolFilter();
+  await Promise.all([
+    refetchStats(),
+    needsManualRefetch ? refetchLogs() : Promise.resolve(),
+  ]);
+};
+
+const handleStatusFilterChange = () => {
+  applyToolFilter();
+};
+
+const handleFilterChange = () => {
+  if (applyToolFilter()) {
     void refetchLogs();
   }
 };
