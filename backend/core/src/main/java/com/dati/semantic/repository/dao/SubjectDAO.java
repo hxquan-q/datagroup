@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface SubjectDAO extends JpaRepository<SubjectPO, String> {
@@ -37,6 +39,21 @@ public interface SubjectDAO extends JpaRepository<SubjectPO, String> {
                                                @Param("userId") String userId,
                                                @Param("groupIds") Collection<String> groupIds,
                                                Pageable pageable);
+
+    @Query("SELECT s.createdAt FROM SubjectPO s")
+    List<Instant> findAllCreatedAt();
+
+    @Query("""
+            SELECT s.createdAt FROM SubjectPO s
+            WHERE s.createdBy = :userId
+               OR EXISTS (SELECT 1 FROM ResourceAclPO a
+                          WHERE a.resourceType = 'SUBJECT'
+                            AND a.resourceId = s.id
+                            AND ((a.principalType = 'USER' AND a.principalId = :userId)
+                                 OR (a.principalType = 'GROUP' AND a.principalId IN :groupIds)))
+            """)
+    List<Instant> findAccessibleCreatedAt(@Param("userId") String userId,
+                                          @Param("groupIds") Collection<String> groupIds);
 
     @Query("""
             SELECT s FROM SubjectPO s
