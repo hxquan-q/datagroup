@@ -4,6 +4,8 @@ import com.dati.base.pojo.IdResponse;
 import com.dati.base.pojo.PageReq;
 import com.dati.base.pojo.PageResponse;
 import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.datasource.server.assembler.ColumnAssembler;
+import com.dati.datasource.server.pojo.ColumnInfoVO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.semantic.domain.model.TableRelation;
 import com.dati.semantic.domain.service.TableRelationService;
@@ -26,6 +28,7 @@ public class TableRelationController {
     private final TableRelationService service;
     private final TableRelationAssembler assembler;
     private final TableInfoDAO tableInfoDAO;
+    private final ColumnAssembler columnAssembler;
 
     @PostMapping("/v1/subjects/{subjectId}/relations")
     public IdResponse create(@PathVariable String subjectId, @Valid @RequestBody CreateTableRelationRequest request) {
@@ -46,6 +49,11 @@ public class TableRelationController {
         Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
         var page = service.getRelations(subjectId, pageReq.toPageRequest().withSort(sort));
         return assembler.toPageResponse(page, tableNames(page.getContent()));
+    }
+
+    @GetMapping("/v1/subjects/{subjectId}/tables/{tableId}/relation-columns")
+    public List<ColumnInfoVO> relationColumns(@PathVariable String subjectId, @PathVariable String tableId) {
+        return service.getRelationColumns(subjectId, tableId).stream().map(columnAssembler::toColumnInfoVO).toList();
     }
 
     @PutMapping("/v1/relations/{id}")

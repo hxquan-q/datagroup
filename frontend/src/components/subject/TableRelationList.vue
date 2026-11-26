@@ -4,9 +4,9 @@ import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus, Refresh } from "@element-plus/icons-vue";
 import { getSubjectTables, type TableInfoVO } from "~/api/subject";
-import { listTableColumns, type TableColumnVO } from "~/api/column";
+import type { TableColumnVO } from "~/api/column";
 import type { TableRelationPayload, TableRelationVO } from "~/api/table-relation";
-import { createTableRelation, deleteTableRelation, listTableRelations, updateTableRelation } from "~/api/table-relation";
+import { createTableRelation, deleteTableRelation, listRelationColumns, listTableRelations, updateTableRelation } from "~/api/table-relation";
 import { notifyError } from "~/api/http";
 import { formatDateTime } from "~/composables";
 
@@ -51,8 +51,8 @@ async function loadTables() {
 
 async function loadColumnOptions() {
   try {
-    if (form.value.fact_table_id) factColumns.value = (await listTableColumns(props.datasourceId, form.value.fact_table_id, 1, 100)).data;
-    if (form.value.dimension_table_id) dimensionColumns.value = (await listTableColumns(props.datasourceId, form.value.dimension_table_id, 1, 100)).data;
+    if (form.value.fact_table_id) factColumns.value = (await listRelationColumns(props.subjectId, form.value.fact_table_id));
+    if (form.value.dimension_table_id) dimensionColumns.value = (await listRelationColumns(props.subjectId, form.value.dimension_table_id));
   } catch (error) { notifyError(error, t("common.loadFailed")); }
 }
 

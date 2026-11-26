@@ -22,6 +22,7 @@ import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.SemanticEntityType;
 import com.dati.semantic.domain.service.SemanticIndexService;
 import com.dati.semantic.repository.dao.TermRelationDAO;
+import com.dati.semantic.repository.dao.TableRelationDAO;
 import com.dati.semantic.repository.po.EntityReference;
 import com.dati.semantic.repository.po.SemanticSearchDocument;
 import org.springframework.data.domain.Page;
@@ -50,16 +51,18 @@ public class TableService {
     private final SemanticIndexService semanticIndexService;
     private final PermissionService permissionService;
     private final TermRelationDAO termRelationDAO;
+    private final TableRelationDAO tableRelationDAO;
 
     public TableService(TableInfoDAO tableInfoDAO, ColumnInfoDAO columnInfoDAO,
                         JdbcMetaService jdbcMetaService, SemanticIndexService semanticIndexService,
-                        PermissionService permissionService, TermRelationDAO termRelationDAO) {
+                        PermissionService permissionService, TermRelationDAO termRelationDAO, TableRelationDAO tableRelationDAO) {
         this.tableInfoDAO = tableInfoDAO;
         this.columnInfoDAO = columnInfoDAO;
         this.jdbcMetaService = jdbcMetaService;
         this.semanticIndexService = semanticIndexService;
         this.permissionService = permissionService;
         this.termRelationDAO = termRelationDAO;
+        this.tableRelationDAO = tableRelationDAO;
     }
 
     public Page<TableInfo> getTables(PageReq pageReq, String datasourceId, String keyword) {
@@ -227,6 +230,7 @@ public class TableService {
             return;
         }
         termRelationDAO.deleteByTableIdIn(tableIds);
+        tableRelationDAO.deleteByAnyTableIdIn(tableIds);
         columnInfoDAO.deleteByTableIdIn(tableIds);
         tableInfoDAO.deleteAllById(tableIds);
         // Flush the deletes before removing their derived index documents.

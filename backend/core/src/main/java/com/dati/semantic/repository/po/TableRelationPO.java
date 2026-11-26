@@ -1,6 +1,7 @@
 package com.dati.semantic.repository.po;
 
 import com.dati.base.pojo.BaseResourcePO;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -15,6 +16,7 @@ import java.io.Serial;
 @FieldNameConstants
 @Entity
 @Table(name = "table_relation")
+@AttributeOverride(name = "name", column = @Column(name = "name", length = 300))
 public class TableRelationPO extends BaseResourcePO {
     @Serial private static final long serialVersionUID = 1L;
     @Column(name = "subject_id", nullable = false, length = 64)

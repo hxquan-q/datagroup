@@ -17,6 +17,7 @@ import com.dati.db.Table;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.service.SemanticIndexService;
 import com.dati.semantic.repository.dao.TermRelationDAO;
+import com.dati.semantic.repository.dao.TableRelationDAO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -68,6 +69,9 @@ class TableServiceTest {
 
     @Mock
     private TermRelationDAO termRelationDAO;
+
+    @Mock
+    private TableRelationDAO tableRelationDAO;
 
     @InjectMocks
     private TableService tableService;

@@ -2,7 +2,9 @@ package com.dati.semantic.domain.service;
 
 import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
+import com.dati.datasource.domain.model.ColumnInfo;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
+import com.dati.datasource.repository.mapper.ColumnMapper;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.model.ResourceType;
 import com.dati.permission.domain.service.PermissionService;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -86,6 +89,14 @@ public class TableRelationService {
         SubjectPO subject = requireSubject(subjectId);
         permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.VIEW, subject.getCreatedBy());
         return tableRelationDAO.findBySubjectId(subjectId, pageable).map(TableRelationMapper::toModel);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ColumnInfo> getRelationColumns(String subjectId, String tableId) {
+        SubjectPO subject = requireSubject(subjectId);
+        permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.VIEW, subject.getCreatedBy());
+        requireTableInSubject(subjectId, tableId);
+        return columnInfoDAO.findByTableId(tableId).stream().map(ColumnMapper::toColumnInfo).toList();
     }
 
     @Transactional

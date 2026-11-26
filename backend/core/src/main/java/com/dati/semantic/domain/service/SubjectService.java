@@ -210,7 +210,10 @@ public class SubjectService {
             }
         }
 
-        tableRelationDAO.deleteByFactTableIdOrDimensionTableId(tableId, tableId);
+        var affectedRelations = tableRelationDAO.findBySubjectId(subjectId).stream()
+                .filter(relation -> tableId.equals(relation.getFactTableId()) || tableId.equals(relation.getDimensionTableId()))
+                .toList();
+        tableRelationDAO.deleteAll(affectedRelations);
         subjectTableDAO.deleteBySubjectIdAndTableId(subjectId, tableId);
     }
 

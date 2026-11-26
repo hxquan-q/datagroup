@@ -39,3 +39,7 @@ export function updateTableRelation(id: string, body: TableRelationPayload): Pro
 export function deleteTableRelation(id: string): Promise<IdResponse> {
   return del<IdResponse>(`/v1/relations/${encodeURIComponent(id)}`);
 }
+
+export function listRelationColumns(subjectId: string, tableId: string) {
+  return get<any[]>(`/v1/subjects/${encodeURIComponent(subjectId)}/tables/${encodeURIComponent(tableId)}/relation-columns`);
+}
