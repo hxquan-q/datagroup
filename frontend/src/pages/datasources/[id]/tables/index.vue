@@ -25,10 +25,17 @@ const datasourceId = ref(route.params.id);
 const searchKeyword = ref("");
 
 const loading = ref(false);
+const datasourceName = ref("");
 const tableList = ref<TableInfoVO[]>([]);
 const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
+
+const breadcrumbs = computed(() => [
+  { label: t("layout.side.dataSources"), to: "/datasources" },
+  { label: datasourceName.value || datasourceId.value },
+  { label: t("tableInfo.title") },
+]);
 
 const metadataDialogVisible = ref(false);
 const currentTable = ref<TableInfoVO | null>(null);
@@ -250,6 +257,7 @@ const removeAlias = (alias: string) => {
 const handleColumnManage = (table: TableInfoVO) => {
   router.push({
     path: `/datasources/${table.datasource_id}/tables/${table.id}/columns`,
+    query: { tableName: table.name },
   });
 };
 
@@ -290,6 +298,7 @@ const handlePageSizeChange = (ps: number) => {
 onMounted(async () => {
   try {
     const ds = await getDataSource(datasourceId.value);
+    datasourceName.value = ds.name || "";
     if (ds.default_schema) {
       defaultSchema.value = ds.default_schema;
     }
@@ -300,25 +309,24 @@ onMounted(async () => {
 
 <template>
   <div class="list-page">
-    <div class="detail-header flex items-start justify-between gap-4">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/datasources' }">
-          {{ t("layout.side.dataSources") }}
-        </el-breadcrumb-item>
-        <el-breadcrumb-item>{{
-          t("tableInfo.title")
-        }}</el-breadcrumb-item>
-      </el-breadcrumb>
-
-      <div class="detail-actions flex items-center gap-2">
+    <DetailPageShell
+      :breadcrumbs="breadcrumbs"
+      :title="t('tableInfo.title')"
+      :description="datasourceName || datasourceId"
+    >
+      <template #meta>
+        <span>ID: {{ datasourceId }}</span>
+        <span v-if="defaultSchema">{{ t("common.schema") }}: {{ defaultSchema }}</span>
+      </template>
+      <template #actions>
         <el-button :icon="Refresh" :loading="loading" @click="handleRefresh">
           {{ t("common.refresh") }}
         </el-button>
         <el-button type="primary" :icon="Plus" @click="handleOpenAddTableDialog">
           {{ t("tableInfo.addTable") }}
         </el-button>
-      </div>
-    </div>
+      </template>
+    </DetailPageShell>
 
     <div class="toolbar">
       <div class="toolbar-fields">

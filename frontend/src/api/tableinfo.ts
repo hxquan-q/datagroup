@@ -24,6 +24,14 @@ export interface AddedTable {
   name: string;
 }
 
+export function getTableInfo(datasourceId: string, tableId: string, signal?: AbortSignal): Promise<TableInfoVO> {
+  return get<TableInfoVO>(
+    `/v1/data-sources/${encodeURIComponent(datasourceId)}/tables/${encodeURIComponent(tableId)}`,
+    undefined,
+    signal
+  );
+}
+
 export function getAddedTables(datasourceId: string, signal?: AbortSignal): Promise<AddedTable[]> {
   return get<AddedTable[]>(
     `/v1/data-sources/${encodeURIComponent(datasourceId)}/tables/added-names`,

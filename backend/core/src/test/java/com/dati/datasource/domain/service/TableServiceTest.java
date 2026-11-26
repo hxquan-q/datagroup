@@ -14,6 +14,7 @@ import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.datasource.server.pojo.AddTableRequest;
 import com.dati.db.Column;
 import com.dati.db.Table;
+import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.service.SemanticIndexService;
 import com.dati.semantic.repository.dao.TermRelationDAO;
@@ -379,6 +380,33 @@ class TableServiceTest {
         verify(columnInfoDAO, never()).deleteByTableIdIn(anyList());
         verify(tableInfoDAO, never()).deleteAllById(any());
         verify(semanticIndexService, never()).deleteByEntityTableIds(any());
+    }
+
+    @Test
+    @DisplayName("Get table detail - requires view permission and returns table")
+    void getTable_shouldReturnTableWhenDatasourceMatches() {
+        // given
+        when(tableInfoDAO.findById(TestFixtures.TEST_TABLE_ID)).thenReturn(Optional.of(testTableInfoPO));
+
+        // when
+        var result = tableService.getTable(TestFixtures.TEST_DATASOURCE_ID, TestFixtures.TEST_TABLE_ID);
+
+        // then
+        assertThat(result.getId()).isEqualTo(TestFixtures.TEST_TABLE_ID);
+        assertThat(result.getDatasourceId()).isEqualTo(TestFixtures.TEST_DATASOURCE_ID);
+        verify(permissionService).requireDataSource(TestFixtures.TEST_DATASOURCE_ID, Permission.VIEW);
+    }
+
+    @Test
+    @DisplayName("Get table detail - rejects a table that belongs to another datasource")
+    void getTable_shouldRejectTableFromAnotherDatasource() {
+        // given
+        when(tableInfoDAO.findById(TestFixtures.TEST_TABLE_ID)).thenReturn(Optional.of(testTableInfoPO));
+
+        // when & then
+        assertThatThrownBy(() -> tableService.getTable("other-datasource", TestFixtures.TEST_TABLE_ID))
+                .isInstanceOf(DatiException.class)
+                .satisfies(e -> assertThat(((DatiException) e).getCode()).isEqualTo(ErrorCode.DS_TABLE_NOT_FOUND));
     }
 
     @Test

@@ -52,6 +52,26 @@ class TableAssemblerTest {
         assertThat(vo.getUpdatedUserName()).isEqualTo("bob");
     }
 
+    @Test
+    @DisplayName("toTableInfoVO fills created_user_name and updated_user_name")
+    void toTableInfoVO_shouldFillUserNames() {
+        TableAssembler assembler = new TableAssembler();
+        assembler.setUserService(userService);
+
+        TableInfo table = new TableInfo();
+        table.setId("table-001");
+        table.setName("users");
+        table.setCreatedBy("u1");
+        table.setUpdatedBy("u2");
+        when(userService.getUserMap(any()))
+                .thenReturn(Map.of("u1", user("u1", "alice"), "u2", user("u2", "bob")));
+
+        TableInfoVO vo = assembler.toTableInfoVO(table);
+
+        assertThat(vo.getCreatedUserName()).isEqualTo("alice");
+        assertThat(vo.getUpdatedUserName()).isEqualTo("bob");
+    }
+
     private static User user(String id, String name) {
         User user = new User();
         user.setId(id);

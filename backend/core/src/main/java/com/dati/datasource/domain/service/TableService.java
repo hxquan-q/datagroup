@@ -74,6 +74,11 @@ public class TableService {
         return tableInfoDAO.findByDataSourceIdAndKeyword(datasourceId, keyword, pageReq.toPageRequest().withSort(sortBy)).map(TableMapper::toTableInfo);
     }
 
+    public TableInfo getTable(String datasourceId, String tableId) {
+        permissionService.requireDataSource(datasourceId, Permission.VIEW);
+        return TableMapper.toTableInfo(requireTableInDatasource(datasourceId, tableId));
+    }
+
     public List<TableInfo> getAddedTables(String datasourceId) {
         permissionService.requireDataSource(datasourceId, Permission.VIEW);
         return tableInfoDAO.findByDataSourceId(datasourceId).stream()

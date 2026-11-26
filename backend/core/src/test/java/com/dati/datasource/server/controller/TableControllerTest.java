@@ -106,6 +106,27 @@ class TableControllerTest {
     }
 
     @Test
+    @DisplayName("Get table detail - success")
+    void getTable_shouldReturnTable() throws Exception {
+        // given
+        when(tableService.getTable(TestFixtures.TEST_DATASOURCE_ID, TestFixtures.TEST_TABLE_ID))
+            .thenReturn(testTableInfo);
+        TableInfoVO vo = new TableInfoVO();
+        vo.setId(TestFixtures.TEST_TABLE_ID);
+        vo.setName("test_table");
+        vo.setDatasourceId(TestFixtures.TEST_DATASOURCE_ID);
+        when(tableAssembler.toTableInfoVO(testTableInfo)).thenReturn(vo);
+
+        // when & then
+        mockMvc.perform(get("/v1/data-sources/{datasourceId}/tables/{tableId}",
+                    TestFixtures.TEST_DATASOURCE_ID, TestFixtures.TEST_TABLE_ID))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(TestFixtures.TEST_TABLE_ID))
+            .andExpect(jsonPath("$.name").value("test_table"))
+            .andExpect(jsonPath("$.datasource_id").value(TestFixtures.TEST_DATASOURCE_ID));
+    }
+
+    @Test
     @DisplayName("Get added tables - returns schema and name")
     void getAddedTables_shouldReturnSchemaAndName() throws Exception {
         // given

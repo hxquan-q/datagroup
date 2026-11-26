@@ -35,6 +35,11 @@ public class TableController {
         return tableAssembler.toPageResponse(tableService.getTables(pageReq, datasourceId, keyword));
     }
 
+    @GetMapping("/tables/{tableId}")
+    public TableInfoVO getTable(@PathVariable String datasourceId, @PathVariable String tableId) {
+        return tableAssembler.toTableInfoVO(tableService.getTable(datasourceId, tableId));
+    }
+
     @GetMapping("/tables/added-names")
     public List<AddedTableVO> getAddedTableNames(@PathVariable String datasourceId) {
         return tableAssembler.toAddedTables(tableService.getAddedTables(datasourceId));

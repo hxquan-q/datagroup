@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Refresh } from "@element-plus/icons-vue";
+import { Plus, RefreshCw as Refresh } from "@lucide/vue";
 import type { MetricVO } from "~/api/metric";
 import { listMetrics } from "~/api/metric";
 import type { ValidationCasePayload, ValidationCaseVO } from "~/api/validation-case";
