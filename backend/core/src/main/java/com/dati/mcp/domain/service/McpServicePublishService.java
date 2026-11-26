@@ -96,7 +96,7 @@ public class McpServicePublishService {
             throw new DatiException(ErrorCode.MS_SERVICE_VALIDATION_FAILED, String.join("; ", validationFailures));
         }
 
-        return doPublish(servicePO, releaseNote);
+        return doPublish(servicePO, releaseNote, scopes);
     }
 
     /**
@@ -105,6 +105,10 @@ public class McpServicePublishService {
      */
     private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote) {
         return doPublish(servicePO, releaseNote, buildCurrentSnapshotContent(servicePO));
+    }
+
+    private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote, List<McpServiceDataScope> scopes) {
+        return doPublish(servicePO, releaseNote, buildCurrentSnapshotContent(servicePO, scopes));
     }
 
     private McpServiceSnapshot doPublish(McpServicePO servicePO, String releaseNote,
@@ -483,6 +487,10 @@ public class McpServicePublishService {
     }
 
     private McpServiceSnapshot.SnapshotContent buildCurrentSnapshotContent(McpServicePO servicePO) {
+        return buildCurrentSnapshotContent(servicePO, dataScopeService.getDataScope(servicePO.getId()));
+    }
+
+    private McpServiceSnapshot.SnapshotContent buildCurrentSnapshotContent(McpServicePO servicePO, List<McpServiceDataScope> scopes) {
         String serviceId = servicePO.getId();
 
         McpServiceSnapshot.ServiceInfo serviceInfo = new McpServiceSnapshot.ServiceInfo();
@@ -491,7 +499,7 @@ public class McpServicePublishService {
         serviceInfo.setDescription(servicePO.getDescription());
         serviceInfo.setCode(servicePO.getCode());
 
-        List<McpServiceSnapshot.DataScopeDraft> dataScopes = dataScopeService.getDataScope(serviceId).stream()
+        List<McpServiceSnapshot.DataScopeDraft> dataScopes = scopes.stream()
                 .map(McpServiceSnapshotMapper::toDataScopeDraft)
                 .map(this::withResolvedTables)
                 .toList();

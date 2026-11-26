@@ -76,6 +76,8 @@ class ValidationCaseServiceTest {
         lenient().when(validationCaseDAO.save(any(ValidationCasePO.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(dataSourceDAO.existsById("ds-1")).thenReturn(true);
         lenient().when(relationSnapshotService.buildRelationDrafts(any(), any())).thenReturn(java.util.List.of());
+        lenient().when(subjectTableDAO.findBySubjectId(anyString())).thenReturn(java.util.List.of());
+        lenient().when(tableInfoDAO.findAllById(any())).thenReturn(java.util.List.of());
     }
 
     @AfterEach
@@ -101,9 +103,11 @@ class ValidationCaseServiceTest {
         ValidationCasePO item = new ValidationCasePO();
         item.setName("FPY regression");
         item.setMetricId("metric-1");
+        item.setSubjectId("subject-1");
         item.setEnabled(true);
         item.setLastStatus("PASS");
         item.setLastMetricRevision(1);
+        item.setLastEvidence(java.util.Map.of("relation_fingerprint", ""));
         when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
 
         assertThat(service.publishBlockingMessages(java.util.List.of("subject-1"))).isEmpty();
@@ -115,13 +119,15 @@ class ValidationCaseServiceTest {
         ValidationCasePO item = new ValidationCasePO();
         item.setName("FPY regression");
         item.setMetricId("metric-1");
+        item.setSubjectId("subject-1");
         item.setEnabled(true);
         item.setLastStatus("PASS");
-        item.setLastMetricRevision(0);
+        item.setLastMetricRevision(1);
+        item.setLastEvidence(java.util.Map.of("relation_fingerprint", "old"));
         when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
 
         assertThat(service.publishBlockingMessages(java.util.List.of("subject-1")))
-            .containsExactly("FPY regression: metric changed after validation");
+            .containsExactly("FPY regression: table relations changed after validation");
     }
 
     @Test

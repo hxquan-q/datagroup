@@ -175,7 +175,9 @@ public class ValidationCaseService {
             } else {
                 applyAssertion(po, execution, returnedRows);
             }
-            po.setLastEvidence(evidence(execution, returnedRows));
+            Map<String, Object> resultEvidence = new HashMap<>(evidence(execution, returnedRows));
+            resultEvidence.put("relation_fingerprint", relationFingerprint(po.getSubjectId()));
+            po.setLastEvidence(resultEvidence);
         } catch (Exception e) {
             po.setLastStatus("ERROR");
             po.setLastMessage(e.getMessage());
@@ -253,6 +255,16 @@ public class ValidationCaseService {
             List.of(scope), List.of(draft), relations);
         MetricExecution execution = (MetricExecution) queryMetricExecutor.execute(ctx);
         return execution.execution();
+    }
+
+    private String relationFingerprint(String subjectId) {
+        McpServiceDataScope scope = subjectScope(subjectId);
+        return relationSnapshotService.buildRelationDrafts(List.of(subjectId), List.of(scope)).stream()
+            .map(relation -> relation.factDataSourceId() + "." + relation.factSchema() + "." + relation.factTableName() + "." + relation.factColumn()
+                + "->" + relation.dimensionDataSourceId() + "." + relation.dimensionSchema() + "." + relation.dimensionTableName() + "." + relation.dimensionColumn()
+                + "|" + relation.cardinality() + "|" + relation.revision())
+            .sorted()
+            .collect(java.util.stream.Collectors.joining("\n"));
     }
 
     private McpServiceDataScope subjectScope(String subjectId) {
@@ -355,6 +367,10 @@ public class ValidationCaseService {
         }
         if (!Objects.equals(item.getLastMetricRevision(), metric.getRevision())) {
             return item.getName() + ": metric changed after validation";
+        }
+        Object validatedRelations = item.getLastEvidence() == null ? null : item.getLastEvidence().get("relation_fingerprint");
+        if (!Objects.equals(validatedRelations, relationFingerprint(item.getSubjectId()))) {
+            return item.getName() + ": table relations changed after validation";
         }
         return null;
     }
