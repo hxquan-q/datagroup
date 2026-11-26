@@ -99,6 +99,7 @@ declare module 'vue' {
     SubjectTableList: typeof import('./components/subject/SubjectTableList.vue')['default']
     TableListResult: typeof import('./components/mcp-service/tool-test/results/TableListResult.vue')['default']
     TableMetadataResult: typeof import('./components/mcp-service/tool-test/results/TableMetadataResult.vue')['default']
+    TableRelationList: typeof import('./components/subject/TableRelationList.vue')['default']
     TemplatePreviewDialog: typeof import('./components/mcp-service/TemplatePreviewDialog.vue')['default']
     TermManager: typeof import('./components/subject/TermManager.vue')['default']
     ToolsTab: typeof import('./components/mcp-service/ToolsTab.vue')['default']

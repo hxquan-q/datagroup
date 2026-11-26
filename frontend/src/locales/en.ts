@@ -309,6 +309,27 @@ export default {
     deleteConfirm: "Delete metric \"{name}\"?",
   },
 
+
+  relation: {
+    title: "Table Relations",
+    subtitle: "Maintain reviewed fact-to-dimension join keys and cardinality for semantic execution and validation",
+    createButton: "New Relation",
+    createTitle: "Create Table Relation",
+    editTitle: "Edit Table Relation",
+    emptyList: "No table relations yet",
+    factTable: "Fact Table",
+    factColumn: "Fact Column",
+    dimensionTable: "Dimension Table",
+    dimensionColumn: "Dimension Column",
+    cardinality: "Cardinality",
+    owner: "Owner",
+    requiredFields: "Please select fact table, dimension table, and join columns",
+    createSuccess: "Table relation created successfully",
+    updateSuccess: "Table relation updated successfully",
+    deleteSuccess: "Table relation deleted successfully",
+    deleteConfirm: "Delete this table relation?",
+  },
+
   tableInfo: {
     // Page Titles
     title: "Tables",

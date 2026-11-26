@@ -34,6 +34,7 @@ const activeTab = ref("basic");
 const tabs = computed(() => [
   { key: "basic", label: t("subject.basicInfo") },
   { key: "tables", label: t("subject.tableManagement") },
+  { key: "relations", label: t("relation.title") },
   { key: "terms", label: t("subject.termManagement") },
   { key: "metrics", label: t("metric.title") },
   { key: "validation", label: t("subject.validationTab") },
@@ -236,6 +237,10 @@ onMounted(() => {
           :datasource-id="subject.datasource_id"
           @refresh="loadSubject"
         />
+      </div>
+
+      <div v-else-if="activeTab === 'relations'" class="scope-panel p-[20px] shadow-sm">
+        <TableRelationList v-if="subject?.datasource_id" :subject-id="subjectId" :datasource-id="subject.datasource_id" />
       </div>
 
       <!-- Tab 3: Term Management -->

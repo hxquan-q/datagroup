@@ -20,6 +20,7 @@ import com.dati.semantic.repository.dao.SubjectDAO;
 import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.semantic.repository.dao.TermDAO;
 import com.dati.semantic.repository.dao.TermRelationDAO;
+import com.dati.semantic.repository.dao.TableRelationDAO;
 import com.dati.semantic.repository.mapper.SubjectMapper;
 import com.dati.semantic.repository.po.EntityReference;
 import com.dati.semantic.repository.po.SemanticSearchDocument;
@@ -46,6 +47,7 @@ public class SubjectService {
     private final SubjectDAO subjectDAO;
     private final SubjectTableDAO subjectTableDAO;
     private final MetricDAO metricDAO;
+    private final TableRelationDAO tableRelationDAO;
     private final TermDAO termDAO;
     private final TermRelationDAO termRelationDAO;
     private final TableInfoDAO tableInfoDAO;
@@ -54,13 +56,14 @@ public class SubjectService {
     private final UserGroupService userGroupService;
 
     public SubjectService(SubjectDAO subjectDAO, SubjectTableDAO subjectTableDAO,
-                          MetricDAO metricDAO, TermDAO termDAO, TermRelationDAO termRelationDAO,
+                          MetricDAO metricDAO, TableRelationDAO tableRelationDAO, TermDAO termDAO, TermRelationDAO termRelationDAO,
                           TableInfoDAO tableInfoDAO,
                           SemanticIndexService semanticIndexService,
                           PermissionService permissionService, UserGroupService userGroupService) {
         this.subjectDAO = subjectDAO;
         this.subjectTableDAO = subjectTableDAO;
         this.metricDAO = metricDAO;
+        this.tableRelationDAO = tableRelationDAO;
         this.termDAO = termDAO;
         this.termRelationDAO = termRelationDAO;
         this.tableInfoDAO = tableInfoDAO;
@@ -156,6 +159,7 @@ public class SubjectService {
         termDAO.deleteBySubjectId(id);
         subjectTableDAO.deleteBySubjectId(id);
         metricDAO.deleteBySubjectId(id);
+        tableRelationDAO.deleteBySubjectId(id);
         subjectDAO.deleteById(id);
         // Flush the cascade before removing the derived subject/term documents.
         subjectDAO.flush();
@@ -206,6 +210,7 @@ public class SubjectService {
             }
         }
 
+        tableRelationDAO.deleteByFactTableIdOrDimensionTableId(tableId, tableId);
         subjectTableDAO.deleteBySubjectIdAndTableId(subjectId, tableId);
     }
 
