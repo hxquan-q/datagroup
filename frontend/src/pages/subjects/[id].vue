@@ -30,6 +30,10 @@ const newAliasInputVisible = ref(false);
 const newAliasInputRef = ref();
 
 const activeTab = ref("basic");
+const breadcrumbs = computed(() => [
+  { label: t("subject.title"), to: "/subjects" },
+  { label: subject.value?.name || subjectId.value },
+]);
 
 const tabs = computed(() => [
   { key: "basic", label: t("subject.basicInfo") },
@@ -113,22 +117,21 @@ onMounted(() => {
 <template>
   <div v-loading="loading" class="subject-detail-page flex flex-col flex-1 min-h-0 gap-5 p-6 overflow-hidden">
     <!-- Top Navigation Header -->
-    <div class="detail-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-      <div class="flex items-center gap-3 flex-wrap">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/subjects' }">
-            {{ t("subject.title") }}
-          </el-breadcrumb-item>
-          <el-breadcrumb-item>{{ subject?.name || subjectId }}</el-breadcrumb-item>
-        </el-breadcrumb>
-      </div>
-
-      <div class="flex items-center gap-3">
+    <DetailPageShell
+      :breadcrumbs="breadcrumbs"
+      :title="subject?.name || subjectId"
+      :description="subject?.description || undefined"
+    >
+      <template #meta>
+        <span>{{ t("subject.datasource") }}: {{ subject?.datasource_name || subject?.datasource_id || '-' }}</span>
+        <span>{{ t("common.lastModifiedAt", { time: subject?.updated_at ? formatDateTime(subject.updated_at) : '-' }) }}</span>
+      </template>
+      <template #actions>
         <el-button @click="authDialogVisible = true">
           {{ t("permission.button") }}
         </el-button>
-      </div>
-    </div>
+      </template>
+    </DetailPageShell>
 
     <!-- Top Horizontal Underline Tabs -->
     <div class="tabs-bar flex flex-wrap items-center border-b border-[var(--ep-border-color-lighter)] gap-x-8 gap-y-0 shrink-0">

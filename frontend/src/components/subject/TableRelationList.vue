@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Refresh } from "@element-plus/icons-vue";
+import { Plus, RefreshCw as Refresh } from "@lucide/vue";
 import { getSubjectTables, type TableInfoVO } from "~/api/subject";
 import type { TableColumnVO } from "~/api/column";
 import type { TableRelationPayload, TableRelationVO } from "~/api/table-relation";

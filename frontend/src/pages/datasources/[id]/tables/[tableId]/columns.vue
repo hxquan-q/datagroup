@@ -22,6 +22,7 @@ import {
 import { useSystemStore } from "~/stores/system";
 import { formatDateTime } from "~/composables";
 import { notifyError } from "~/api/http";
+import { getDataSource } from "~/api/datasource";
 
 const { t } = useI18n();
 const systemStore = useSystemStore();
@@ -32,11 +33,19 @@ const tableId = computed(() => route.params.tableId);
 
 const searchKeyword = ref("");
 const loading = ref(false);
+const datasourceName = ref("");
 
 const columnList = ref<TableColumnVO[]>([]);
 const page = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
+const tableName = computed(() => String(route.query.tableName || tableId.value));
+const breadcrumbs = computed(() => [
+  { label: t("layout.side.dataSources"), to: "/datasources" },
+  { label: datasourceName.value || datasourceId.value },
+  { label: t("tableInfo.title"), to: `/datasources/${datasourceId.value}/tables` },
+  { label: tableName.value },
+]);
 
 // 弹窗状态（列元数据配置）
 const metadataDialogVisible = ref(false);
@@ -599,28 +608,26 @@ onBeforeUnmount(() => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const ds = await getDataSource(datasourceId.value);
+    datasourceName.value = ds.name || "";
+  } catch { /* ignore */ }
   loadColumns();
 });
 </script>
 
 <template>
   <div class="list-page">
-    <div class="detail-header flex items-start justify-between gap-4">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/datasources' }">
-          {{ t("layout.side.dataSources") }}
-        </el-breadcrumb-item>
-        <el-breadcrumb-item
-          :to="{ path: `/datasources/${datasourceId}/tables` }"
-        >
-          {{ t("tableInfo.title") }}
-        </el-breadcrumb-item>
-        <el-breadcrumb-item>
-          {{ t("tableInfo.columnSettings") }}
-        </el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
+    <DetailPageShell
+      :breadcrumbs="breadcrumbs"
+      :title="t('tableInfo.columnSettings')"
+      :description="tableName"
+    >
+      <template #meta>
+        <span>{{ t("layout.side.dataSources") }}: {{ datasourceName || datasourceId }}</span>
+      </template>
+    </DetailPageShell>
 
     <div class="toolbar">
       <div class="toolbar-fields">
