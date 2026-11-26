@@ -54,7 +54,31 @@ watch(
   { deep: true },
 );
 
+const rowErrors = reactive<Record<number, string>>({});
+
+watch(
+  () => form.tables,
+  () => Object.keys(rowErrors).forEach((key) => delete rowErrors[Number(key)]),
+  { deep: true },
+);
+
+function validateRows() {
+  Object.keys(rowErrors).forEach((key) => delete rowErrors[Number(key)]);
+  let valid = true;
+  form.tables.forEach((entry, index) => {
+    const missing: string[] = [];
+    if (!entry.data_source_id) missing.push(t("common.dataSource"));
+    if (!entry.table) missing.push(t("mcpService.toolTest.fieldTable"));
+    if (missing.length > 0) {
+      rowErrors[index] = t("mcpService.toolTest.requiredHint", { name: missing.join(" / ") });
+      valid = false;
+    }
+  });
+  return valid;
+}
+
 defineExpose({
+  validate: () => Promise.resolve(validateRows()),
   getArgs: () => ({ tables: form.tables.map(stripEmpty) }),
 });
 </script>
@@ -155,6 +179,7 @@ defineExpose({
         class="w-full"
         :placeholder="t('mcpService.toolTest.aliasesPlaceholder')"
       />
+      <p v-if="rowErrors[i]" class="tool-test-field-error">{{ rowErrors[i] }}</p>
     </div>
 
     <el-button

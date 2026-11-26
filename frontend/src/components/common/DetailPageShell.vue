@@ -48,11 +48,9 @@ defineProps<{
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 18px;
-  border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.04);
+  padding: 4px 2px 0;
+  border: 0;
+  background: transparent;
 }
 
 .detail-shell-main {
@@ -86,7 +84,7 @@ defineProps<{
 .detail-shell-title-row h1 {
   margin: 0;
   color: var(--ep-text-color-primary);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 720;
   letter-spacing: -0.02em;
   line-height: 1.25;
