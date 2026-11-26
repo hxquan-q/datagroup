@@ -21,6 +21,7 @@ import com.dati.permission.domain.service.PermissionService;
 import com.dati.semantic.domain.SemanticEntityType;
 import com.dati.semantic.domain.service.SemanticIndexService;
 import com.dati.semantic.repository.dao.TermRelationDAO;
+import com.dati.semantic.repository.dao.TableRelationDAO;
 import com.dati.semantic.repository.po.EntityReference;
 import com.dati.semantic.repository.po.SemanticSearchDocument;
 import org.springframework.data.domain.Page;
@@ -47,16 +48,18 @@ public class ColumnService {
     private final SemanticIndexService semanticIndexService;
     private final PermissionService permissionService;
     private final TermRelationDAO termRelationDAO;
+    private final TableRelationDAO tableRelationDAO;
 
     public ColumnService(ColumnInfoDAO columnInfoDAO, TableInfoDAO tableInfoDAO,
                          JdbcMetaService jdbcMetaService, SemanticIndexService semanticIndexService,
-                         PermissionService permissionService, TermRelationDAO termRelationDAO) {
+                         PermissionService permissionService, TermRelationDAO termRelationDAO, TableRelationDAO tableRelationDAO) {
         this.columnInfoDAO = columnInfoDAO;
         this.tableInfoDAO = tableInfoDAO;
         this.jdbcMetaService = jdbcMetaService;
         this.semanticIndexService = semanticIndexService;
         this.permissionService = permissionService;
         this.termRelationDAO = termRelationDAO;
+        this.tableRelationDAO = tableRelationDAO;
     }
 
     public Page<ColumnInfo> getColumns(PageReq pageReq, String datasourceId, String tableId, String keyword) {
@@ -151,8 +154,8 @@ public class ColumnService {
 
         // 只删除消失的列，保留既有列的 ID 与审计信息（列身份稳定，外部引用不失效）
         if (!removedColumns.isEmpty()) {
-            termRelationDAO.deleteByTableIdAndFieldNameIn(tableId,
-                    removedColumns.stream().map(ColumnInfoPO::getName).toList());
+            java.util.List<String> removedColumnNames = removedColumns.stream().map(ColumnInfoPO::getName).toList();
+            termRelationDAO.deleteByTableIdAndFieldNameIn(tableId, removedColumnNames);
             columnInfoDAO.deleteAll(removedColumns);
         }
         

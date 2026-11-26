@@ -310,6 +310,26 @@ export default {
   },
 
 
+  relation: {
+    title: "表关系",
+    subtitle: "维护事实表与维表的关联键和基数，为语义计算和联表校验提供已审核关系",
+    createButton: "新建关系",
+    createTitle: "新建表关系",
+    editTitle: "编辑表关系",
+    emptyList: "暂无表关系",
+    factTable: "事实表",
+    factColumn: "事实表字段",
+    dimensionTable: "维表",
+    dimensionColumn: "维表字段",
+    cardinality: "基数",
+    owner: "负责人",
+    requiredFields: "请选择事实表、维表和关联字段",
+    createSuccess: "表关系创建成功",
+    updateSuccess: "表关系更新成功",
+    deleteSuccess: "表关系删除成功",
+    deleteConfirm: "确定删除该表关系吗？",
+  },
+
   validation: {
     title: "样例校验",
     subtitle: "沉淀业务问法、执行断言、健康状态和失败证据，验证指标口径是否持续正确",
