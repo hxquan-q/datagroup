@@ -56,7 +56,7 @@ const highlights = [
   grid-template-columns: minmax(0, 1.05fr) 430px;
   overflow: hidden;
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 28px;
+  border-radius: 24px;
   background: color-mix(in srgb, var(--ep-bg-color) 92%, transparent);
   box-shadow: 0 28px 80px rgba(15, 23, 42, 0.11);
 }

@@ -239,7 +239,7 @@ onMounted(fetchOverview);
   overflow: hidden;
   padding: 28px;
   border: 1px solid rgba(37, 99, 235, 0.14);
-  border-radius: 28px;
+  border-radius: 24px;
   background:
     linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 42%),
     linear-gradient(180deg, var(--ep-bg-color), color-mix(in srgb, var(--ep-bg-color) 82%, var(--ep-color-primary-light-9)));
@@ -309,7 +309,7 @@ onMounted(fetchOverview);
 .hero-actions :deep(.ep-button) {
   height: 42px;
   padding-inline: 18px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-weight: 650;
 }
 
@@ -457,11 +457,11 @@ onMounted(fetchOverview);
   min-height: 188px;
   padding: 20px;
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 22px;
+  border-radius: 24px;
   background: color-mix(in srgb, var(--ep-bg-color) 90%, transparent);
   box-shadow: 0 14px 40px rgba(15, 23, 42, 0.05);
   cursor: pointer;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  transition: transform var(--xiaoai-motion), border-color var(--xiaoai-motion), box-shadow var(--xiaoai-motion);
 }
 
 .module-card:hover {
@@ -498,7 +498,7 @@ onMounted(fetchOverview);
 
 .module-arrow {
   color: var(--ep-text-color-placeholder);
-  transition: transform 180ms ease, color 180ms ease;
+  transition: transform var(--xiaoai-motion), color var(--xiaoai-motion);
 }
 
 .module-card:hover .module-arrow {
@@ -592,7 +592,7 @@ onMounted(fetchOverview);
   color: inherit;
   cursor: pointer;
   text-align: left;
-  transition: all 160ms ease;
+  transition: all var(--xiaoai-motion);
 }
 
 .workflow-step:hover {
@@ -640,7 +640,7 @@ onMounted(fetchOverview);
   gap: 12px;
   padding: 16px;
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 18px;
+  border-radius: 20px;
   background: color-mix(in srgb, var(--ep-bg-color) 84%, transparent);
 }
 

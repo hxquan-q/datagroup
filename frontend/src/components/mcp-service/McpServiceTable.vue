@@ -5,8 +5,10 @@ import type { McpServiceVO } from "~/api/mcp-service";
 import { formatDateTime } from "~/composables";
 import { copyToClipboard } from "~/utils/clipboard";
 import { useI18n } from "vue-i18n";
+import { useMediaQuery } from "@vueuse/core";
 
 const { t } = useI18n();
+const compactColumns = useMediaQuery("(max-width: 1100px)");
 
 interface Props {
   data: McpServiceVO[];
@@ -126,6 +128,7 @@ const handleCopy = async (endpointPath: string) => {
       </template>
     </el-table-column>
     <el-table-column
+      v-if="!compactColumns"
       prop="description"
       :label="t('common.description')"
       min-width="120"
@@ -136,6 +139,7 @@ const handleCopy = async (endpointPath: string) => {
       </template>
     </el-table-column>
     <el-table-column
+      v-if="!compactColumns"
       prop="created_user_name"
       :label="t('common.createdBy')"
       min-width="90"
