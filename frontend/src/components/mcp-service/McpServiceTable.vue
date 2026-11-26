@@ -139,7 +139,6 @@ const handleCopy = async (endpointPath: string) => {
       </template>
     </el-table-column>
     <el-table-column
-      v-if="!compactColumns"
       prop="created_user_name"
       :label="t('common.createdBy')"
       min-width="90"
