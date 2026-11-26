@@ -278,7 +278,32 @@ onMounted(() => {
 }
 .validation-panel {
   min-height: 320px;
-  display: grid;
-  place-items: center;
+}
+
+@media (max-width: 1024px) {
+  .subject-detail-page {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .tabs-bar {
+    flex-wrap: nowrap;
+    gap: 18px;
+    overflow-x: auto;
+  }
+
+  .tab-item {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .subject-detail-page {
+    padding: 12px;
+  }
+
+  .scope-panel {
+    padding: 14px !important;
+  }
 }
 </style>

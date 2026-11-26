@@ -309,7 +309,7 @@ onMounted(() => {
       />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editingCase ? t('validation.editTitle') : t('validation.createTitle')" width="680px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editingCase ? t('validation.editTitle') : t('validation.createTitle')" width="min(680px, calc(100vw - 32px))" destroy-on-close>
       <el-form label-position="top">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <el-form-item :label="t('common.name')" required>
@@ -385,3 +385,22 @@ onMounted(() => {
     </el-drawer>
   </div>
 </template>
+
+<style scoped>
+.validation-workbench {
+  width: 100%;
+  min-width: 0;
+}
+
+.validation-workbench :deep(.el-table) {
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .validation-workbench :deep(.el-pagination) {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 8px;
+  }
+}
+</style>
