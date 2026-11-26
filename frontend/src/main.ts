@@ -15,6 +15,7 @@ import 'element-plus/theme-chalk/src/message-box.scss'
 import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import { pinia } from "./stores";
+import { setupVueQuery } from "~/plugins/query";
 import { useAuthStore } from "~/stores/auth";
 
 const app = createApp(App);
@@ -41,6 +42,7 @@ router.beforeEach((to) => {
 });
 
 app.use(pinia)
+setupVueQuery(app)
 app.use(router)
 app.use(i18n)
 

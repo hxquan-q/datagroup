@@ -10,13 +10,15 @@ src/
 ├── api/
 │   ├── http.ts             # Axios instance, interceptors, typed wrappers (get/post/put/del)
 │   ├── types.ts            # Shared: IdResponse, PageResponse, BaseResourceVO, User
+│   ├── openapi.types.ts    # Generated from docs/api/openapi.json; never edit manually
+│   ├── query-keys.ts       # Shared Vue Query key factories
 │   └── <feature>.ts        # Domain APIs + local VO/Request types
 ├── composables/            # Reusable composables, barrel-exported via index.ts
 ├── stores/                 # Pinia (setup syntax)
 ├── locales/                # i18n (zh.ts, en.ts)
 ├── styles/                 # TailwindCSS 4 + Element Plus SCSS overrides
 ├── utils/                  # Pure utility functions (clipboard, codemirror, formatters)
-└── plugins/                # i18n setup
+└── plugins/                # i18n and Vue Query setup
 ```
 
 **Path alias**: `~/` → `src/`. All imports use `~/api/...`, `~/components/...`, `~/stores/...`, `~/utils/...`.
@@ -51,7 +53,19 @@ import { get, post, put, del } from './http'
 - `notifyError` prefers the backend `message`, appends the backend `code` only for 5xx, and groups identical toasts
 - Silent catches are allowed only for non-critical background/type-ahead loads; state the reason in a comment
 - `ElMessage.error` remains appropriate for non-API failures such as clipboard errors
-- Detail/list pages must still reset loading in `finally` and keep dialogs open on submit failure
+- Non-query async flows such as dialog submissions must still reset loading in `finally` and keep dialogs open on submit failure
+
+**OpenAPI type generation**:
+- `src/api/openapi.types.ts` is generated with `pnpm api:types` from `../docs/api/openapi.json`; never edit it manually
+- After backend OpenAPI changes, regenerate both the backend OpenAPI snapshot and frontend types
+- Prefer generated schema types when introducing or tightening API types; keep runtime calls in `api/http.ts` so authentication and error behavior stay centralized
+
+**Server state**:
+- Use `@tanstack/vue-query` for new list/detail reads instead of hand-written `loadXxx`/`loading` state
+- Define shared query keys in `api/query-keys.ts`; invalidate by stable key prefix after creates, updates, and deletes
+- Use `isPending` for first-load UI and `isFetching` when background refreshes should also show progress
+- Use `placeholderData: keepPreviousData` for paginated tables so rows do not disappear while changing pages
+- Query errors are reported by the shared query client; mutations still use their own contextual `notifyError`
 
 **Domain API conventions**:
 - VO types extend `BaseResourceVO`; field names `snake_case`
@@ -107,27 +121,35 @@ watch(() => props.item, (val) => {
 ### Standard CRUD Pattern
 
 ```ts
-const loading = ref(false)
-const list = ref<T[]>([])
-const dialogVisible = ref(false)
-const currentItem = ref<T | null>(null)
 const searchKeyword = ref('')
-const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const appliedKeyword = ref('')
+const page = ref(1)
+const pageSize = ref(10)
 
-const loadData = async () => {
-  loading.value = true
-  try {
-    const res = await listApi(page.value, pageSize.value, searchKeyword.value)
-    list.value = res.data || []; total.value = res.total ?? 0
-  } catch (e) { console.error(e); ElMessage.error(t('common.loadFailed')) }
-  finally { loading.value = false }
+const queryClient = useQueryClient()
+const queryKey = computed(() => fooKeys.list(page.value, pageSize.value, appliedKeyword.value))
+const { data, isFetching, refetch } = useQuery({
+  queryKey,
+  queryFn: ({ signal }) => listFoos(page.value, pageSize.value, appliedKeyword.value, signal),
+  placeholderData: keepPreviousData,
+})
+
+const loading = computed(() => isFetching.value)
+const list = computed(() => data.value?.data || [])
+const total = computed(() => data.value?.total ?? 0)
+
+const handleSearch = () => {
+  const isSameQuery = appliedKeyword.value === searchKeyword.value && page.value === 1
+  appliedKeyword.value = searchKeyword.value
+  page.value = 1
+  if (isSameQuery) void refetch()
 }
-
-// Search resets to page 1; pagination events trigger reload
-const handleSearch = () => { page.value = 1; loadData() }
 const handleCreate = () => { currentItem.value = null; dialogVisible.value = true }
 const handleEdit = (item: T) => { currentItem.value = { ...item }; dialogVisible.value = true }
-const handleDialogSuccess = () => { dialogVisible.value = false; loadData() }
+const handleDialogSuccess = () => {
+  dialogVisible.value = false
+  queryClient.invalidateQueries({ queryKey: fooKeys.lists() })
+}
 ```
 
 ### Delete Confirmation
