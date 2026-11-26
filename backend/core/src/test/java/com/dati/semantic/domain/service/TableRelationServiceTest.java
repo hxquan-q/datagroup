@@ -85,11 +85,40 @@ class TableRelationServiceTest {
         TableRelation item = relation();
         TableRelationPO existing = new TableRelationPO();
         existing.setId("rel-existing");
-        when(tableRelationDAO.findBySubjectIdAndFactTableIdAndFactColumnAndDimensionTableIdAndDimensionColumn(
-            "subject-1", "fact-1", "wo_id", "dim-1", "id")).thenReturn(Optional.of(existing));
+        existing.setFactTableId("fact-1");
+        existing.setFactColumn("WO_ID");
+        existing.setDimensionTableId("dim-1");
+        existing.setDimensionColumn("ID");
+        when(tableRelationDAO.findBySubjectId("subject-1")).thenReturn(java.util.List.of(existing));
 
         assertThatThrownBy(() -> service.createRelation("subject-1", item))
             .isInstanceOf(DatiException.class);
+    }
+
+    @Test
+    @DisplayName("update rejects a duplicate join before mutating the stored relation")
+    void updateRejectsDuplicateBeforeMutation() {
+        TableRelationPO po = new TableRelationPO();
+        po.setId("rel-1");
+        po.setSubjectId("subject-1");
+        po.setFactTableId("fact-1");
+        po.setDimensionTableId("dim-1");
+        po.setFactColumn("source_id");
+        po.setDimensionColumn("id");
+        TableRelationPO existing = new TableRelationPO();
+        existing.setId("rel-2");
+        existing.setFactTableId("fact-1");
+        existing.setFactColumn("wo_id");
+        existing.setDimensionTableId("dim-1");
+        existing.setDimensionColumn("ID");
+        when(tableRelationDAO.findById("rel-1")).thenReturn(Optional.of(po));
+        when(tableRelationDAO.findBySubjectId("subject-1")).thenReturn(java.util.List.of(po, existing));
+        TableRelation patch = new TableRelation();
+        patch.setFactColumn("WO_ID");
+
+        assertThatThrownBy(() -> service.updateRelation("rel-1", patch)).isInstanceOf(DatiException.class);
+        assertThat(po.getFactColumn()).isEqualTo("source_id");
+        assertThat(po.getDimensionColumn()).isEqualTo("id");
     }
 
     @Test

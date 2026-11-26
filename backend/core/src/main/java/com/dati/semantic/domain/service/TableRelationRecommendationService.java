@@ -288,7 +288,7 @@ public class TableRelationRecommendationService {
     }
 
     private static String relationKey(String factTableId, String factColumn, String dimensionTableId, String dimensionColumn) {
-        return factTableId + "|" + factColumn + "|" + dimensionTableId + "|" + dimensionColumn;
+        return factTableId + "|" + factColumn.toLowerCase(Locale.ROOT) + "|" + dimensionTableId + "|" + dimensionColumn.toLowerCase(Locale.ROOT);
     }
 
     private boolean canUseDictionaryValues(SubjectPO subject) {

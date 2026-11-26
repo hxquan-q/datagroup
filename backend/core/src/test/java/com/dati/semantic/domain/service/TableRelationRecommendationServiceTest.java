@@ -115,6 +115,24 @@ class TableRelationRecommendationServiceTest {
     }
 
     @Test
+    @DisplayName("does not recommend a case-variant of an existing governed relation")
+    void skipsExistingCaseVariantRelation() {
+        TableInfoPO fact = table("fact-1", "t_mes_passstaion", "过站记录");
+        TableInfoPO dimension = table("dim-1", "t_mes_workshop", "车间");
+        mockTables(fact, dimension);
+        when(columnInfoDAO.findByTableId("fact-1")).thenReturn(List.of(column("fact-col-1", "fact-1", "FWorkShopID", "INT", "车间")));
+        when(columnInfoDAO.findByTableId("dim-1")).thenReturn(List.of(column("dim-col-1", "dim-1", "F_id", "INT", "")));
+        TableRelationPO existing = new TableRelationPO();
+        existing.setFactTableId("fact-1");
+        existing.setFactColumn("fworkshopid");
+        existing.setDimensionTableId("dim-1");
+        existing.setDimensionColumn("f_ID");
+        when(tableRelationDAO.findBySubjectId("subject-1")).thenReturn(List.of(existing));
+
+        assertThat(service.recommendRelations("subject-1", 20)).isEmpty();
+    }
+
+    @Test
     @DisplayName("uses extracted dictionary values as supporting evidence")
     void usesDictionaryValueOverlap() {
         TableInfoPO fact = table("fact-1", "t_mes_passstaion", "过站记录");

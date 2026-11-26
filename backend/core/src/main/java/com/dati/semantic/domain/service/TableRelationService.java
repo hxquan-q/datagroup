@@ -63,20 +63,19 @@ public class TableRelationService {
         TableRelationPO po = requireRelation(id);
         SubjectPO subject = requireSubject(po.getSubjectId());
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.EDIT, subject.getCreatedBy());
-        if (patch.getFactColumn() != null) {
-            if (patch.getFactColumn().isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "factColumn must not be blank");
-            if (!patch.getFactColumn().equals(po.getFactColumn())) {
-                requireColumn(po.getFactTableId(), patch.getFactColumn());
-            }
-            po.setFactColumn(patch.getFactColumn());
+        String nextFactColumn = patch.getFactColumn() != null ? patch.getFactColumn() : po.getFactColumn();
+        String nextDimensionColumn = patch.getDimensionColumn() != null ? patch.getDimensionColumn() : po.getDimensionColumn();
+        if (nextFactColumn.isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "factColumn must not be blank");
+        if (nextDimensionColumn.isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "dimensionColumn must not be blank");
+        if (!nextFactColumn.equals(po.getFactColumn())) {
+            requireColumn(po.getFactTableId(), nextFactColumn);
         }
-        if (patch.getDimensionColumn() != null) {
-            if (patch.getDimensionColumn().isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "dimensionColumn must not be blank");
-            if (!patch.getDimensionColumn().equals(po.getDimensionColumn())) {
-                requireColumn(po.getDimensionTableId(), patch.getDimensionColumn());
-            }
-            po.setDimensionColumn(patch.getDimensionColumn());
+        if (!nextDimensionColumn.equals(po.getDimensionColumn())) {
+            requireColumn(po.getDimensionTableId(), nextDimensionColumn);
         }
+        requireUniqueJoin(po.getSubjectId(), po.getFactTableId(), nextFactColumn, po.getDimensionTableId(), nextDimensionColumn, po.getId());
+        po.setFactColumn(nextFactColumn);
+        po.setDimensionColumn(nextDimensionColumn);
         if (patch.getCardinality() != null) {
             validateCardinality(patch.getCardinality());
             po.setCardinality(patch.getCardinality());
@@ -84,7 +83,6 @@ public class TableRelationService {
         if (patch.getOwner() != null) po.setOwner(patch.getOwner());
         if (patch.getDescription() != null) po.setDescription(patch.getDescription());
         if (patch.getUpdatedBy() != null) po.setUpdatedBy(patch.getUpdatedBy());
-        requireUniqueJoin(po.getSubjectId(), po.getFactTableId(), po.getFactColumn(), po.getDimensionTableId(), po.getDimensionColumn(), po.getId());
         po.setName(po.getFactColumn() + " -> " + po.getDimensionColumn());
         po.setRevision((po.getRevision() == null ? 1 : po.getRevision()) + 1);
         return TableRelationMapper.toModel(tableRelationDAO.save(po));
@@ -131,13 +129,15 @@ public class TableRelationService {
 
     private void requireUniqueJoin(String subjectId, String factTableId, String factColumn,
                                    String dimensionTableId, String dimensionColumn, String excludeId) {
-        tableRelationDAO.findBySubjectIdAndFactTableIdAndFactColumnAndDimensionTableIdAndDimensionColumn(
-                subjectId, factTableId, factColumn, dimensionTableId, dimensionColumn)
-            .ifPresent(existing -> {
-                if (excludeId == null || !excludeId.equals(existing.getId())) {
-                    throw new DatiException(ErrorCode.SM_RELATION_EXISTS);
-                }
-            });
+        for (TableRelationPO existing : tableRelationDAO.findBySubjectId(subjectId)) {
+            if (excludeId != null && excludeId.equals(existing.getId())) continue;
+            if (existing.getFactTableId().equals(factTableId)
+                && existing.getDimensionTableId().equals(dimensionTableId)
+                && existing.getFactColumn().equalsIgnoreCase(factColumn)
+                && existing.getDimensionColumn().equalsIgnoreCase(dimensionColumn)) {
+                throw new DatiException(ErrorCode.SM_RELATION_EXISTS);
+            }
+        }
     }
 
     private void requireTableInSubject(String subjectId, String tableId) {
