@@ -12,6 +12,7 @@ import BaseChart from "~/components/common/BaseChart.vue";
 import DataTableShell from "~/components/common/DataTableShell.vue";
 import { formatDateTime, useChartColors } from "~/composables";
 import { escapeHtml } from "~/utils/html";
+import { fillDailyTrendGaps } from "~/utils/usage-stats";
 
 const { t } = useI18n();
 const props = defineProps<{ serviceId: string }>();
@@ -65,7 +66,7 @@ const totalLogs = computed(() => logsPage.value?.total ?? 0);
 
 const trendOption = computed<EChartsCoreOption>(() => {
   const colors = chartColors.value;
-  const trend = stats.value?.daily_trend || [];
+  const trend = fillDailyTrendGaps(stats.value?.daily_trend || []);
   const successRateLabel = t("mcpService.stats.successRate");
 
   return {
@@ -88,7 +89,8 @@ const trendOption = computed<EChartsCoreOption>(() => {
         const items = Array.isArray(params) ? params : [params];
         const lines = items.map((item) => {
           const suffix = item.seriesType === "line" ? "%" : "";
-          return `${item.marker}${escapeHtml(String(item.seriesName ?? ""))}: ${item.value}${suffix}`;
+          const value = item.value == null ? "-" : `${item.value}${suffix}`;
+          return `${item.marker}${escapeHtml(String(item.seriesName ?? ""))}: ${value}`;
         });
         return [escapeHtml(items[0]?.axisValue || ""), ...lines].join("<br/>");
       },
