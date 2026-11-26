@@ -204,6 +204,42 @@ class QueryMetricExecutorTest {
     }
 
     @Test
+    @DisplayName("query metric arguments preserve explicit null values")
+    void queryMetricArgumentsPreserveNullValues() {
+        java.util.Map<String, Object> input = new java.util.LinkedHashMap<>();
+        input.put("optional_filter", null);
+
+        var args = new com.dati.mcp.domain.model.param.QueryMetricArgs("metric-1", input, null);
+
+        assertThat(args.arguments()).containsEntry("optional_filter", null);
+    }
+
+    @Test
+    @DisplayName("structured metrics can use row-preserving reverse one-hop relations")
+    void structuredMetricUsesSafeReverseRelation() {
+        McpServiceSnapshot.MetricDraft structured = new McpServiceSnapshot.MetricDraft(
+            "metric-reverse", "subject-1", "ds-1", "customer_order_count", "Customer order count", null,
+            List.of(), "owner", "day", "created_at", "Asia/Shanghai", List.of("order_status"),
+            List.of(new MetricDimension("order_status", "public", "orders", "status", null)),
+            "COUNT(*)", "public", "customers", null, List.of(), 30, 1000, 1);
+        McpServiceSnapshot.TableRelationDraft relation = new McpServiceSnapshot.TableRelationDraft(
+            "subject-1", "fact-id", "ds-1", "public", "orders", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "ONE_TO_MANY", "owner", 1);
+        when(parameterizedSqlExecutor.execute(any())).thenReturn(new SqlExecution("SELECT", List.of(), List.of()));
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.QUERY_METRIC, new ToolConfig.QueryMetricConfig(),
+            new com.dati.mcp.domain.model.param.QueryMetricArgs("customer_order_count", Map.of(), List.of("order_status")),
+            List.of(), List.of(structured), List.of(relation));
+
+        executor.execute(ctx);
+
+        ArgumentCaptor<ToolExecutionContext> captor = ArgumentCaptor.forClass(ToolExecutionContext.class);
+        verify(parameterizedSqlExecutor).execute(captor.capture());
+        ToolConfig.ParamSqlConfig config = (ToolConfig.ParamSqlConfig) captor.getValue().config();
+        assertThat(config.getSqlTemplate()).contains("LEFT JOIN public.orders d1 ON f.id = d1.customer_id");
+    }
+
+    @Test
     @DisplayName("structured dimensions require a confirmed relation")
     void structuredMetricRejectsMissingRelation() {
         McpServiceSnapshot.MetricDraft structured = new McpServiceSnapshot.MetricDraft(
