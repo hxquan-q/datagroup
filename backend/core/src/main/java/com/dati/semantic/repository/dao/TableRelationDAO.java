@@ -21,7 +21,4 @@ public interface TableRelationDAO extends JpaRepository<TableRelationPO, String>
     @Query("delete from TableRelationPO r where r.factTableId in :tableIds or r.dimensionTableId in :tableIds")
     void deleteByAnyTableIdIn(@Param("tableIds") Collection<String> tableIds);
 
-    @Modifying
-    @Query("delete from TableRelationPO r where (r.factTableId = :tableId and r.factColumn in :columns) or (r.dimensionTableId = :tableId and r.dimensionColumn in :columns)")
-    void deleteByAnyColumnIn(@Param("tableId") String tableId, @Param("columns") Collection<String> columns);
 }

@@ -156,7 +156,6 @@ public class ColumnService {
         if (!removedColumns.isEmpty()) {
             java.util.List<String> removedColumnNames = removedColumns.stream().map(ColumnInfoPO::getName).toList();
             termRelationDAO.deleteByTableIdAndFieldNameIn(tableId, removedColumnNames);
-            tableRelationDAO.deleteByAnyColumnIn(tableId, removedColumnNames);
             columnInfoDAO.deleteAll(removedColumns);
         }
         

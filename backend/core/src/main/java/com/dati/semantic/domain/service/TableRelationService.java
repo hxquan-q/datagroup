@@ -64,12 +64,16 @@ public class TableRelationService {
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.EDIT, subject.getCreatedBy());
         if (patch.getFactColumn() != null) {
             if (patch.getFactColumn().isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "factColumn must not be blank");
-            requireColumn(po.getFactTableId(), patch.getFactColumn());
+            if (!patch.getFactColumn().equals(po.getFactColumn())) {
+                requireColumn(po.getFactTableId(), patch.getFactColumn());
+            }
             po.setFactColumn(patch.getFactColumn());
         }
         if (patch.getDimensionColumn() != null) {
             if (patch.getDimensionColumn().isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "dimensionColumn must not be blank");
-            requireColumn(po.getDimensionTableId(), patch.getDimensionColumn());
+            if (!patch.getDimensionColumn().equals(po.getDimensionColumn())) {
+                requireColumn(po.getDimensionTableId(), patch.getDimensionColumn());
+            }
             po.setDimensionColumn(patch.getDimensionColumn());
         }
         if (patch.getCardinality() != null) {
@@ -94,7 +98,7 @@ public class TableRelationService {
     @Transactional(readOnly = true)
     public List<ColumnInfo> getRelationColumns(String subjectId, String tableId) {
         SubjectPO subject = requireSubject(subjectId);
-        permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.VIEW, subject.getCreatedBy());
+        permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.EDIT, subject.getCreatedBy());
         requireTableInSubject(subjectId, tableId);
         return columnInfoDAO.findByTableId(tableId).stream().map(ColumnMapper::toColumnInfo).toList();
     }
