@@ -34,6 +34,7 @@ const rowHeight = 25;
 const selectedKey = ref("");
 const focusedTableId = ref("");
 const focusedColumn = ref("");
+const focusedColumnTableId = ref("");
 const searchQuery = ref("");
 const showAllTables = ref(false);
 const batchKeys = ref<Set<string>>(new Set());
@@ -306,7 +307,9 @@ function applyVisualState() {
   flowEdges.value = flowEdges.value.map((edge) => {
     const relation = (edge.data as { relation: GraphEdge }).relation;
     const focusedHit = !focusedTableId.value || relation.factTableId === focusedTableId.value || relation.dimensionTableId === focusedTableId.value;
-    const columnHit = !focusedColumn.value || relation.factColumn === focusedColumn.value || relation.dimensionColumn === focusedColumn.value;
+    const columnHit = !focusedColumn.value
+      || (relation.factTableId === focusedColumnTableId.value && relation.factColumn === focusedColumn.value)
+      || (relation.dimensionTableId === focusedColumnTableId.value && relation.dimensionColumn === focusedColumn.value);
     const active = focusedHit && columnHit;
     return {
       ...edge,
@@ -333,6 +336,7 @@ function onNodeClick(payload: { node?: RelationNode }) {
   const next = focusedTableId.value === node.id ? "" : node.id;
   focusedTableId.value = next;
   focusedColumn.value = "";
+  focusedColumnTableId.value = "";
   userClearedFocus = !next;
   applyVisualState();
 }
@@ -342,11 +346,13 @@ function onEdgeClick(payload: { edge?: RelationFlowEdge }) {
   if (relation) selectEdge(relation);
 }
 function onPaneClick() { clearFocus(); }
-function clearFocus() { focusedTableId.value = ""; focusedColumn.value = ""; userClearedFocus = true; applyVisualState(); }
+function clearFocus() { focusedTableId.value = ""; focusedColumn.value = ""; focusedColumnTableId.value = ""; userClearedFocus = true; applyVisualState(); }
 function focusColumn(tableId: string, column: string) {
   userClearedFocus = false;
   focusedTableId.value = tableId;
-  focusedColumn.value = focusedColumn.value === column ? "" : column;
+  const sameColumn = focusedColumnTableId.value === tableId && focusedColumn.value === column;
+  focusedColumnTableId.value = sameColumn ? "" : tableId;
+  focusedColumn.value = sameColumn ? "" : column;
   applyVisualState();
 }
 function selectEdge(edge: GraphEdge) { selectedKey.value = edge.key; applyVisualState(); }
@@ -376,7 +382,7 @@ function toggleShowAll() { showAllTables.value = !showAllTables.value; applyVisu
 function relayout() { layoutNonce.value += 1; rebuildLayout(); }
 
 watch([visibleTables, displayEdges, layoutNonce], () => { rebuildLayout(); }, { immediate: true });
-watch([searchQuery], () => { selectedKey.value = ""; focusedTableId.value = ""; focusedColumn.value = ""; userClearedFocus = false; });
+watch([searchQuery], () => { selectedKey.value = ""; focusedTableId.value = ""; focusedColumn.value = ""; focusedColumnTableId.value = ""; userClearedFocus = false; });
 watch(focusedTableId, () => { rebuildLayout(); });
 </script>
 
