@@ -59,6 +59,7 @@ const { data: logsPage, isFetching: logsLoading, refetch: refetchLogs } = useQue
       signal,
     ),
   placeholderData: keepPreviousData,
+  staleTime: 0,
 });
 
 const logs = computed(() => logsPage.value?.data || []);
