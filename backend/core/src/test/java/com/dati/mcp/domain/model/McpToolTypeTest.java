@@ -28,7 +28,7 @@ class McpToolTypeTest {
         assertThat(type.getToolName()).isEqualTo("get_table_schema");
         assertThat(type.getTitle()).isEqualTo("Get Table Schema");
         assertThat(type.getDescription()).isEqualTo(
-            "Get detailed column schemas (names, types, comments, and sample values) for specified tables (up to 20 tables)."
+            "Get detailed column schemas (names, types, comments, and sample values) for specified tables (up to 20 tables), plus governed relation paths touching those tables. Use these confirmed join keys instead of guessing joins."
         );
         assertThat(type.isPrebuilt()).isTrue();
         assertThat(type.isDefaultEnabled()).isTrue();

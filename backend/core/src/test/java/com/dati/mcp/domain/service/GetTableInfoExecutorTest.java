@@ -8,7 +8,9 @@ import com.dati.datasource.domain.service.TableMetadataService;
 import com.dati.datasource.domain.service.TableMetadataService.TableMeta;
 import com.dati.mcp.domain.model.McpDataScopeAccessMode;
 import com.dati.mcp.domain.model.McpDataScopeType;
+import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 import com.dati.mcp.domain.model.ToolError;
@@ -226,5 +228,32 @@ class GetTableInfoExecutorTest {
         TableMetadata result = (TableMetadata) executor.execute(ctx(args, List.of(schemaScope("sandbox"))));
 
         assertThat(result.tables()).isEmpty();
+    }
+    @Test
+    @DisplayName("returns governed relation paths touching requested tables")
+    void returnsRelationsTouchingRequestedTables() {
+        TableMeta meta = new TableMeta("t1", "public", "orders", "Orders table",
+            List.of(), "ds-1", List.of());
+        when(tableMetadataService.getTableMeta("ds-1", "public", "orders")).thenReturn(Optional.of(meta));
+        McpServiceSnapshot.TableRelationDraft relation = new McpServiceSnapshot.TableRelationDraft(
+            "sub-1", "fact-1", "ds-1", "public", "orders", "customer_id",
+            "dim-1", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        McpServiceSnapshot.TableRelationDraft unrelated = new McpServiceSnapshot.TableRelationDraft(
+            "sub-1", "fact-2", "ds-1", "public", "payments", "customer_id",
+            "dim-1", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        GetTableInfoArgs args = new GetTableInfoArgs(List.of(
+            new GetTableInfoArgs.TableRef("ds-1", "public", "orders", null)));
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(
+            new McpResolvedTable("ds-1", "public", "orders"),
+            new McpResolvedTable("ds-1", "public", "customers")));
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.GET_TABLE_INFO,
+            new ToolConfig.GetTableInfoConfig(), args, List.of(scope), List.of(), List.of(relation, unrelated));
+
+        TableMetadata result = (TableMetadata) executor.execute(context);
+
+        assertThat(result.relations()).containsExactly(relation);
     }
 }
