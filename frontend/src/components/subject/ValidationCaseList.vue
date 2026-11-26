@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus, RefreshCw as Refresh } from "@lucide/vue";
@@ -47,6 +48,7 @@ const emptyForm = (): ValidationCasePayload & { argumentsJson: string; dimension
 });
 
 const form = ref(emptyForm());
+const pinActions = useMediaQuery("(min-width: 640px)");
 const enabledCases = computed(() => healthCases.value.filter((item) => item.enabled !== false));
 const passCount = computed(() => enabledCases.value.filter((item) => item.last_status === "PASS").length);
 const failCount = computed(() => enabledCases.value.filter((item) => item.last_status === "FAIL").length);
@@ -283,7 +285,7 @@ onMounted(() => {
       <el-table-column :label="t('validation.lastMessage')" min-width="210" show-overflow-tooltip>
         <template #default="{ row }">{{ row.last_message || "-" }}</template>
       </el-table-column>
-      <el-table-column :label="t('common.actions')" width="230" fixed="right">
+      <el-table-column :label="t('common.actions')" width="230" :fixed="pinActions ? 'right' : false">
         <template #default="{ row }">
           <el-button type="primary" link :loading="runningId === row.id" @click="runCase(row)">{{ t("validation.run") }}</el-button>
           <el-button type="primary" link @click="openDetail(row)">{{ t("validation.detail") }}</el-button>
@@ -309,7 +311,7 @@ onMounted(() => {
       />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editingCase ? t('validation.editTitle') : t('validation.createTitle')" width="680px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editingCase ? t('validation.editTitle') : t('validation.createTitle')" width="min(680px, calc(100vw - 32px))" destroy-on-close>
       <el-form label-position="top">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <el-form-item :label="t('common.name')" required>
@@ -385,3 +387,23 @@ onMounted(() => {
     </el-drawer>
   </div>
 </template>
+
+<style scoped>
+.validation-workbench {
+  width: 100%;
+  min-width: 0;
+}
+
+.validation-workbench :deep(.el-table) {
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .validation-workbench :deep(.ep-pagination) {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 8px;
+    max-width: 100%;
+  }
+}
+</style>
