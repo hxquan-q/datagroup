@@ -9,8 +9,10 @@ import { notifyError } from "~/api/http";
 import { createApiKey, deleteApiKey, listApiKeys } from "~/api/auth";
 import type { ApiKey, ApiKeyCreated } from "~/api/types";
 import DataTableShell from "~/components/common/DataTableShell.vue";
+import { useAuthStore } from "~/stores/auth";
 
 const { t } = useI18n();
+const authStore = useAuthStore();
 
 const loading = ref(false);
 const keys = ref<ApiKey[]>([]);
@@ -51,10 +53,26 @@ async function loadKeys() {
   }
 }
 
+const canCreateApiKey = computed(() => !!authStore.user && !authStore.isGuest);
+
 function openCreate() {
+  if (!canCreateApiKey.value) return;
   createForm.value = { name: "", expiresInDays: NEVER_EXPIRES };
   createdKey.value = null;
   dialogVisible.value = true;
+}
+
+async function goToRegister() {
+  try {
+    await ElMessageBox.confirm(t("apiKeys.guestRegisterWarning"), t("common.warning"), {
+      confirmButtonText: t("apiKeys.registerAction"),
+      cancelButtonText: t("common.cancel"),
+      type: "warning",
+    });
+  } catch {
+    return;
+  }
+  authStore.logout("/register");
 }
 
 async function submitCreate() {
@@ -125,11 +143,37 @@ onMounted(loadKeys);
         <p>{{ t("apiKeys.subtitle") }}</p>
       </div>
       <div class="heading-actions">
-        <el-button type="primary" :icon="Plus" @click="openCreate">
-          {{ t("apiKeys.create") }}
-        </el-button>
+        <el-tooltip
+          :disabled="canCreateApiKey"
+          :content="t('apiKeys.guestCreateDisabled')"
+          placement="bottom"
+        >
+          <span>
+            <el-button type="primary" :icon="Plus" :disabled="!canCreateApiKey" @click="openCreate">
+              {{ t("apiKeys.create") }}
+            </el-button>
+          </span>
+        </el-tooltip>
       </div>
     </div>
+
+    <el-alert
+      v-if="authStore.isGuest"
+      type="info"
+      :closable="false"
+      show-icon
+      class="guest-api-key-alert"
+    >
+      <template #title>{{ t("apiKeys.guestCreateDisabled") }}</template>
+      <template #default>
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <span>{{ t("apiKeys.guestCreateHint") }}</span>
+          <el-button type="primary" link @click="goToRegister">
+            {{ t("apiKeys.registerAction") }}
+          </el-button>
+        </div>
+      </template>
+    </el-alert>
 
     <!-- Data Table Shell -->
     <DataTableShell :total="keys.length" :page="1" :page-size="100">

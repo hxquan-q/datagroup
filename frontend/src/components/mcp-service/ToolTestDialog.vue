@@ -72,14 +72,16 @@ const doExecute = async () => {
   }
 };
 
-const handleTestClick = async () => {
-  if (props.tool?.tool_type === "PARAMETERIZED_SQL") {
-    try {
-      await paramRef.value?.validate?.();
-    } catch {
-      return;
-    }
+const validateParams = async () => {
+  try {
+    return (await paramRef.value?.validate?.()) ?? true;
+  } catch {
+    return false;
   }
+};
+
+const handleTestClick = async () => {
+  if (!(await validateParams())) return;
   await doExecute();
 };
 </script>
@@ -142,6 +144,7 @@ const handleTestClick = async () => {
         <SearchMetadataParams
           v-else-if="tool?.tool_type === 'SEARCH_METADATA' || tool?.tool_type === 'SEARCH_SEMANTICS'"
           ref="paramRef"
+          :require-keywords="tool?.tool_type === 'SEARCH_METADATA'"
         />
         <QueryMetricParams
           v-else-if="tool?.tool_type === 'QUERY_METRIC'"
@@ -184,5 +187,38 @@ const handleTestClick = async () => {
   margin-right: 8px;
   vertical-align: middle;
   margin-top: -1px;
+}
+
+@media (max-width: 768px) {
+  .test-layout {
+    height: auto !important;
+    max-height: calc(100dvh - 150px);
+    flex-direction: column !important;
+    overflow-y: auto;
+  }
+
+  .left-panel {
+    width: 100% !important;
+    flex: 0 0 auto;
+    padding-right: 0 !important;
+    padding-bottom: 16px;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--ep-border-color-lighter);
+    overflow: visible !important;
+  }
+
+  .left-panel :deep(.execute-area) {
+    position: sticky;
+    bottom: 0;
+    background: var(--ep-bg-color-overlay);
+  }
+
+  :deep(.right-panel) {
+    flex: 0 0 auto;
+    min-height: 240px;
+    padding-left: 0 !important;
+    padding-top: 16px;
+    overflow: visible !important;
+  }
 }
 </style>

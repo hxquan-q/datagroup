@@ -134,25 +134,16 @@ onMounted(() => {
     </DetailPageShell>
 
     <!-- Top Horizontal Underline Tabs -->
-    <div class="tabs-bar flex flex-wrap items-center border-b border-[var(--ep-border-color-lighter)] gap-x-8 gap-y-0 shrink-0">
+    <div class="tabs-bar">
       <button
         v-for="tab in tabs"
         :key="tab.key"
-        class="tab-item py-3 px-1 relative text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer border-none bg-transparent"
-        :class="
-          activeTab === tab.key
-            ? 'text-[var(--ep-color-primary)] font-semibold'
-            : 'text-[var(--ep-text-color-secondary)] hover:text-[var(--ep-text-color-primary)]'
-        "
+        class="tab-item"
+        :class="{ 'is-active': activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
         <span>{{ tab.label }}</span>
 
-        <!-- Active Underline Indicator -->
-        <span
-          v-if="activeTab === tab.key"
-          class="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--ep-color-primary)] rounded-full"
-        />
       </button>
     </div>
 
@@ -233,7 +224,7 @@ onMounted(() => {
       </div>
 
       <!-- Tab 2: Table Management -->
-      <div v-else-if="activeTab === 'tables'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'tables'" class="scope-panel">
         <SubjectTableList
           v-if="subject?.datasource_id"
           :subject-id="subjectId"
@@ -242,22 +233,22 @@ onMounted(() => {
         />
       </div>
 
-      <div v-else-if="activeTab === 'relations'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'relations'" class="scope-panel">
         <TableRelationList v-if="subject?.datasource_id" :subject-id="subjectId" :datasource-id="subject.datasource_id" />
       </div>
 
       <!-- Tab 3: Term Management -->
-      <div v-else-if="activeTab === 'terms'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'terms'" class="scope-panel">
         <TermManager :subject-id="subjectId" />
       </div>
 
       <!-- Tab 4: Governed Metrics -->
-      <div v-else-if="activeTab === 'metrics'" class="scope-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'metrics'" class="scope-panel">
         <MetricList :subject-id="subjectId" />
       </div>
 
       <!-- Tab 5: Validation Examples -->
-      <div v-else-if="activeTab === 'validation'" class="scope-panel validation-panel p-[20px] shadow-sm">
+      <div v-else-if="activeTab === 'validation'" class="scope-panel validation-panel">
         <ValidationCaseList :subject-id="subjectId" />
       </div>
     </main>
@@ -271,9 +262,66 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.subject-detail-page {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.tabs-bar {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--ep-fill-color-light);
+  scrollbar-width: none;
+}
+
+.tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ep-text-color-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color var(--xiaoai-motion), background-color var(--xiaoai-motion);
+  white-space: nowrap;
+}
+
+.tab-item:hover {
+  color: var(--ep-text-color-primary);
+}
+
+.tab-item.is-active {
+  background: var(--ep-bg-color);
+  color: var(--ep-color-primary);
+  font-weight: 650;
+}
+
+.tab-item:focus-visible {
+  outline: 2px solid var(--ep-color-primary-light-5);
+  outline-offset: 2px;
+}
+
 .scope-panel {
+  padding: 18px;
   border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--ep-bg-color);
 }
 .validation-panel {
@@ -286,15 +334,6 @@ onMounted(() => {
     gap: 14px;
   }
 
-  .tabs-bar {
-    flex-wrap: nowrap;
-    gap: 18px;
-    overflow-x: auto;
-  }
-
-  .tab-item {
-    flex-shrink: 0;
-  }
 }
 
 @media (max-width: 640px) {
@@ -303,7 +342,11 @@ onMounted(() => {
   }
 
   .scope-panel {
-    padding: 14px !important;
+    padding: 14px;
+  }
+
+  .tabs-bar {
+    width: 100%;
   }
 }
 </style>
