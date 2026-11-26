@@ -15,6 +15,7 @@ const { t } = useI18n();
 const loading = ref(false);
 const saving = ref(false);
 const relations = ref<TableRelationVO[]>([]);
+const graphRelations = ref<TableRelationVO[]>([]);
 const tables = ref<TableInfoVO[]>([]);
 const total = ref(0);
 const page = ref(1);
@@ -42,6 +43,19 @@ async function loadRelations() {
     total.value = resp.total;
   } catch (error) { notifyError(error, t("common.loadFailed")); }
   finally { loading.value = false; }
+}
+
+
+async function loadGraphRelations() {
+  try {
+    const first = await listTableRelations(props.subjectId, 1, 100);
+    const items = [...first.data];
+    const pages = Math.ceil((first.total || 0) / 100);
+    for (let next = 2; next <= pages; next += 1) {
+      items.push(...(await listTableRelations(props.subjectId, next, 100)).data);
+    }
+    graphRelations.value = items;
+  } catch (error) { notifyError(error, t("common.loadFailed")); }
 }
 
 async function loadTables() {
@@ -112,7 +126,7 @@ async function save() {
       ElMessage.success(t("relation.createSuccess"));
     }
     dialogVisible.value = false;
-    await loadRelations();
+    await Promise.all([loadRelations(), loadGraphRelations()]);
   } catch (error) { notifyError(error, t("common.operationFailed")); }
   finally { saving.value = false; }
 }
@@ -158,7 +172,7 @@ async function confirmRecommendation(item: TableRelationRecommendationVO) {
     });
     recommendations.value = recommendations.value.filter((candidate) => recommendationKey(candidate) !== key);
     ElMessage.success(t("relation.confirmSuccess"));
-    await loadRelations();
+    await Promise.all([loadRelations(), loadGraphRelations()]);
   } catch (error) { notifyError(error, t("common.operationFailed")); }
   finally { confirmingKey.value = ""; }
 }
@@ -183,7 +197,7 @@ async function confirmSelectedRecommendations() {
   batchConfirming.value = false;
   if (succeeded.size) {
     ElMessage.success(t("relation.batchConfirmSuccess", { count: succeeded.size }));
-    await loadRelations();
+    await Promise.all([loadRelations(), loadGraphRelations()]);
   }
   const failed = results.length - succeeded.size;
   if (failed) ElMessage.warning(t("relation.batchConfirmPartial", { count: failed }));
@@ -199,11 +213,11 @@ async function remove(row: TableRelationVO) {
     await ElMessageBox.confirm(t("relation.deleteConfirm"), t("common.warning"), { type: "warning" });
     await deleteTableRelation(row.id);
     ElMessage.success(t("relation.deleteSuccess"));
-    await loadRelations();
+    await Promise.all([loadRelations(), loadGraphRelations()]);
   } catch (error) { if (error !== "cancel") notifyError(error, t("common.operationFailed")); }
 }
 
-onMounted(() => { loadTables(); loadRelations(); loadRecommendations(); });
+onMounted(() => { loadTables(); loadRelations(); loadGraphRelations(); loadRecommendations(); });
 </script>
 
 <template>
@@ -230,7 +244,7 @@ onMounted(() => { loadTables(); loadRelations(); loadRecommendations(); });
     <TableRelationGraph
       v-if="viewMode === 'graph'"
       :tables="tables"
-      :relations="relations"
+      :relations="graphRelations"
       :recommendations="recommendations"
       :loading="loading || recommending"
       @confirm="confirmRecommendation"
