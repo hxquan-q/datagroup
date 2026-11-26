@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { CopyDocument, Plus, Search } from "@element-plus/icons-vue";
+import { Copy as CopyDocument, Plus, Search } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "~/utils/clipboard";
 import type { SubjectAvailableTableVO, TableInfoVO } from "~/api/subject";

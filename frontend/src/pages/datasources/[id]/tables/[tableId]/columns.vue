@@ -8,7 +8,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Compon
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { InputInstance } from "element-plus";
-import { Search } from "@element-plus/icons-vue";
+import { Search } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import {
   listTableColumns,

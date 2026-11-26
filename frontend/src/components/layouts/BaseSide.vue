@@ -220,7 +220,7 @@ function isActive(path: string, exact = false) {
   outline-offset: 2px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .app-sidebar {
     width: 72px;
   }

@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { useVModel } from "@vueuse/core";
 import { EditorView } from "@codemirror/view";
-import { FullScreen } from "@element-plus/icons-vue";
+import { Maximize2 as FullScreen } from "@lucide/vue";
 import { autocompletion } from "@codemirror/autocomplete";
 import { useI18n } from "vue-i18n";
 import { useCodeMirror } from "~/composables/useCodeMirror";

@@ -8,7 +8,7 @@ import { nextTick, onMounted, ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { InputInstance } from "element-plus";
-import { Plus, Search, Refresh, MoreFilled, CopyDocument } from "@element-plus/icons-vue";
+import { Plus, Search, RefreshCw as Refresh, MoreHorizontal as MoreFilled, Copy as CopyDocument } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "~/utils/clipboard";
 import { listTableInfos, getAddedTables, batchAddTables, syncColumns, deleteTable, updateTable, type AddedTable, type TableInfoVO } from "~/api/tableinfo.ts";

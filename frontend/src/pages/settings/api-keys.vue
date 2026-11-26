@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
-import { Plus, DocumentCopy, WarningFilled } from "@element-plus/icons-vue";
+import { Plus, Copy as DocumentCopy, TriangleAlert as WarningFilled } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import { formatDateTime } from "~/composables";
 import { copyToClipboard } from "~/utils/clipboard";

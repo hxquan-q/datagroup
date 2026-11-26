@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { User, UserFilled, Lock } from "@element-plus/icons-vue";
+import { Lock, User, UserRound } from "@lucide/vue";
 import { ElMessage } from "element-plus";
 import { notifyError } from "~/api/http";
 import { useAuthStore } from "~/stores/auth";
@@ -50,13 +50,14 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-[var(--ep-fill-color-light)]">
-    <el-card class="w-96">
-      <template #header>
-        <div class="text-center text-xl font-bold">{{ t("auth.registerTitle") }}</div>
-      </template>
+  <AuthShell>
+    <div class="auth-form">
+      <div class="auth-form-header">
+        <h2>{{ t("auth.registerTitle") }}</h2>
+        <p>{{ t("home.consoleLabel") }}</p>
+      </div>
 
-      <el-form :model="form" label-position="top" @submit.prevent="handleRegister">
+      <el-form :model="form" label-position="top" size="large" @submit.prevent="handleRegister">
         <el-form-item :label="t('common.username')">
           <el-input
             v-model="form.name"
@@ -69,7 +70,7 @@ async function handleRegister() {
           <el-input
             v-model="form.displayName"
             :placeholder="t('auth.displayNamePlaceholder')"
-            :prefix-icon="UserFilled"
+            :prefix-icon="UserRound"
           />
         </el-form-item>
 
@@ -93,11 +94,11 @@ async function handleRegister() {
           />
         </el-form-item>
 
-        <el-form-item>
+        <el-form-item class="!mb-3">
           <el-button
             type="primary"
             native-type="submit"
-            class="w-full"
+            class="auth-submit"
             :loading="authStore.loading"
           >
             {{ t("auth.register") }}
@@ -105,13 +106,61 @@ async function handleRegister() {
         </el-form-item>
       </el-form>
 
-      <div class="text-center text-sm">
-        <span class="text-[var(--ep-text-color-regular)]">{{ t("auth.hasAccount") }}</span>
-        {{ ' ' }}
-        <RouterLink to="/login" class="text-[var(--ep-color-primary)] hover:underline">
+      <div class="auth-switch">
+        <span>{{ t("auth.hasAccount") }}</span>
+        <RouterLink to="/login">
           {{ t("auth.toLogin") }}
         </RouterLink>
       </div>
-    </el-card>
-  </div>
+    </div>
+  </AuthShell>
 </template>
+
+<style scoped>
+.auth-form {
+  width: 100%;
+}
+
+.auth-form-header {
+  margin-bottom: 24px;
+}
+
+.auth-form-header h2 {
+  margin: 0;
+  color: var(--ep-text-color-primary);
+  font-size: 28px;
+  font-weight: 740;
+  letter-spacing: -0.03em;
+}
+
+.auth-form-header p {
+  margin: 8px 0 0;
+  color: var(--ep-text-color-secondary);
+  font-size: 13px;
+}
+
+.auth-submit {
+  width: 100%;
+  height: 44px;
+  margin-top: 4px;
+  font-weight: 650;
+}
+
+.auth-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ep-text-color-secondary);
+  font-size: 13px;
+}
+
+.auth-switch a {
+  color: var(--ep-color-primary);
+  font-weight: 620;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+</style>

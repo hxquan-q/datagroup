@@ -2,7 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { Delete, Plus } from "@element-plus/icons-vue";
+import { Trash2 as Delete, Plus } from "@lucide/vue";
 import type { McpPromptVO, PromptParameter } from "~/api/mcp-prompt";
 import { createPrompt, updatePrompt } from "~/api/mcp-prompt";
 import { notifyError } from "~/api/http";

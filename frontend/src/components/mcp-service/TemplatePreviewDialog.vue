@@ -2,7 +2,7 @@
 import { nextTick, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
-import { CopyDocument } from "@element-plus/icons-vue";
+import { Copy as CopyDocument } from "@lucide/vue";
 import { copyToClipboard } from "~/utils/clipboard";
 import { notifyError } from "~/api/http";
 import { previewTemplate } from "~/api/template-preview";

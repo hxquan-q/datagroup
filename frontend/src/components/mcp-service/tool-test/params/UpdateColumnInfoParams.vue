@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Plus, Delete } from "@element-plus/icons-vue";
+import { Plus, Trash2 as Delete } from "@lucide/vue";
 import { useTablePicker } from "~/composables/useTablePicker";
 import { stripEmpty } from "~/utils/stripEmpty";
 

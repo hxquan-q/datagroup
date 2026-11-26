@@ -9,6 +9,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AuthDialog: typeof import('./components/common/AuthDialog.vue')['default']
+    AuthShell: typeof import('./components/common/AuthShell.vue')['default']
     BaseHeader: typeof import('./components/layouts/BaseHeader.vue')['default']
     BaseSide: typeof import('./components/layouts/BaseSide.vue')['default']
     CustomToolDialog: typeof import('./components/mcp-service/CustomToolDialog.vue')['default']

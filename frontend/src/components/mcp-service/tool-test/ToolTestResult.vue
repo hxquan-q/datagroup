@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { CircleCloseFilled } from "@element-plus/icons-vue";
+import { CircleX as CircleCloseFilled } from "@lucide/vue";
 import type {
   ToolTestResponse,
   SqlExecution,

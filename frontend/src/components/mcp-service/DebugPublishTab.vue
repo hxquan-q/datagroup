@@ -2,7 +2,7 @@
 import { ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { RefreshRight } from "@element-plus/icons-vue";
+import { RotateCw as RefreshRight } from "@lucide/vue";
 import { notifyError } from "~/api/http";
 import type { McpServiceSnapshotVO, McpServiceVO } from "~/api/mcp-service";
 import {

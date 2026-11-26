@@ -156,11 +156,6 @@ onMounted(fetchOverview);
             <div><b>{{ subjectCount }}</b><span>{{ t("home.stats.subjects") }}</span></div>
             <div><b>{{ mcpServiceCount }}</b><span>{{ t("home.stats.mcpServices") }}</span></div>
           </div>
-          <div class="signal-lines">
-            <span style="width: 82%"></span>
-            <span style="width: 64%"></span>
-            <span style="width: 73%"></span>
-          </div>
         </div>
       </div>
     </section>
@@ -185,7 +180,6 @@ onMounted(fetchOverview);
         </div>
         <h2>{{ module.statLabel }}</h2>
         <p>{{ module.desc }}</p>
-        <span class="module-link">{{ t("home.openModule") }}</span>
       </article>
     </section>
 
@@ -231,19 +225,19 @@ onMounted(fetchOverview);
 .home-page {
   width: min(1180px, 100%);
   margin: 0 auto;
-  padding: 32px 28px 48px;
+  padding: 24px 28px 40px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
 }
 
 .hero-panel {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-  gap: 32px;
+  gap: 28px;
   overflow: hidden;
-  padding: 36px;
+  padding: 28px;
   border: 1px solid rgba(37, 99, 235, 0.14);
   border-radius: 28px;
   background:
@@ -288,9 +282,9 @@ onMounted(fetchOverview);
 }
 
 .hero-copy h1 {
-  margin: 20px 0 14px;
+  margin: 16px 0 12px;
   color: var(--ep-text-color-primary);
-  font-size: clamp(32px, 4.6vw, 46px);
+  font-size: clamp(30px, 4vw, 40px);
   font-weight: 780;
   letter-spacing: -0.045em;
   line-height: 1.04;
@@ -308,7 +302,7 @@ onMounted(fetchOverview);
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 22px;
 }
 
 .hero-actions :deep(.el-button),
@@ -321,7 +315,7 @@ onMounted(fetchOverview);
 
 .hero-visual {
   position: relative;
-  min-height: 260px;
+  min-height: 216px;
   display: grid;
   place-items: center;
 }
@@ -451,18 +445,6 @@ onMounted(fetchOverview);
 .signal-grid b { color: var(--xiaoai-cyan-soft); font-size: 20px; }
 .signal-grid span { margin-top: 3px; color: var(--xiaoai-ink-muted); font-size: 11px; }
 
-.signal-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 18px;
-}
-
-.signal-lines span {
-  height: 7px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(37,99,235,.9), rgba(6,182,212,.32), transparent);
-}
 
 .module-grid {
   display: grid;
@@ -472,8 +454,8 @@ onMounted(fetchOverview);
 
 .module-card {
   position: relative;
-  min-height: 218px;
-  padding: 22px;
+  min-height: 188px;
+  padding: 20px;
   border: 1px solid var(--ep-border-color-lighter);
   border-radius: 22px;
   background: color-mix(in srgb, var(--ep-bg-color) 90%, transparent);
@@ -525,9 +507,9 @@ onMounted(fetchOverview);
 }
 
 .module-count {
-  margin-top: 22px;
+  margin-top: 16px;
   color: var(--ep-text-color-primary);
-  font-size: 38px;
+  font-size: 32px;
   font-weight: 760;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -549,17 +531,12 @@ onMounted(fetchOverview);
 }
 
 .module-card p {
-  margin: 12px 0 18px;
+  margin: 10px 0 12px;
   color: var(--ep-text-color-regular);
   font-size: 13px;
   line-height: 1.65;
 }
 
-.module-link {
-  color: var(--ep-color-primary);
-  font-size: 13px;
-  font-weight: 700;
-}
 
 .workflow-panel {
   padding: 24px;
@@ -687,13 +664,23 @@ onMounted(fetchOverview);
   line-height: 1.55;
 }
 
+@media (max-width: 1180px) {
+  .hero-panel {
+    padding: 24px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(28px, 3.5vw, 36px);
+  }
+}
+
 @media (max-width: 980px) {
   .hero-panel {
     grid-template-columns: 1fr;
   }
 
   .hero-visual {
-    min-height: 260px;
+    min-height: 210px;
   }
 
   .module-grid,

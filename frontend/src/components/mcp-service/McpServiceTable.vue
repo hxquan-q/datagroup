@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
-import { DocumentCopy, MoreFilled } from "@element-plus/icons-vue";
+import { Copy as DocumentCopy, MoreHorizontal as MoreFilled } from "@lucide/vue";
 import type { McpServiceVO } from "~/api/mcp-service";
 import { formatDateTime } from "~/composables";
 import { copyToClipboard } from "~/utils/clipboard";

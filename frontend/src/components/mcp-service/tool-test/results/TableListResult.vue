@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { Coin, Menu as IconMenu } from "@element-plus/icons-vue";
+import { Coins as Coin, Menu as IconMenu } from "@lucide/vue";
 import type { TableListData } from "~/api/mcp-tool-test";
 import { useSystemStore } from "~/stores/system";
 

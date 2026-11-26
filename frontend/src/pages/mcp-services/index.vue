@@ -6,7 +6,7 @@ import { useRouter } from "vue-router";
 import type { McpServiceVO } from "~/api/mcp-service";
 import { notifyError } from "~/api/http";
 import { deleteMcpService, listMcpServices } from "~/api/mcp-service";
-import { Plus, Refresh, Search } from "@element-plus/icons-vue";
+import { Plus, RefreshCw as Refresh, Search } from "@lucide/vue";
 import AuthDialog from "~/components/common/AuthDialog.vue";
 import DataTableShell from "~/components/common/DataTableShell.vue";
 

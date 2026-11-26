@@ -2,7 +2,7 @@
 import type { DatasourceVO } from '~/api/datasource'
 import { formatDateTime } from "~/composables";
 import { useI18n } from "vue-i18n";
-import { MoreFilled } from "@element-plus/icons-vue";
+import { MoreHorizontal as MoreFilled } from "@lucide/vue";
 
 const { t } = useI18n();
 

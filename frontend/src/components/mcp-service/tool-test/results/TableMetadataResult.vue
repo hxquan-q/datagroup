@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleCheckFilled } from "@element-plus/icons-vue";
+import { CircleCheck as CircleCheckFilled } from "@lucide/vue";
 import type { TableMetadata } from "~/api/mcp-tool-test";
 
 defineProps<{ data: TableMetadata }>();

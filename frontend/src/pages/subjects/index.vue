@@ -11,7 +11,7 @@ import { useRouter } from "vue-router";
 import type { SubjectVO } from "~/api/subject";
 import { deleteSubject, listSubjects } from "~/api/subject";
 import { notifyError } from "~/api/http";
-import { Plus, Search, Refresh } from "@element-plus/icons-vue";
+import { Plus, Search, RefreshCw as Refresh } from "@lucide/vue";
 import AuthDialog from "~/components/common/AuthDialog.vue";
 
 const { t } = useI18n();
