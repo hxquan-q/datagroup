@@ -5,6 +5,7 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
@@ -15,7 +16,7 @@ import java.io.Serial;
 @Getter
 @FieldNameConstants
 @Entity
-@Table(name = "table_relation")
+@Table(name = "table_relation", uniqueConstraints = @UniqueConstraint(name = "uk_table_relation_join", columnNames = {"subject_id", "fact_table_id", "fact_column", "dimension_table_id", "dimension_column"}))
 @AttributeOverride(name = "name", column = @Column(name = "name", length = 300))
 public class TableRelationPO extends BaseResourcePO {
     @Serial private static final long serialVersionUID = 1L;

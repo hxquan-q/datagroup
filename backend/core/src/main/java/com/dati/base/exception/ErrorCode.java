@@ -49,6 +49,7 @@ public enum ErrorCode {
     SM_METRIC_NOT_FOUND("SM007", 404, "Metric not found: {0}"),
     SM_METRIC_CODE_EXISTS("SM008", 409, "Metric code already exists in this subject: {0}"),
     SM_METRIC_CODE_INVALID("SM009", 400, "Metric code must be 1-128 chars, lowercase letters, digits and underscores only, starting with a letter"),
+    SM_RELATION_EXISTS("SM010", 409, "Table relation already exists for the same fact and dimension columns"),
 
     FIELD_REQUIRED("VAL002", 400, "Field {0} is required"),
 
@@ -75,6 +76,7 @@ public enum ErrorCode {
     MS_SERVICE_DATA_SCOPE_REQUIRED("MS018", 400, "Data scope is required when creating MCP service"),
     MS_SERVICE_DATA_SCOPE_EMPTY("MS019", 400, "Data scope is empty, cannot publish MCP service: {0}"),
     MS_TEMPLATE_QUOTED_VAR("MS020", 400, "Template variable(s) {0} are inside string literals; strings are auto-quoted, remove the surrounding quotes"),
+    MS_SERVICE_VALIDATION_FAILED("MS021", 409, "Validation cases must pass before publishing: {0}"),
 
     // ── Authentication module (AUTH) ──────────────────────
 

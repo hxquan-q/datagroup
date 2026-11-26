@@ -23,6 +23,8 @@ public class ColumnAssembler extends BaseAssembler {
         columnInfoVO.setColumnType(columnInfo.getColumnType());
         columnInfoVO.setAliases(columnInfo.getAliases() != null ? columnInfo.getAliases() : new ArrayList<>());
         columnInfoVO.setExtractValueEnabled(Boolean.TRUE.equals(columnInfo.getExtractValueEnabled()));
+        columnInfoVO.setPrimaryKey(Boolean.TRUE.equals(columnInfo.getPrimaryKey()));
+        columnInfoVO.setUniqueKey(Boolean.TRUE.equals(columnInfo.getUniqueKey()));
         return columnInfoVO;
     }
 

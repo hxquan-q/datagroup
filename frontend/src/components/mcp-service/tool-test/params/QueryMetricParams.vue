@@ -9,6 +9,7 @@ const form = reactive({
   argumentsJson: "{}",
   dimensions: [] as string[],
 });
+const errors = reactive({ metric: "", argumentsJson: "" });
 
 function assertSafeIntegerLiterals(source: string) {
   let inString = false;
@@ -39,18 +40,37 @@ function assertSafeIntegerLiterals(source: string) {
   }
 }
 
-defineExpose({
-  getArgs: () => {
-    let metricArguments: Record<string, any> = {};
-    const raw = form.argumentsJson.trim();
-    if (raw) {
-      assertSafeIntegerLiterals(raw);
-      const parsed = JSON.parse(raw);
-      if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error(t("mcpService.toolTest.metricArgumentsInvalid"));
-      }
-      metricArguments = parsed;
+function parseMetricArguments() {
+  let metricArguments: Record<string, any> = {};
+  const raw = form.argumentsJson.trim();
+  if (raw) {
+    assertSafeIntegerLiterals(raw);
+    const parsed = JSON.parse(raw);
+    if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error(t("mcpService.toolTest.metricArgumentsInvalid"));
     }
+    metricArguments = parsed;
+  }
+  return metricArguments;
+}
+
+function validate() {
+  errors.metric = form.metric.trim()
+    ? ""
+    : t("mcpService.toolTest.requiredHint", { name: t("mcpService.toolTest.metric") });
+  errors.argumentsJson = "";
+  try {
+    parseMetricArguments();
+  } catch (error) {
+    errors.argumentsJson = error instanceof Error ? error.message : t("mcpService.toolTest.metricArgumentsInvalid");
+  }
+  return !errors.metric && !errors.argumentsJson;
+}
+
+defineExpose({
+  validate: () => Promise.resolve(validate()),
+  getArgs: () => {
+    const metricArguments = parseMetricArguments();
     return {
       metric: form.metric.trim(),
       arguments: metricArguments,
@@ -62,19 +82,21 @@ defineExpose({
 
 <template>
   <el-form label-position="top" size="small">
-    <el-form-item :label="t('mcpService.toolTest.metric')" required>
+    <el-form-item :label="t('mcpService.toolTest.metric')" required :error="errors.metric">
       <el-input
         v-model="form.metric"
         :placeholder="t('mcpService.toolTest.metricPlaceholder')"
+        @input="errors.metric = ''"
       />
     </el-form-item>
-    <el-form-item :label="t('mcpService.toolTest.metricArguments')">
+    <el-form-item :label="t('mcpService.toolTest.metricArguments')" :error="errors.argumentsJson">
       <el-input
         v-model="form.argumentsJson"
         type="textarea"
         :rows="8"
         spellcheck="false"
         class="font-mono"
+        @input="errors.argumentsJson = ''"
       />
     </el-form-item>
     <el-form-item :label="t('mcpService.toolTest.dimensions')">

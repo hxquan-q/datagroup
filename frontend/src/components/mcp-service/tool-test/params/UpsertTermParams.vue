@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Plus, Trash2 as Delete } from "@lucide/vue";
 import { stripEmpty } from "~/utils/stripEmpty";
@@ -101,7 +101,31 @@ const descriptionPlaceholder = (entry: TermRow) =>
     ? t("mcpService.toolTest.descriptionPlaceholder")
     : t("common.placeholder.description");
 
+const rowErrors = reactive<Record<number, string>>({});
+
+watch(
+  () => form.terms,
+  () => Object.keys(rowErrors).forEach((key) => delete rowErrors[Number(key)]),
+  { deep: true },
+);
+
+function validateRows() {
+  Object.keys(rowErrors).forEach((key) => delete rowErrors[Number(key)]);
+  let valid = true;
+  form.terms.forEach((entry, index) => {
+    const missing: string[] = [];
+    if (!entry.subject_name) missing.push(t("mcpService.toolTest.fieldSubject"));
+    if (!entry.name) missing.push(t("mcpService.toolTest.fieldTerm"));
+    if (missing.length > 0) {
+      rowErrors[index] = t("mcpService.toolTest.requiredHint", { name: missing.join(" / ") });
+      valid = false;
+    }
+  });
+  return valid;
+}
+
 defineExpose({
+  validate: () => Promise.resolve(validateRows()),
   getArgs: () => ({
     terms: form.terms.map((r) =>
       stripEmpty({
@@ -202,6 +226,7 @@ defineExpose({
         class="w-full"
         :placeholder="t('mcpService.toolTest.aliasesPlaceholder')"
       />
+      <p v-if="rowErrors[i]" class="tool-test-field-error">{{ rowErrors[i] }}</p>
     </div>
 
     <el-button

@@ -5,6 +5,7 @@ import com.dati.mcp.domain.model.McpDataScopeAccessMode;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpResolvedTable;
 import com.dati.mcp.domain.model.McpServiceDataScope;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -57,6 +58,11 @@ final class McpScopeResolution {
         }
         return scope.getScopeType() == McpDataScopeType.DATA_SOURCE
             && scope.getAccessMode() != McpDataScopeAccessMode.SCHEMA_SCOPE;
+    }
+
+    static boolean relationAllowed(List<McpServiceDataScope> scopeItems, McpServiceSnapshot.TableRelationDraft relation) {
+        return tableAllowed(scopeItems, relation.factDataSourceId(), relation.factSchema(), relation.factTableName(), null)
+            && tableAllowed(scopeItems, relation.dimensionDataSourceId(), relation.dimensionSchema(), relation.dimensionTableName(), null);
     }
 
     static boolean tableAllowed(List<McpServiceDataScope> scopeItems, String dataSourceId,

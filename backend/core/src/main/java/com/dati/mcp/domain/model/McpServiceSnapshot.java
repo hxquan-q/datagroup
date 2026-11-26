@@ -1,6 +1,7 @@
 package com.dati.mcp.domain.model;
 
 import com.dati.base.pojo.BaseResource;
+import com.dati.semantic.domain.model.MetricDimension;
 import com.dati.semantic.domain.model.MetricParameter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -35,6 +36,7 @@ public class McpServiceSnapshot extends BaseResource {
         private List<CustomToolDraft> customTools;
         private List<PromptDraft> prompts;
         private List<MetricDraft> metrics;
+        private List<TableRelationDraft> relations;
     }
 
     @Data
@@ -98,15 +100,44 @@ public class McpServiceSnapshot extends BaseResource {
     public record MetricDraft(String metricId, String subjectId, String dataSourceId, String code,
                               String name, String description, List<String> aliases, String owner,
                               String grain, String timeField, String timeZone,
-                              List<String> allowedDimensions, String sqlTemplate,
+                              List<String> allowedDimensions, List<MetricDimension> dimensionMappings,
+                              String measureExpression, String factSchema, String factTableName,
+                              String sqlTemplate,
                               List<MetricParameter> parameters, Integer timeout, Integer maxRows,
                               Integer revision) {
+        public MetricDraft(String metricId, String subjectId, String dataSourceId, String code,
+                           String name, String description, List<String> aliases, String owner,
+                           String grain, String timeField, String timeZone,
+                           List<String> allowedDimensions, String sqlTemplate,
+                           List<MetricParameter> parameters, Integer timeout, Integer maxRows,
+                           Integer revision) {
+            this(metricId, subjectId, dataSourceId, code, name, description, aliases, owner,
+                grain, timeField, timeZone, allowedDimensions, List.of(), null, null, null,
+                sqlTemplate, parameters, timeout, maxRows, revision);
+        }
+
         public MetricDraft {
             aliases = aliases == null ? List.of() : aliases.stream().filter(Objects::nonNull).toList();
             allowedDimensions = allowedDimensions == null ? List.of() : allowedDimensions.stream().filter(Objects::nonNull).toList();
+            dimensionMappings = dimensionMappings == null ? List.of() : dimensionMappings.stream().filter(Objects::nonNull).toList();
             parameters = parameters == null ? List.of() : parameters.stream().filter(Objects::nonNull).toList();
             timeout = timeout == null ? 30 : timeout;
             maxRows = maxRows == null ? 1000 : maxRows;
+            revision = revision == null ? 1 : revision;
+        }
+    }
+
+    /**
+     * Confirmed subject table relation frozen into a published service snapshot.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TableRelationDraft(String subjectId, String factTableId, String factDataSourceId,
+                                     String factSchema, String factTableName, String factColumn,
+                                     String dimensionTableId, String dimensionDataSourceId,
+                                     String dimensionSchema, String dimensionTableName, String dimensionColumn,
+                                     String cardinality, String owner, Integer revision) {
+        public TableRelationDraft {
+            cardinality = cardinality == null ? "MANY_TO_ONE" : cardinality;
             revision = revision == null ? 1 : revision;
         }
     }

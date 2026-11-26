@@ -156,9 +156,12 @@ const removeAlias = (alias: string) => {
 
 const handleSubmit = async () => {
   try {
-    const valid = await formRef.value?.validate()
-    if (!valid) return
+    await formRef.value?.validate()
+  } catch {
+    return
+  }
 
+  try {
     submitting.value = true
 
     if (isEdit.value) {

@@ -9,6 +9,7 @@ import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 import com.dati.mcp.domain.model.param.SearchMetadataArgs;
+import com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft;
 import com.dati.mcp.server.pojo.SearchHit;
 import com.dati.semantic.domain.service.SemanticSearchService;
 import com.dati.semantic.domain.service.SemanticSearchService.SearchResult;
@@ -110,5 +111,72 @@ class SearchMetadataExecutorTest {
             .extracting(com.dati.datasource.domain.model.TableDef::table)
             .containsExactly("orders");
     }
+    @Test
+    @DisplayName("returns published relations whose endpoints are inside scope")
+    void returnsScopedPublishedRelations() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(
+            new McpResolvedTable("ds-1", "public", "orders"),
+            new McpResolvedTable("ds-1", "public", "customers")));
+        when(semanticSearchService.search(List.of("orders"), List.of(), List.of(), List.of()))
+            .thenReturn(new SearchResult(List.of(), List.of()));
+        TableRelationDraft visible = new TableRelationDraft(
+            "sub-1", "fact-id", "ds-1", "public", "orders", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        TableRelationDraft hidden = new TableRelationDraft(
+            "sub-1", "fact-id", "ds-1", "public", "orders", "secret_id",
+            "dim-id", "ds-1", "public", "secrets", "id", "MANY_TO_ONE", "owner", 1);
 
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.SEARCH_METADATA,
+            new ToolConfig.SearchMetadataConfig(), new SearchMetadataArgs(List.of("orders")), List.of(scope), List.of(), List.of(visible, hidden));
+        SearchHit hit = (SearchHit) executor.execute(context);
+
+        assertThat(hit.relations()).containsExactly(visible);
+    }
+    @Test
+    @DisplayName("unified search returns matching metrics with call examples")
+    void returnsMatchingMetricsWithExamples() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        when(semanticSearchService.search(List.of("close rate"), List.of(), List.of(), List.of()))
+            .thenReturn(new SearchResult(List.of(), List.of()));
+        com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft metric = new com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft(
+            "metric-1", "sub-1", "ds-1", "mo_close_rate", "工单关闭率", null,
+            List.of("close rate"), "owner", "day", "FCreateTime", "Asia/Shanghai", List.of(),
+            "SELECT 1", List.of(new com.dati.semantic.domain.model.MetricParameter("start", "String", true, null, null)),
+            30, 1000, 1);
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.SEARCH_METADATA,
+            new ToolConfig.SearchMetadataConfig(), new SearchMetadataArgs(List.of("close rate")), List.of(scope), List.of(metric));
+
+        SearchHit hit = (SearchHit) executor.execute(context);
+
+        assertThat(hit.metrics()).hasSize(1);
+        assertThat(hit.metrics().getFirst().code()).isEqualTo("mo_close_rate");
+        assertThat(hit.metrics().getFirst().callExample().arguments()).containsKey("start");
+    }
+    @Test
+    @DisplayName("keyword search omits unrelated relations")
+    void keywordSearchOmitsUnrelatedRelations() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(
+            new McpResolvedTable("ds-1", "public", "orders"),
+            new McpResolvedTable("ds-1", "public", "customers"),
+            new McpResolvedTable("ds-1", "public", "payments")));
+        when(semanticSearchService.search(List.of("orders"), List.of(), List.of(), List.of()))
+            .thenReturn(new SearchResult(List.of(), List.of()));
+        TableRelationDraft unrelated = new TableRelationDraft(
+            "sub-1", "fact-id", "ds-1", "public", "payments", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.SEARCH_METADATA,
+            new ToolConfig.SearchMetadataConfig(), new SearchMetadataArgs(List.of("orders")), List.of(scope), List.of(), List.of(unrelated));
+
+        SearchHit hit = (SearchHit) executor.execute(context);
+
+        assertThat(hit.relations()).isEmpty();
+    }
 }

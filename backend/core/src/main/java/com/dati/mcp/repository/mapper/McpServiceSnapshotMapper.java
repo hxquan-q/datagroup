@@ -9,7 +9,9 @@ import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
+import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.semantic.domain.model.Metric;
+import com.dati.semantic.repository.po.TableRelationPO;
 import com.dati.mcp.repository.po.McpServiceSnapshotPO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -94,6 +96,15 @@ public class McpServiceSnapshotMapper {
                 metrics.add(JsonUtils.fromJson(n.toString(), McpServiceSnapshot.MetricDraft.class));
             }
             content.setMetrics(metrics);
+        }
+
+        // relations — Draft record
+        if (root.has("relations")) {
+            List<McpServiceSnapshot.TableRelationDraft> relations = new ArrayList<>();
+            for (JsonNode n : root.get("relations")) {
+                relations.add(JsonUtils.fromJson(n.toString(), McpServiceSnapshot.TableRelationDraft.class));
+            }
+            content.setRelations(relations);
         }
 
         // prompts — Draft record
@@ -209,8 +220,20 @@ public class McpServiceSnapshotMapper {
                 metric.getId(), metric.getSubjectId(), metric.getDataSourceId(), metric.getCode(),
                 metric.getName(), metric.getDescription(), metric.getAliases(), metric.getOwner(),
                 metric.getGrain(), metric.getTimeField(), metric.getTimeZone(),
-                metric.getAllowedDimensions(), metric.getSqlTemplate(), metric.getParameters(),
+                metric.getAllowedDimensions(), metric.getDimensionMappings(), metric.getMeasureExpression(),
+                metric.getFactSchema(), metric.getFactTableName(), metric.getSqlTemplate(), metric.getParameters(),
                 metric.getTimeout(), metric.getMaxRows(), metric.getRevision());
+    }
+
+    public static McpServiceSnapshot.TableRelationDraft toTableRelationDraft(TableRelationPO relation,
+                                                                              TableInfoPO factTable,
+                                                                              TableInfoPO dimensionTable) {
+        return new McpServiceSnapshot.TableRelationDraft(
+                relation.getSubjectId(), relation.getFactTableId(), factTable.getDataSourceId(),
+                factTable.getSchema(), factTable.getName(), relation.getFactColumn(),
+                relation.getDimensionTableId(), dimensionTable.getDataSourceId(),
+                dimensionTable.getSchema(), dimensionTable.getName(), relation.getDimensionColumn(),
+                relation.getCardinality(), relation.getOwner(), relation.getRevision());
     }
 
     public static McpServiceSnapshot.DataScopeDraft toDataScopeDraft(McpServiceDataScope scope) {

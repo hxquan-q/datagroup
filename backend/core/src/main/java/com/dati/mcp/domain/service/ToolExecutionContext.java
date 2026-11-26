@@ -11,12 +11,20 @@ import java.util.Map;
 public record ToolExecutionContext(String serviceId, McpToolType toolType,
                                    ToolConfig config, Object arguments,
                                    List<McpServiceDataScope> scopeItems,
-                                   List<McpServiceSnapshot.MetricDraft> metrics) {
+                                   List<McpServiceSnapshot.MetricDraft> metrics,
+                                   List<McpServiceSnapshot.TableRelationDraft> relations) {
 
     public ToolExecutionContext(String serviceId, McpToolType toolType,
                                 ToolConfig config, Object arguments,
                                 List<McpServiceDataScope> scopeItems) {
-        this(serviceId, toolType, config, arguments, scopeItems, List.of());
+        this(serviceId, toolType, config, arguments, scopeItems, List.of(), List.of());
+    }
+
+    public ToolExecutionContext(String serviceId, McpToolType toolType,
+                                ToolConfig config, Object arguments,
+                                List<McpServiceDataScope> scopeItems,
+                                List<McpServiceSnapshot.MetricDraft> metrics) {
+        this(serviceId, toolType, config, arguments, scopeItems, metrics, List.of());
     }
 
     /** Returns the bound parameter record; dynamic tools (PARAMETERIZED_SQL) have none. */

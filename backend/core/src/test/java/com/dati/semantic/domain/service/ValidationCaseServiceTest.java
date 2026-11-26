@@ -12,7 +12,9 @@ import com.dati.semantic.repository.dao.ValidationCaseDAO;
 import com.dati.datasource.repository.dao.DataSourceDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
 import com.dati.datasource.repository.po.DataSourcePO;
-import com.dati.mcp.domain.service.ParameterizedSqlExecutor;
+import com.dati.mcp.domain.service.McpTableRelationSnapshotService;
+import com.dati.mcp.domain.service.QueryMetricExecutor;
+import com.dati.mcp.server.pojo.MetricExecution;
 import com.dati.mcp.server.pojo.SqlExecution;
 import com.dati.mcp.server.pojo.StatementResult;
 import com.dati.semantic.repository.po.MetricPO;
@@ -45,7 +47,8 @@ class ValidationCaseServiceTest {
     @Mock private SubjectTableDAO subjectTableDAO;
     @Mock private TableInfoDAO tableInfoDAO;
     @Mock private DataSourceDAO dataSourceDAO;
-    @Mock private ParameterizedSqlExecutor parameterizedSqlExecutor;
+    @Mock private QueryMetricExecutor queryMetricExecutor;
+    @Mock private McpTableRelationSnapshotService relationSnapshotService;
     @InjectMocks private ValidationCaseService service;
 
     @BeforeEach
@@ -72,6 +75,9 @@ class ValidationCaseServiceTest {
         lenient().doAnswer(inv -> null).when(permissionService).requireCurrentUser(any(), anyString(), any(), anyString());
         lenient().when(validationCaseDAO.save(any(ValidationCasePO.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(dataSourceDAO.existsById("ds-1")).thenReturn(true);
+        lenient().when(relationSnapshotService.buildRelationDrafts(any(), any())).thenReturn(java.util.List.of());
+        lenient().when(subjectTableDAO.findBySubjectId(anyString())).thenReturn(java.util.List.of());
+        lenient().when(tableInfoDAO.findAllById(any())).thenReturn(java.util.List.of());
     }
 
     @AfterEach
@@ -92,13 +98,46 @@ class ValidationCaseServiceTest {
         assertThat(created.getEnabled()).isTrue();
     }
     @Test
+    @DisplayName("publish gate passes only current passing validation cases")
+    void publishGatePassesCurrentPassingCases() {
+        ValidationCasePO item = new ValidationCasePO();
+        item.setName("FPY regression");
+        item.setMetricId("metric-1");
+        item.setSubjectId("subject-1");
+        item.setEnabled(true);
+        item.setLastStatus("PASS");
+        item.setLastMetricRevision(1);
+        item.setLastEvidence(java.util.Map.of("relation_fingerprint", ""));
+        when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
+
+        assertThat(service.publishBlockingMessages(java.util.List.of("subject-1"))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("publish gate blocks stale validation results")
+    void publishGateBlocksStaleResults() {
+        ValidationCasePO item = new ValidationCasePO();
+        item.setName("FPY regression");
+        item.setMetricId("metric-1");
+        item.setSubjectId("subject-1");
+        item.setEnabled(true);
+        item.setLastStatus("PASS");
+        item.setLastMetricRevision(1);
+        item.setLastEvidence(java.util.Map.of("relation_fingerprint", "old"));
+        when(validationCaseDAO.findBySubjectIdIn(java.util.List.of("subject-1"))).thenReturn(java.util.List.of(item));
+
+        assertThat(service.publishBlockingMessages(java.util.List.of("subject-1")))
+            .containsExactly("FPY regression: table relations changed after validation");
+    }
+
+    @Test
     @DisplayName("run passes when execution succeeds and rows are returned for NON_EMPTY")
     void runPassesNonEmpty() {
         ValidationCasePO existing = existingCase("NON_EMPTY");
         when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
-        when(parameterizedSqlExecutor.execute(any())).thenReturn(new SqlExecution("SELECT 1",
+        when(queryMetricExecutor.execute(any())).thenReturn(metricExecution(new SqlExecution("SELECT 1",
             java.util.List.of(StatementResult.select(java.util.List.of("close_rate"), java.util.List.of(java.util.List.of(28.16)), false)),
-            java.util.List.of()));
+            java.util.List.of())));
 
         ValidationCase result = service.runCase("case-1");
 
@@ -112,9 +151,9 @@ class ValidationCaseServiceTest {
     void runFailsWhenEmpty() {
         ValidationCasePO existing = existingCase("NON_EMPTY");
         when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
-        when(parameterizedSqlExecutor.execute(any())).thenReturn(new SqlExecution("SELECT 1",
+        when(queryMetricExecutor.execute(any())).thenReturn(metricExecution(new SqlExecution("SELECT 1",
             java.util.List.of(StatementResult.select(java.util.List.of("close_rate"), java.util.List.of(), false)),
-            java.util.List.of()));
+            java.util.List.of())));
 
         ValidationCase result = service.runCase("case-1");
 
@@ -154,9 +193,9 @@ class ValidationCaseServiceTest {
         ValidationCasePO existing = existingCase("ROW_COUNT");
         existing.setExpectedValue("1");
         when(validationCaseDAO.findById("case-1")).thenReturn(Optional.of(existing));
-        when(parameterizedSqlExecutor.execute(any())).thenReturn(new SqlExecution("SELECT 1",
+        when(queryMetricExecutor.execute(any())).thenReturn(metricExecution(new SqlExecution("SELECT 1",
             java.util.List.of(StatementResult.select(java.util.List.of("close_rate"), java.util.List.of(java.util.List.of(28.16)), true)),
-            java.util.List.of()));
+            java.util.List.of())));
 
         ValidationCase result = service.runCase("case-1");
 
@@ -272,6 +311,10 @@ class ValidationCaseServiceTest {
         po.setAssertionType(assertionType);
         po.setEnabled(true);
         return po;
+    }
+
+    private MetricExecution metricExecution(SqlExecution execution) {
+        return new MetricExecution(null, java.util.Map.of(), java.util.List.of(), execution);
     }
 
 }

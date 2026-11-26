@@ -12,6 +12,7 @@ import java.util.List;
 public interface ValidationCaseDAO extends JpaRepository<ValidationCasePO, String> {
     Page<ValidationCasePO> findBySubjectId(String subjectId, Pageable pageable);
     List<ValidationCasePO> findBySubjectId(String subjectId);
+    List<ValidationCasePO> findBySubjectIdIn(List<String> subjectIds);
     void deleteBySubjectId(String subjectId);
     void deleteByMetricId(String metricId);
 }

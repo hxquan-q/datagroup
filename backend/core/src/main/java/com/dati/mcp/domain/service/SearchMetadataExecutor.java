@@ -5,11 +5,13 @@ import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.db.analysis.TableRef;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpServiceDataScope;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.param.SearchMetadataArgs;
 import com.dati.datasource.domain.model.DataSourceDef;
 import com.dati.datasource.domain.model.TableDef;
 import com.dati.mcp.server.pojo.SearchHit;
+import com.dati.mcp.server.pojo.SemanticCatalog;
 import com.dati.mcp.server.pojo.ToolTestData;
 import com.dati.semantic.domain.model.TermDef;
 import com.dati.semantic.domain.service.SemanticSearchService;
@@ -74,7 +76,13 @@ public class SearchMetadataExecutor implements ToolExecutor {
                 .map(t -> new TermDef(t.name(), t.description(), t.subjectName()))
                 .toList();
 
-        return new SearchHit(keywords, dataSources, terms);
+        List<McpServiceSnapshot.TableRelationDraft> relations = ctx.relations().stream()
+                .filter(relation -> McpScopeResolution.relationAllowed(ctx.scopeItems(), relation))
+                .filter(relation -> TableRelationSearch.relevant(relation, keywords, dataSources))
+                .toList();
+
+        List<SemanticCatalog.SemanticMetric> metrics = SemanticMetricSearch.search(ctx.metrics(), keywords, 10);
+        return new SearchHit(keywords, dataSources, terms, relations, metrics);
     }
     private List<String> searchableTableIds(List<McpServiceDataScope> scopeItems) {
         Set<String> tableIds = new java.util.LinkedHashSet<>();

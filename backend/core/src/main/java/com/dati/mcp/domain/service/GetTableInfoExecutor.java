@@ -5,6 +5,7 @@ import com.dati.datasource.domain.model.TableDef;
 import com.dati.datasource.domain.service.DataSourceService;
 import com.dati.datasource.domain.service.TableMetadataService;
 import com.dati.datasource.domain.service.TableMetadataService.TableMeta;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.param.GetTableInfoArgs;
 import com.dati.mcp.server.pojo.TableMetadata;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Component
@@ -39,6 +41,7 @@ public class GetTableInfoExecutor implements ToolExecutor {
     public ToolTestData execute(ToolExecutionContext ctx) {
         GetTableInfoArgs args = ctx.args(GetTableInfoArgs.class);
         List<TableDef> entries = new ArrayList<>();
+        List<TableKey> requestedTables = new ArrayList<>();
         for (GetTableInfoArgs.TableRef ref : args.tables()) {
             scopeValidator.validateDataSource(ctx.scopeItems(), ref.dataSourceId());
 
@@ -66,9 +69,29 @@ public class GetTableInfoExecutor implements ToolExecutor {
 
             if (meta != null) {
                 entries.add(toTableDef(ref, meta, physical));
+                requestedTables.add(new TableKey(ref.dataSourceId(),
+                    meta.schema() != null ? meta.schema() : ref.schema(), meta.tableName() != null ? meta.tableName() : ref.table()));
             }
         }
-        return new TableMetadata(entries);
+        List<McpServiceSnapshot.TableRelationDraft> relations = ctx.relations().stream()
+            .filter(relation -> McpScopeResolution.relationAllowed(ctx.scopeItems(), relation))
+            .filter(relation -> requestedTables.stream().anyMatch(table -> touches(relation, table)))
+            .toList();
+        return new TableMetadata(entries, relations);
+    }
+
+    private boolean touches(McpServiceSnapshot.TableRelationDraft relation, TableKey table) {
+        return endpointMatches(table, relation.factDataSourceId(), relation.factSchema(), relation.factTableName())
+            || endpointMatches(table, relation.dimensionDataSourceId(), relation.dimensionSchema(), relation.dimensionTableName());
+    }
+
+    private boolean endpointMatches(TableKey table, String dataSourceId, String schema, String tableName) {
+        return Objects.equals(table.dataSourceId(), dataSourceId)
+            && Objects.equals(table.schema(), schema)
+            && Objects.equals(table.tableName(), tableName);
+    }
+
+    private record TableKey(String dataSourceId, String schema, String tableName) {
     }
 
     private TableDef toTableDef(GetTableInfoArgs.TableRef ref, TableMeta meta, boolean physical) {

@@ -82,14 +82,12 @@ function isActive(path: string, exact = false) {
 
 <style scoped>
 .app-sidebar {
-  width: 236px;
+  width: 216px;
   flex: 0 0 auto;
   min-height: 0;
-  color: rgba(226, 232, 240, 0.86);
-  background:
-    radial-gradient(circle at 20% 0%, rgba(37, 99, 235, 0.2), transparent 32%),
-    linear-gradient(180deg, var(--xiaoai-sidebar-start) 0%, var(--xiaoai-sidebar-end) 100%);
-  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  color: var(--xiaoai-side-text);
+  background: var(--xiaoai-side-bg);
+  border-right: 1px solid var(--xiaoai-side-border);
   transition: width 180ms ease;
 }
 
@@ -106,7 +104,7 @@ function isActive(path: string, exact = false) {
 
 .sidebar-caption {
   padding: 0 12px 10px;
-  color: rgba(148, 163, 184, 0.72);
+  color: var(--xiaoai-side-muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -141,22 +139,22 @@ function isActive(path: string, exact = false) {
   overflow: hidden;
   border: 1px solid transparent;
   border-radius: 12px;
-  color: rgba(203, 213, 225, 0.8);
+  color: var(--xiaoai-side-text);
   text-decoration: none;
   transition: all 160ms ease;
 }
 
 .sidebar-link:hover {
-  border-color: rgba(148, 163, 184, 0.12);
-  background: rgba(148, 163, 184, 0.08);
-  color: var(--xiaoai-ink-strong);
+  border-color: transparent;
+  background: var(--ep-fill-color-light);
+  color: var(--ep-text-color-primary);
 }
 
 .sidebar-link.is-active {
-  border-color: rgba(96, 165, 250, 0.22);
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.28), rgba(6, 182, 212, 0.12));
-  color: var(--xiaoai-ink-strong);
-  box-shadow: inset 3px 0 0 rgba(34, 211, 238, 0.9), 0 10px 24px rgba(2, 6, 23, 0.16);
+  border-color: transparent;
+  background: var(--ep-color-primary-light-9);
+  color: var(--ep-color-primary);
+  box-shadow: none;
 }
 
 .sidebar-icon {
@@ -166,11 +164,11 @@ function isActive(path: string, exact = false) {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 9px;
-  color: rgba(165, 180, 252, 0.88);
+  color: var(--xiaoai-side-muted);
 }
 
 .sidebar-link.is-active .sidebar-icon {
-  color: var(--xiaoai-cyan-soft);
+  color: var(--ep-color-primary);
 }
 
 .sidebar-label {
@@ -198,10 +196,10 @@ function isActive(path: string, exact = false) {
   justify-content: center;
   gap: 8px;
   padding: 0 10px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: 11px;
-  background: rgba(15, 23, 42, 0.38);
-  color: rgba(203, 213, 225, 0.72);
+  border: 1px solid var(--ep-border-color-lighter);
+  border-radius: 10px;
+  background: var(--ep-bg-color);
+  color: var(--ep-text-color-secondary);
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
@@ -209,14 +207,14 @@ function isActive(path: string, exact = false) {
 }
 
 .sidebar-collapse:hover {
-  border-color: rgba(96, 165, 250, 0.24);
-  background: rgba(37, 99, 235, 0.16);
-  color: var(--xiaoai-ink-strong);
+  border-color: var(--ep-color-primary-light-7);
+  background: var(--ep-color-primary-light-9);
+  color: var(--ep-color-primary);
 }
 
 .sidebar-collapse:focus-visible,
 .sidebar-link:focus-visible {
-  outline: 2px solid var(--xiaoai-cyan-bright);
+  outline: 2px solid var(--ep-color-primary-light-5);
   outline-offset: 2px;
 }
 
@@ -234,6 +232,48 @@ function isActive(path: string, exact = false) {
   .sidebar-link {
     justify-content: center;
     padding: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-sidebar,
+  .app-sidebar.is-collapsed {
+    width: 100%;
+    height: 56px;
+    flex: 0 0 56px;
+    border-right: 0;
+    border-bottom: 1px solid var(--xiaoai-side-border);
+  }
+
+  .sidebar-inner {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 10px;
+  }
+
+  .sidebar-nav {
+    width: 100%;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sidebar-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-link {
+    min-width: 44px;
+    min-height: 40px;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  .sidebar-label,
+  .sidebar-caption,
+  .sidebar-collapse {
+    display: none;
   }
 }
 </style>

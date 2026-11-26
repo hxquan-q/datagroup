@@ -2,6 +2,7 @@ package com.dati.db.client;
 
 import com.dati.db.Column;
 import com.dati.db.DbType;
+import com.dati.db.ForeignKey;
 import com.dati.db.HikariPoolManager;
 import com.dati.db.JdbcConnector;
 import com.dati.db.Table;
@@ -21,6 +22,10 @@ public interface DbClient {
 
     /** 使用已有连接查询列信息，由调用方管理连接生命周期。 */
     List<Column> getColumns(Connection connection, String schema, String table) throws SQLException;
+
+    List<ForeignKey> getImportedKeys(JdbcConnector jdbcConnector, String schema, String table) throws SQLException;
+
+    List<ForeignKey> getImportedKeys(Connection connection, String schema, String table) throws SQLException;
 
     String getCurrentSchema(Connection connection) throws SQLException;
 

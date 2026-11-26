@@ -28,10 +28,19 @@ const endpointUrl = computed(() => {
   return path;
 });
 
+const endpointUsable = computed(() => props.service?.status === "PUBLISHED" && !!endpointUrl.value);
+
+const configStateHint = computed(() => {
+  if (props.service?.status === "DRAFT") return t("mcpService.accessConfig.publishBeforeUse");
+  if (props.service?.status === "DISABLED") return t("mcpService.accessConfig.enableBeforeUse");
+  return "";
+});
+
 // ── 通用 JSON 接入配置 ──
 const jsonConfigSnippet = computed(() => {
+  if (!endpointUsable.value) return "";
   const code = props.service?.code || "my-mcp-service";
-  const url = endpointUrl.value || `http://localhost:8085/${code}/mcp`;
+  const url = endpointUrl.value;
 
   const configObj = {
     mcpServers: {
@@ -65,7 +74,7 @@ const goToApiKeys = () => {
 
 <template>
   <aside
-    class="mcp-access-card panel p-6 flex flex-col justify-between shadow-sm border border-[var(--ep-border-color-lighter)] rounded-xl bg-[var(--ep-bg-color)]"
+    class="mcp-access-card panel p-6 flex flex-col justify-between border border-[var(--ep-border-color-lighter)] rounded-xl bg-[var(--ep-bg-color)]"
   >
     <!-- Top Configuration Content Area -->
     <div class="flex flex-col gap-4">
@@ -105,7 +114,7 @@ const goToApiKeys = () => {
           >
             {{ endpointUrl || t("mcpService.notPublished") }}
           </span>
-          <el-tooltip v-if="endpointUrl" :trigger-keys="[]" :content="t('mcpService.accessConfig.copyEndpoint')" placement="top">
+          <el-tooltip v-if="endpointUsable" :trigger-keys="[]" :content="t('mcpService.accessConfig.copyEndpoint')" placement="top">
             <el-button
               link
               :icon="Copy"
@@ -136,8 +145,15 @@ const goToApiKeys = () => {
           </el-tooltip>
         </div>
 
+        <el-alert
+          v-if="configStateHint"
+          type="warning"
+          :title="configStateHint"
+          :closable="false"
+          show-icon
+        />
         <!-- Code block container with embedded top-right copy button -->
-        <div class="relative group">
+        <div v-else-if="jsonConfigSnippet" class="relative group">
           <pre
             class="m-0 font-mono text-xs text-[var(--ep-text-color-primary)] whitespace-pre-wrap break-all leading-relaxed select-text rounded-lg bg-[var(--ep-fill-color-light)] border border-[var(--ep-border-color-lighter)] p-3.5 pr-10"
             >{{ jsonConfigSnippet }}</pre

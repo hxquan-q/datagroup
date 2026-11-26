@@ -18,7 +18,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.VITE_APP_VERSION || pkg.version),
   },
   server: {
-    allowedHosts: ['.trycloudflare.com'],
+    allowedHosts: ['.trycloudflare.com', '.preview.devinapps.com'],
     proxy: {
       "/docs": {
         target: "http://localhost:5174",

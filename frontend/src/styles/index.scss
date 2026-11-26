@@ -43,6 +43,10 @@
   --xiaoai-success-soft: #34d399;
   --xiaoai-sidebar-start: #101a33;
   --xiaoai-sidebar-end: #0b1224;
+  --xiaoai-side-bg: #f8fafc;
+  --xiaoai-side-text: #475569;
+  --xiaoai-side-muted: #94a3b8;
+  --xiaoai-side-border: rgba(15, 23, 42, 0.08);
   --xiaoai-ink-strong: #f8fafc;
   --xiaoai-ink: #e2e8f0;
   --xiaoai-ink-muted: #94a3b8;
@@ -56,11 +60,15 @@
   --ep-color-primary-light-9: #eff6ff;
   --ep-color-primary-dark-2: #1d4ed8;
   --ep-border-radius-base: 10px;
-  --xiaoai-motion: 240ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --xiaoai-motion: 160ms ease-out;
 }
 
 html.dark {
   --xiaoai-canvas: #070b16;
+  --xiaoai-side-bg: #0b1224;
+  --xiaoai-side-text: #cbd5e1;
+  --xiaoai-side-muted: #64748b;
+  --xiaoai-side-border: rgba(148, 163, 184, 0.12);
   --xiaoai-header-bg: #0b1224;
   --xiaoai-header-border: rgba(148, 163, 184, 0.12);
   --ep-color-primary: #60a5fa;
@@ -84,36 +92,20 @@ body {
 
 .ep-button--primary:not(.is-link):not(.is-text),
 .el-button--primary:not(.is-link):not(.is-text) {
-  border-radius: 999px;
-}
-
-.ep-button--primary:not(.is-link):not(.is-text):not(.is-disabled):hover,
-.el-button--primary:not(.is-link):not(.is-text):not(.is-disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
-}
-
-.ep-button--primary:not(.is-link):not(.is-text):not(.is-disabled):active,
-.el-button--primary:not(.is-link):not(.is-text):not(.is-disabled):active {
-  transform: scale(0.98);
-}
-
-.ep-button--primary:not(.is-link):not(.is-text),
-.el-button--primary:not(.is-link):not(.is-text) {
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.16);
+  box-shadow: none;
 }
 
 .ep-input__wrapper,
 .el-input__wrapper,
 .ep-select__wrapper,
 .el-select__wrapper {
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', sans-serif;
+    'Hiragino Sans GB', 'Noto Sans CJK SC', 'Microsoft YaHei', '微软雅黑', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
@@ -151,6 +143,29 @@ code {
       }
     }
   }
+}
+
+
+/* Reference-style data surfaces: compact, quiet, no boxed-in-table look. */
+.ep-table,
+.el-table {
+  --el-table-header-bg-color: var(--ep-fill-color-light);
+  --el-table-tr-bg-color: var(--ep-bg-color);
+  --el-table-row-hover-bg-color: var(--ep-fill-color);
+  --el-table-border-color: var(--ep-border-color-lighter);
+}
+
+.ep-table .el-table__inner-wrapper::before,
+.el-table .el-table__inner-wrapper::before {
+  display: none;
+}
+
+.el-tag {
+  border-color: transparent;
+  border-radius: 6px;
+  background: var(--ep-fill-color-light);
+  color: var(--ep-text-color-regular);
+  font-weight: 500;
 }
 
 /* ============ Tooltip ============ */
@@ -239,7 +254,6 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
   border: 1px solid var(--ep-border-color-lighter);
   border-radius: 16px;
   background: color-mix(in srgb, var(--ep-bg-color) 92%, transparent);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.04);
   padding: 16px;
 }
 
@@ -260,6 +274,19 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
   width: min(420px, 100%) !important;
 }
 
+
+/* Detail workbench tables sit directly inside their panel instead of nested cards. */
+.scope-panel .data-table-shell {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.scope-panel .data-table-footer {
+  padding-right: 0;
+  padding-left: 0;
+}
+
 /* ============ Tables ============ */
 .ep-table th.ep-table__cell,
 .el-table th.el-table__cell {
@@ -271,6 +298,67 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 .ep-table .ep-table__cell,
 .el-table .el-table__cell {
   border-bottom-color: var(--ep-border-color-lighter);
+}
+
+
+/* ============ Dialogs and form feedback ============ */
+.ep-dialog,
+.el-dialog {
+  max-width: calc(100vw - 32px);
+}
+
+.tool-test-field-error {
+  margin: 0;
+  color: var(--ep-color-danger);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+@media (max-width: 768px) {
+  .ep-dialog,
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+    margin-top: 5vh !important;
+    margin-bottom: 12px;
+  }
+
+  .ep-dialog__body,
+  .el-dialog__body {
+    max-height: calc(100dvh - 160px);
+    overflow-y: auto;
+  }
+
+  .ep-dialog .ep-form-item,
+  .el-dialog .el-form-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ep-dialog .ep-form-item__label,
+  .el-dialog .el-form-item__label {
+    width: auto !important;
+    height: auto;
+    justify-content: flex-start;
+    padding: 0 0 6px;
+    text-align: left;
+  }
+
+  .ep-dialog .ep-form-item__content,
+  .el-dialog .el-form-item__content {
+    margin-left: 0 !important;
+  }
+
+  .ep-dialog .dialog-footer,
+  .ep-dialog__footer,
+  .el-dialog .dialog-footer,
+  .el-dialog__footer {
+    flex-wrap: wrap;
+  }
+
+  .ep-message-box,
+  .el-message-box {
+    width: calc(100vw - 32px) !important;
+  }
 }
 
 /* ============ Responsive ============ */

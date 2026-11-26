@@ -68,23 +68,23 @@ watch(
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .app-body {
+    flex-direction: column;
+  }
+}
+
 .app-main {
   flex: 1;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.08), transparent 30%),
-    radial-gradient(circle at 90% 8%, rgba(6, 182, 212, 0.08), transparent 28%),
-    var(--xiaoai-canvas);
+  background: var(--xiaoai-canvas);
   outline: none;
 }
 
 html.dark .app-main {
-  background:
-    radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.16), transparent 34%),
-    radial-gradient(circle at 88% 10%, rgba(6, 182, 212, 0.13), transparent 30%),
-    var(--xiaoai-canvas);
+  background: var(--xiaoai-canvas);
 }
 </style>

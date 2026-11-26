@@ -1,7 +1,5 @@
 package com.dati.mcp.domain.service;
 
-import com.dati.base.exception.DatiException;
-import com.dati.base.exception.ErrorCode;
 import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.repository.dao.McpServiceDataScopeDAO;
@@ -33,13 +31,15 @@ public class McpToolTestService {
     private final PermissionService permissionService;
     private final McpScopeResolver scopeResolver;
     private final MetricService metricService;
+    private final McpTableRelationSnapshotService relationSnapshotService;
 
     public McpToolTestService(ToolResolver toolResolver, McpServiceDataScopeDAO scopeDAO,
                               List<ToolExecutor> toolExecutorList,
                               ToolParameterBinder parameterBinder,
                               PermissionService permissionService,
                               McpScopeResolver scopeResolver,
-                              MetricService metricService) {
+                              MetricService metricService,
+                              McpTableRelationSnapshotService relationSnapshotService) {
         this.toolResolver = toolResolver;
         this.scopeDAO = scopeDAO;
         this.parameterBinder = parameterBinder;
@@ -47,6 +47,7 @@ public class McpToolTestService {
         this.permissionService = permissionService;
         this.scopeResolver = scopeResolver;
         this.metricService = metricService;
+        this.relationSnapshotService = relationSnapshotService;
     }
 
     public ToolTestResponse test(String serviceId, String toolId, ToolTestRequest request) {
@@ -61,18 +62,28 @@ public class McpToolTestService {
                 .map(McpServiceDataScope::getReferenceId)
                 .distinct()
                 .toList();
+            List<String> readableSubjectIds = subjectIds.stream()
+                .filter(subjectId -> permissionService.canSubject(subjectId, Permission.VIEW))
+                .toList();
             List<com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft> metrics = List.of();
-            if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC) {
-                subjectIds.forEach(this::requireSubjectIfExists);
-                metrics = metricService.getMetricsBySubjectIds(subjectIds).stream()
+            if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC
+                    || tool.toolType() == McpToolType.SEARCH_METADATA) {
+                metrics = metricService.getMetricsBySubjectIds(readableSubjectIds).stream()
                     .map(McpServiceSnapshotMapper::toMetricDraft)
                     .toList();
+            }
+            List<com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft> relations = List.of();
+            if (tool.toolType() == McpToolType.SEARCH_METADATA || tool.toolType() == McpToolType.LIST_TABLES
+                    || tool.toolType() == McpToolType.GET_TABLE_INFO || tool.toolType() == McpToolType.SEARCH_SEMANTICS
+                    || tool.toolType() == McpToolType.QUERY_METRIC) {
+                relations = relationSnapshotService.buildRelationDrafts(readableSubjectIds, scopeItems);
             }
             ToolExecutionContext ctx = new ToolExecutionContext(
                 serviceId, tool.toolType(), tool.config(),
                 parameterBinder.bind(tool.toolType().getParameterType(), request.arguments()),
                 scopeItems,
-                metrics);
+                metrics,
+                relations);
             ToolExecutor executor = executorMap.get(tool.toolType());
             if (executor == null) {
                 throw new IllegalStateException(
@@ -85,16 +96,6 @@ public class McpToolTestService {
             long elapsed = System.currentTimeMillis() - start;
             return new ToolTestResponse(false, elapsed, null,
                 new ToolTestError(e.getErrorCategory(), e.getMessage()));
-        }
-    }
-
-    private void requireSubjectIfExists(String subjectId) {
-        try {
-            permissionService.requireSubject(subjectId, Permission.VIEW);
-        } catch (DatiException e) {
-            if (e.getCode() != ErrorCode.SM_SUBJECT_NOT_FOUND) {
-                throw e;
-            }
         }
     }
 

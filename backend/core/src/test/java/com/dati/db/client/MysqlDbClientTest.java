@@ -40,6 +40,8 @@ class MysqlDbClientTest {
         Connection connection = mock(Connection.class);
         DatabaseMetaData metaData = mock(DatabaseMetaData.class);
         ResultSet resultSet = mock(ResultSet.class);
+        ResultSet primaryKeys = mock(ResultSet.class);
+        ResultSet indexes = mock(ResultSet.class);
 
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getCatalogs()).thenReturn(resultSet);
@@ -90,6 +92,8 @@ class MysqlDbClientTest {
         Connection connection = mock(Connection.class);
         DatabaseMetaData metaData = mock(DatabaseMetaData.class);
         ResultSet resultSet = mock(ResultSet.class);
+        ResultSet primaryKeys = mock(ResultSet.class);
+        ResultSet indexes = mock(ResultSet.class);
 
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getColumns(eq("test_db"), eq(null), eq("users"), eq(null)))
@@ -98,6 +102,11 @@ class MysqlDbClientTest {
         when(resultSet.getString("COLUMN_NAME")).thenReturn("id");
         when(resultSet.getString("TYPE_NAME")).thenReturn("INT");
         when(resultSet.getString("REMARKS")).thenReturn("Primary key");
+        when(metaData.getPrimaryKeys(eq("test_db"), eq(null), eq("users"))).thenReturn(primaryKeys);
+        when(primaryKeys.next()).thenReturn(true, false);
+        when(primaryKeys.getString("COLUMN_NAME")).thenReturn("id");
+        when(metaData.getIndexInfo(eq("test_db"), eq(null), eq("users"), eq(true), eq(false))).thenReturn(indexes);
+        when(indexes.next()).thenReturn(false);
 
         try (MockedStatic<HikariPoolManager> mockedHikari = mockStatic(HikariPoolManager.class)) {
             mockedHikari.when(() -> HikariPoolManager.getConnection(eq(connector))).thenReturn(connection);
@@ -108,6 +117,7 @@ class MysqlDbClientTest {
             assertThat(columns.getFirst().name()).isEqualTo("id");
             assertThat(columns.getFirst().type()).isEqualTo("INT");
             assertThat(columns.getFirst().comment()).isEqualTo("Primary key");
+            assertThat(columns.getFirst().primaryKey()).isTrue();
         }
     }
 
