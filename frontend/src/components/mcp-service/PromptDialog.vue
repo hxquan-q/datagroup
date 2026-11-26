@@ -45,7 +45,7 @@ watch(() => props.modelValue, (v) => {
       }
     });
   }
-});
+}, { immediate: true });
 
 const scanning = ref(false);
 const scanParams = async () => {
