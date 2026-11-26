@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +24,7 @@ public record QueryMetricArgs(
     List<String> dimensions
 ) {
     public QueryMetricArgs {
-        arguments = arguments == null ? Map.of() : Map.copyOf(arguments);
+        arguments = arguments == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(arguments));
         dimensions = dimensions == null ? List.of() : List.copyOf(dimensions);
     }
 }
