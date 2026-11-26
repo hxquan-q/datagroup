@@ -15,19 +15,25 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft;
+import com.dati.datasource.domain.service.TableMetadataService;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
 import com.dati.datasource.repository.po.ColumnInfoPO;
 import com.dati.datasource.repository.po.TableInfoPO;
+import com.dati.semantic.domain.service.SemanticSearchService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SearchSemanticsExecutor tests")
 class SearchSemanticsExecutorTest {
+
+    @Mock
+    private SemanticSearchService semanticSearchService;
 
     @Mock
     private TableInfoDAO tableInfoDAO;
@@ -39,7 +45,9 @@ class SearchSemanticsExecutorTest {
 
     @BeforeEach
     void setUp() {
-        executor = new SearchSemanticsExecutor(tableInfoDAO, columnInfoDAO);
+        executor = new SearchSemanticsExecutor(semanticSearchService, tableInfoDAO, columnInfoDAO);
+        lenient().when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList()))
+            .thenReturn(new SemanticSearchService.SearchResult(List.of(), List.of()));
     }
 
     private McpServiceSnapshot.MetricDraft metric() {
@@ -112,6 +120,26 @@ class SearchSemanticsExecutorTest {
         ToolExecutionContext ctx = new ToolExecutionContext(
             "svc-1", McpToolType.SEARCH_SEMANTICS, new ToolConfig.SearchSemanticsConfig(),
             new SearchSemanticsArgs(List.of("client")), List.of(), List.of(metric()), List.of(relation));
+
+        SemanticCatalog result = (SemanticCatalog) executor.execute(ctx);
+
+        assertThat(result.relations()).containsExactly(relation);
+    }
+
+    @Test
+    @DisplayName("business term metadata hits can discover their confirmed joins")
+    void semanticHitsDiscoverRelations() {
+        TableRelationDraft relation = new TableRelationDraft(
+            "subject-1", "fact-id", "ds-1", "public", "orders", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 2);
+        TableMetadataService.TableMeta customers = new TableMetadataService.TableMeta(
+            "dim-id", "public", "customers", null, List.of(), "ds-1", List.of());
+        when(semanticSearchService.search(anyList(), anyList(), anyList(), anyList()))
+            .thenReturn(new SemanticSearchService.SearchResult(List.of(
+                new SemanticSearchService.DataSourceGroup("ds-1", "Warehouse", "MYSQL", "public", null, List.of(customers))), List.of()));
+        ToolExecutionContext ctx = new ToolExecutionContext(
+            "svc-1", McpToolType.SEARCH_SEMANTICS, new ToolConfig.SearchSemanticsConfig(),
+            new SearchSemanticsArgs(List.of("buyer")), List.of(), List.of(metric()), List.of(relation));
 
         SemanticCatalog result = (SemanticCatalog) executor.execute(ctx);
 
