@@ -127,25 +127,34 @@ final class StructuredMetricSqlBuilder {
 
     private static String buildJoin(McpServiceSnapshot.MetricDraft metric, Endpoint fact, Endpoint dimension,
                                     String dimensionAlias, List<McpServiceSnapshot.TableRelationDraft> relations) {
-        for (McpServiceSnapshot.TableRelationDraft relation : relations) {
-            Endpoint relationFact = new Endpoint(relation.factDataSourceId(), relation.factSchema(), relation.factTableName());
-            Endpoint relationDimension = new Endpoint(relation.dimensionDataSourceId(), relation.dimensionSchema(), relation.dimensionTableName());
-            if (fact.matches(relationFact) && dimension.matches(relationDimension)) {
-                validateIdentifier(relation.factColumn(), "fact join column");
-                validateIdentifier(relation.dimensionColumn(), "dimension join column");
-                return "LEFT JOIN " + qualified(dimension.schema(), dimension.tableName()) + " " + dimensionAlias
-                    + " ON f." + relation.factColumn() + " = " + dimensionAlias + "." + relation.dimensionColumn();
-            }
-            if (fact.matches(relationDimension) && dimension.matches(relationFact)) {
-                validateIdentifier(relation.factColumn(), "fact join column");
-                validateIdentifier(relation.dimensionColumn(), "dimension join column");
-                return "LEFT JOIN " + qualified(dimension.schema(), dimension.tableName()) + " " + dimensionAlias
-                    + " ON f." + relation.dimensionColumn() + " = " + dimensionAlias + "." + relation.factColumn();
-            }
+        List<McpServiceSnapshot.TableRelationDraft> matches = relations.stream()
+            .filter(relation -> Objects.equals(metric.subjectId(), relation.subjectId()))
+            .filter(relation -> {
+                Endpoint relationFact = new Endpoint(relation.factDataSourceId(), relation.factSchema(), relation.factTableName());
+                Endpoint relationDimension = new Endpoint(relation.dimensionDataSourceId(), relation.dimensionSchema(), relation.dimensionTableName());
+                return fact.matches(relationFact) && dimension.matches(relationDimension);
+            })
+            .toList();
+        if (matches.isEmpty()) {
+            throw new ToolExecuteException(ToolError.PARAM_INVALID,
+                "No confirmed one-hop table relation from " + metric.factTableName() + " to " + dimension.tableName()
+                    + " for metric " + metric.code());
         }
-        throw new ToolExecuteException(ToolError.PARAM_INVALID,
-            "No confirmed one-hop table relation from " + metric.factTableName() + " to " + dimension.tableName()
-                + " for metric " + metric.code());
+        if (matches.size() > 1) {
+            throw new ToolExecuteException(ToolError.PARAM_INVALID,
+                "Multiple confirmed relations connect " + metric.factTableName() + " to " + dimension.tableName()
+                    + " for metric " + metric.code() + "; keep one governed join path");
+        }
+        McpServiceSnapshot.TableRelationDraft relation = matches.getFirst();
+        if ("ONE_TO_MANY".equals(relation.cardinality()) || "MANY_TO_MANY".equals(relation.cardinality())) {
+            throw new ToolExecuteException(ToolError.PARAM_INVALID,
+                "Relation " + metric.factTableName() + " to " + dimension.tableName()
+                    + " can duplicate fact rows and cannot be used for metric aggregation");
+        }
+        validateIdentifier(relation.factColumn(), "fact join column");
+        validateIdentifier(relation.dimensionColumn(), "dimension join column");
+        return "LEFT JOIN " + qualified(dimension.schema(), dimension.tableName()) + " " + dimensionAlias
+            + " ON f." + relation.factColumn() + " = " + dimensionAlias + "." + relation.dimensionColumn();
     }
 
     private static String qualified(String schema, String table) {
