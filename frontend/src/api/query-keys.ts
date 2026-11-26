@@ -24,3 +24,13 @@ export const mcpUsageKeys = {
       { page, size, toolName, success },
     ] as const,
 };
+
+export const dashboardKeys = {
+  all: ["dashboard"] as const,
+  overview: (days: number) => [...dashboardKeys.all, "overview", days] as const,
+};
+
+export const mcpServiceKeys = {
+  all: ["mcp-services"] as const,
+  featured: () => [...mcpServiceKeys.all, "featured"] as const,
+};

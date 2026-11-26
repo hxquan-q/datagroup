@@ -26,6 +26,8 @@ export default {
       dataSources: "数据源",
       subjects: "主题",
       mcpServices: "MCP 服务",
+      creationTrend: "15 日新增趋势",
+      trendCaption: "15 日新增",
     },
     features: {
       security: "安全可控",

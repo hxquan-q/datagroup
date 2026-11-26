@@ -26,6 +26,8 @@ export default {
       dataSources: "Data Sources",
       subjects: "Data Subjects",
       mcpServices: "MCP Services",
+      creationTrend: "15-day creation trend",
+      trendCaption: "15d new",
     },
     features: {
       security: "Security & Governance",

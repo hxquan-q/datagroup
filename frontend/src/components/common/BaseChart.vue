@@ -33,6 +33,5 @@ withDefaults(
 <style scoped>
 .base-chart {
   width: 100%;
-  min-height: 180px;
 }
 </style>

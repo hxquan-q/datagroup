@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { datasourceKeys, mcpUsageKeys } from "../query-keys";
+import { dashboardKeys, datasourceKeys, mcpServiceKeys, mcpUsageKeys } from "../query-keys";
 
 describe("datasource query keys", () => {
   it("creates stable list keys from pagination and keyword state", () => {
@@ -30,5 +30,16 @@ describe("mcp usage query keys", () => {
       "svc-1",
       { page: 2, size: 20, toolName: "query", success: false },
     ]);
+  });
+});
+
+
+describe("dashboard query keys", () => {
+  it("scopes overview by day window", () => {
+    expect(dashboardKeys.overview(15)).toEqual(["dashboard", "overview", 15]);
+  });
+
+  it("uses a stable featured service key", () => {
+    expect(mcpServiceKeys.featured()).toEqual(["mcp-services", "featured"]);
   });
 });
