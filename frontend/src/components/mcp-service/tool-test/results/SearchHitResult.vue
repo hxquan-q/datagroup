@@ -16,6 +16,21 @@ const getDbTypeLabel = (type?: string) => {
 </script>
 
 <template>
+  <div v-if="data.metrics?.length" class="mb-6">
+    <div class="result-section-header">
+      <el-icon class="text-[var(--ep-color-primary)]"><Coin /></el-icon>
+      <span>{{ t("mcpService.toolTest.matchMetrics") }} ({{ data.metrics.length }})</span>
+    </div>
+    <div v-for="metric in data.metrics" :key="metric.metric_id" class="p-3 rounded mb-2 bg-[var(--ep-fill-color-lighter)]">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-semibold text-sm">{{ metric.name }}</span>
+        <el-tag size="small" type="primary">{{ metric.code }}</el-tag>
+        <span v-if="metric.owner" class="text-xs text-[var(--ep-text-color-placeholder)]">{{ metric.owner }}</span>
+      </div>
+      <p v-if="metric.description" class="text-sm mt-1 text-[var(--ep-text-color-secondary)]">{{ metric.description }}</p>
+      <pre v-if="metric.call_example" class="metric-example">{{ JSON.stringify(metric.call_example, null, 2) }}</pre>
+    </div>
+  </div>
   <div v-if="data.terms?.length" class="mb-6">
     <div class="result-section-header">
       <el-icon class="text-[var(--ep-color-primary)]"><IconMenu /></el-icon>
@@ -143,7 +158,7 @@ const getDbTypeLabel = (type?: string) => {
     </template>
   </div>
   <el-empty
-    v-if="!data.data_sources?.length && !data.terms?.length"
+    v-if="!data.data_sources?.length && !data.terms?.length && !data.metrics?.length"
     :description="t('mcpService.toolTest.emptyResult')"
   />
 </template>
@@ -167,5 +182,14 @@ const getDbTypeLabel = (type?: string) => {
 }
 .ds-body {
   background: var(--ep-bg-color);
+}
+.metric-example {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--ep-bg-color);
+  color: var(--ep-text-color-secondary);
+  font-size: 11px;
+  overflow-x: auto;
 }
 </style>

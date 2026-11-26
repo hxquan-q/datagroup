@@ -35,6 +35,7 @@ public class McpServiceSnapshot extends BaseResource {
         private List<CustomToolDraft> customTools;
         private List<PromptDraft> prompts;
         private List<MetricDraft> metrics;
+        private List<TableRelationDraft> relations;
     }
 
     @Data
@@ -107,6 +108,21 @@ public class McpServiceSnapshot extends BaseResource {
             parameters = parameters == null ? List.of() : parameters.stream().filter(Objects::nonNull).toList();
             timeout = timeout == null ? 30 : timeout;
             maxRows = maxRows == null ? 1000 : maxRows;
+            revision = revision == null ? 1 : revision;
+        }
+    }
+
+    /**
+     * Confirmed subject table relation frozen into a published service snapshot.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TableRelationDraft(String subjectId, String factTableId, String factDataSourceId,
+                                     String factSchema, String factTableName, String factColumn,
+                                     String dimensionTableId, String dimensionDataSourceId,
+                                     String dimensionSchema, String dimensionTableName, String dimensionColumn,
+                                     String cardinality, String owner, Integer revision) {
+        public TableRelationDraft {
+            cardinality = cardinality == null ? "MANY_TO_ONE" : cardinality;
             revision = revision == null ? 1 : revision;
         }
     }

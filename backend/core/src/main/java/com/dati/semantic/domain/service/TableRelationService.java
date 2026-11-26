@@ -4,6 +4,7 @@ import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
 import com.dati.datasource.domain.model.ColumnInfo;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
+import com.dati.datasource.repository.dao.DataSourceDAO;
 import com.dati.datasource.repository.mapper.ColumnMapper;
 import com.dati.permission.domain.model.Permission;
 import com.dati.permission.domain.model.ResourceType;
@@ -13,6 +14,8 @@ import com.dati.semantic.repository.dao.SubjectDAO;
 import com.dati.semantic.repository.dao.SubjectTableDAO;
 import com.dati.semantic.repository.dao.TableRelationDAO;
 import com.dati.semantic.repository.mapper.TableRelationMapper;
+import com.dati.datasource.repository.po.DataSourcePO;
+import com.dati.db.DbType;
 import com.dati.semantic.repository.po.SubjectPO;
 import com.dati.semantic.repository.po.TableRelationPO;
 import org.springframework.data.domain.Page;
@@ -30,14 +33,17 @@ public class TableRelationService {
     private final SubjectDAO subjectDAO;
     private final SubjectTableDAO subjectTableDAO;
     private final ColumnInfoDAO columnInfoDAO;
+    private final DataSourceDAO dataSourceDAO;
     private final PermissionService permissionService;
 
     public TableRelationService(TableRelationDAO tableRelationDAO, SubjectDAO subjectDAO,
-                                SubjectTableDAO subjectTableDAO, ColumnInfoDAO columnInfoDAO, PermissionService permissionService) {
+                                SubjectTableDAO subjectTableDAO, ColumnInfoDAO columnInfoDAO,
+                                DataSourceDAO dataSourceDAO, PermissionService permissionService) {
         this.tableRelationDAO = tableRelationDAO;
         this.subjectDAO = subjectDAO;
         this.subjectTableDAO = subjectTableDAO;
         this.columnInfoDAO = columnInfoDAO;
+        this.dataSourceDAO = dataSourceDAO;
         this.permissionService = permissionService;
     }
 
@@ -50,6 +56,7 @@ public class TableRelationService {
         requireTableInSubject(subjectId, item.getDimensionTableId());
         requireColumn(item.getFactTableId(), item.getFactColumn());
         requireColumn(item.getDimensionTableId(), item.getDimensionColumn());
+        requireUniqueJoin(subjectId, item.getFactTableId(), item.getFactColumn(), item.getDimensionTableId(), item.getDimensionColumn(), null, usesCaseInsensitiveColumns(subject));
         item.setSubjectId(subjectId);
         item.setRevision(1);
         if (item.getCardinality() == null || item.getCardinality().isBlank()) item.setCardinality("MANY_TO_ONE");
@@ -62,20 +69,19 @@ public class TableRelationService {
         TableRelationPO po = requireRelation(id);
         SubjectPO subject = requireSubject(po.getSubjectId());
         permissionService.requireCurrentUser(ResourceType.SUBJECT, po.getSubjectId(), Permission.EDIT, subject.getCreatedBy());
-        if (patch.getFactColumn() != null) {
-            if (patch.getFactColumn().isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "factColumn must not be blank");
-            if (!patch.getFactColumn().equals(po.getFactColumn())) {
-                requireColumn(po.getFactTableId(), patch.getFactColumn());
-            }
-            po.setFactColumn(patch.getFactColumn());
+        String nextFactColumn = patch.getFactColumn() != null ? patch.getFactColumn() : po.getFactColumn();
+        String nextDimensionColumn = patch.getDimensionColumn() != null ? patch.getDimensionColumn() : po.getDimensionColumn();
+        if (nextFactColumn.isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "factColumn must not be blank");
+        if (nextDimensionColumn.isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "dimensionColumn must not be blank");
+        if (!nextFactColumn.equals(po.getFactColumn())) {
+            requireColumn(po.getFactTableId(), nextFactColumn);
         }
-        if (patch.getDimensionColumn() != null) {
-            if (patch.getDimensionColumn().isBlank()) throw new DatiException(ErrorCode.INVALID_PARAMETER, "dimensionColumn must not be blank");
-            if (!patch.getDimensionColumn().equals(po.getDimensionColumn())) {
-                requireColumn(po.getDimensionTableId(), patch.getDimensionColumn());
-            }
-            po.setDimensionColumn(patch.getDimensionColumn());
+        if (!nextDimensionColumn.equals(po.getDimensionColumn())) {
+            requireColumn(po.getDimensionTableId(), nextDimensionColumn);
         }
+        requireUniqueJoin(po.getSubjectId(), po.getFactTableId(), nextFactColumn, po.getDimensionTableId(), nextDimensionColumn, po.getId(), usesCaseInsensitiveColumns(subject));
+        po.setFactColumn(nextFactColumn);
+        po.setDimensionColumn(nextDimensionColumn);
         if (patch.getCardinality() != null) {
             validateCardinality(patch.getCardinality());
             po.setCardinality(patch.getCardinality());
@@ -125,6 +131,31 @@ public class TableRelationService {
         if (!columnInfoDAO.existsByTableIdAndName(tableId, column)) {
             throw new DatiException(ErrorCode.INVALID_PARAMETER, "column does not exist in table: " + column);
         }
+    }
+
+    private void requireUniqueJoin(String subjectId, String factTableId, String factColumn,
+                                   String dimensionTableId, String dimensionColumn, String excludeId,
+                                   boolean caseInsensitiveColumns) {
+        for (TableRelationPO existing : tableRelationDAO.findBySubjectId(subjectId)) {
+            if (excludeId != null && excludeId.equals(existing.getId())) continue;
+            if (existing.getFactTableId().equals(factTableId)
+                && existing.getDimensionTableId().equals(dimensionTableId)
+                && columnsEqual(existing.getFactColumn(), factColumn, caseInsensitiveColumns)
+                && columnsEqual(existing.getDimensionColumn(), dimensionColumn, caseInsensitiveColumns)) {
+                throw new DatiException(ErrorCode.SM_RELATION_EXISTS);
+            }
+        }
+    }
+
+    private boolean usesCaseInsensitiveColumns(SubjectPO subject) {
+        return dataSourceDAO.findById(subject.getDatasourceId())
+            .map(DataSourcePO::getType)
+            .map(type -> type == DbType.MYSQL || type == DbType.MARIADB || type == DbType.DORIS)
+            .orElse(false);
+    }
+
+    private static boolean columnsEqual(String left, String right, boolean caseInsensitive) {
+        return caseInsensitive ? left.equalsIgnoreCase(right) : left.equals(right);
     }
 
     private void requireTableInSubject(String subjectId, String tableId) {

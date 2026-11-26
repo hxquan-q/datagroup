@@ -232,4 +232,21 @@ class McpServiceSnapshotMapperTest {
         assertThat(restored.getContent().getMetrics().getFirst().aliases()).containsExactly("FPY");
         assertThat(restored.getContent().getMetrics().getFirst().parameters()).hasSize(1);
     }
+    @Test
+    @DisplayName("Table relations survive snapshot round-trip")
+    void tableRelationsRoundTrip() {
+        McpServiceSnapshot.TableRelationDraft relation = new McpServiceSnapshot.TableRelationDraft(
+            "subject-1", "fact-1", "ds-1", "mes", "t_pass", "FMoID",
+            "dim-1", "ds-1", "mes", "t_mo", "F_id", "MANY_TO_ONE", "owner", 2);
+        McpServiceSnapshot snapshot = new McpServiceSnapshot();
+        snapshot.setServiceId(TestFixtures.TEST_MCP_SERVICE_ID);
+        snapshot.setVersionNumber(1);
+        McpServiceSnapshot.SnapshotContent content = sampleContent();
+        content.setRelations(List.of(relation));
+        snapshot.setContent(content);
+
+        McpServiceSnapshot restored = McpServiceSnapshotMapper.toModel(McpServiceSnapshotMapper.toPO(snapshot));
+
+        assertThat(restored.getContent().getRelations()).containsExactly(relation);
+    }
 }

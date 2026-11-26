@@ -1,6 +1,7 @@
 package com.dati.db.client;
 
 import com.dati.db.Column;
+import com.dati.db.ForeignKey;
 import com.dati.db.HikariPoolManager;
 import com.dati.db.JdbcConnector;
 import com.dati.db.Table;
@@ -9,7 +10,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractDbClient implements DbClient {
 
@@ -69,7 +74,85 @@ public abstract class AbstractDbClient implements DbClient {
                     resultSet.getString("REMARKS")));
             }
         }
-        return columns;
+        Set<String> primaryKeys = primaryKeyColumns(connection, actualCatalog, actualSchema, table);
+        Set<String> uniqueColumns = singleColumnUniqueIndexes(connection, actualCatalog, actualSchema, table);
+        if (primaryKeys.size() == 1) uniqueColumns.addAll(primaryKeys);
+        return columns.stream()
+            .map(column -> new Column(column.name(), column.type(), column.comment(),
+                primaryKeys.contains(column.name()), uniqueColumns.contains(column.name())))
+            .toList();
+    }
+
+    @Override
+    public List<ForeignKey> getImportedKeys(JdbcConnector jdbcConnector, String schema, String table) throws SQLException {
+        try (Connection connection = HikariPoolManager.getConnection(jdbcConnector)) {
+            return getImportedKeys(connection, schema, table);
+        }
+    }
+
+    @Override
+    public List<ForeignKey> getImportedKeys(Connection connection, String schema, String table) throws SQLException {
+        String actualCatalog = isCatalogAsSchema() ? schema : null;
+        String actualSchema = isCatalogAsSchema() ? null : schema;
+        List<ForeignKey> keys = new ArrayList<>();
+        try (ResultSet rs = connection.getMetaData().getImportedKeys(actualCatalog, actualSchema, table)) {
+            while (rs.next()) {
+                keys.add(new ForeignKey(
+                    value(rs.getString("FK_NAME")),
+                    rs.getString("FKCOLUMN_NAME"),
+                    referencedSchema(rs),
+                    rs.getString("PKTABLE_NAME"),
+                    rs.getString("PKCOLUMN_NAME"),
+                    ruleName(rs.getShort("UPDATE_RULE")),
+                    ruleName(rs.getShort("DELETE_RULE")),
+                    rs.getShort("KEY_SEQ")));
+            }
+        }
+        return keys;
+    }
+
+    private String referencedSchema(ResultSet rs) throws SQLException {
+        return isCatalogAsSchema() ? value(rs.getString("PKTABLE_CAT")) : value(rs.getString("PKTABLE_SCHEM"));
+    }
+
+    private static String value(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    private static String ruleName(short rule) {
+        return switch (rule) {
+            case java.sql.DatabaseMetaData.importedKeyCascade -> "CASCADE";
+            case java.sql.DatabaseMetaData.importedKeyRestrict -> "RESTRICT";
+            case java.sql.DatabaseMetaData.importedKeySetNull -> "SET NULL";
+            case java.sql.DatabaseMetaData.importedKeySetDefault -> "SET DEFAULT";
+            default -> "NO ACTION";
+        };
+    }
+
+    private static Set<String> primaryKeyColumns(Connection connection, String catalog, String schema, String table) throws SQLException {
+        Set<String> result = new HashSet<>();
+        try (ResultSet rs = connection.getMetaData().getPrimaryKeys(catalog, schema, table)) {
+            while (rs.next()) result.add(rs.getString("COLUMN_NAME"));
+        }
+        return result;
+    }
+
+    private static Set<String> singleColumnUniqueIndexes(Connection connection, String catalog, String schema, String table) throws SQLException {
+        Map<String, Set<String>> columnsByIndex = new HashMap<>();
+        try (ResultSet rs = connection.getMetaData().getIndexInfo(catalog, schema, table, true, false)) {
+            while (rs.next()) {
+                if (rs.getBoolean("NON_UNIQUE") || rs.getShort("TYPE") == java.sql.DatabaseMetaData.tableIndexStatistic) continue;
+                String indexName = rs.getString("INDEX_NAME");
+                String columnName = rs.getString("COLUMN_NAME");
+                if (indexName == null || columnName == null) continue;
+                columnsByIndex.computeIfAbsent(indexName, ignored -> new HashSet<>()).add(columnName);
+            }
+        }
+        Set<String> result = new HashSet<>();
+        for (Set<String> columns : columnsByIndex.values()) {
+            if (columns.size() == 1) result.addAll(columns);
+        }
+        return result;
     }
 
     protected List<String> getCatalogs(JdbcConnector jdbcConnector) throws SQLException {

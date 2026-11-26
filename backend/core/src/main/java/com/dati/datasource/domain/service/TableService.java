@@ -9,6 +9,7 @@ import com.dati.common.StringUtils;
 import com.dati.datasource.domain.model.ColumnInfo;
 import com.dati.datasource.domain.model.TableInfo;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
+import com.dati.datasource.repository.dao.TableForeignKeyDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
 import com.dati.datasource.repository.mapper.ColumnMapper;
 import com.dati.datasource.repository.mapper.TableMapper;
@@ -52,10 +53,13 @@ public class TableService {
     private final PermissionService permissionService;
     private final TermRelationDAO termRelationDAO;
     private final TableRelationDAO tableRelationDAO;
+    private final TableForeignKeyDAO tableForeignKeyDAO;
+    private final TableStructureSyncService tableStructureSyncService;
 
     public TableService(TableInfoDAO tableInfoDAO, ColumnInfoDAO columnInfoDAO,
                         JdbcMetaService jdbcMetaService, SemanticIndexService semanticIndexService,
-                        PermissionService permissionService, TermRelationDAO termRelationDAO, TableRelationDAO tableRelationDAO) {
+                        PermissionService permissionService, TermRelationDAO termRelationDAO, TableRelationDAO tableRelationDAO, TableForeignKeyDAO tableForeignKeyDAO,
+                        TableStructureSyncService tableStructureSyncService) {
         this.tableInfoDAO = tableInfoDAO;
         this.columnInfoDAO = columnInfoDAO;
         this.jdbcMetaService = jdbcMetaService;
@@ -63,6 +67,8 @@ public class TableService {
         this.permissionService = permissionService;
         this.termRelationDAO = termRelationDAO;
         this.tableRelationDAO = tableRelationDAO;
+        this.tableForeignKeyDAO = tableForeignKeyDAO;
+        this.tableStructureSyncService = tableStructureSyncService;
     }
 
     public Page<TableInfo> getTables(PageReq pageReq, String datasourceId, String keyword) {
@@ -167,6 +173,8 @@ public class TableService {
                     columnInfo.setName(column.name());
                     columnInfo.setColumnType(column.type());
                     columnInfo.setDescription(column.comment());
+                    columnInfo.setPrimaryKey(column.primaryKey());
+                    columnInfo.setUniqueKey(column.uniqueKey());
                     columnInfo.setAliases(new ArrayList<>());
                     columnInfo.setCreatedBy(RequestContext.getUser().getId());
                     columnInfo.setUpdatedBy(RequestContext.getUser().getId());
@@ -194,6 +202,7 @@ public class TableService {
             } catch (Exception e) {
                 throw new DatiException(ErrorCode.DS_SYNC_FAILED, request.getName() + ": " + e.getMessage());
             }
+            tableStructureSyncService.syncForeignKeys(datasourceId, tableId, schema, request.getName());
         }
 
         // Flush tables/columns before writing their derived index documents.
@@ -237,6 +246,7 @@ public class TableService {
         termRelationDAO.deleteByTableIdIn(tableIds);
         tableRelationDAO.deleteByAnyTableIdIn(tableIds);
         columnInfoDAO.deleteByTableIdIn(tableIds);
+        tableForeignKeyDAO.deleteByTableIdIn(tableIds);
         tableInfoDAO.deleteAllById(tableIds);
         // Flush the deletes before removing their derived index documents.
         tableInfoDAO.flush();

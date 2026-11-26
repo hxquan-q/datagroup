@@ -46,6 +46,7 @@ public class McpServicePublishService {
     private final TableInfoDAO tableInfoDAO;
     private final SubjectTableDAO subjectTableDAO;
     private final MetricService metricService;
+    private final McpTableRelationSnapshotService relationSnapshotService;
 
     public McpServicePublishService(McpServiceDAO mcpServiceDAO,
                                      McpServiceSnapshotDAO snapshotDAO,
@@ -55,7 +56,8 @@ public class McpServicePublishService {
                                      PermissionService permissionService,
                                      TableInfoDAO tableInfoDAO,
                                      SubjectTableDAO subjectTableDAO,
-                                     MetricService metricService) {
+                                     MetricService metricService,
+                                     McpTableRelationSnapshotService relationSnapshotService) {
         this.mcpServiceDAO = mcpServiceDAO;
         this.snapshotDAO = snapshotDAO;
         this.dataScopeService = dataScopeService;
@@ -65,6 +67,7 @@ public class McpServicePublishService {
         this.tableInfoDAO = tableInfoDAO;
         this.subjectTableDAO = subjectTableDAO;
         this.metricService = metricService;
+        this.relationSnapshotService = relationSnapshotService;
     }
 
     @Transactional
@@ -273,6 +276,11 @@ public class McpServicePublishService {
             diff.getModifiedComponents().add("METRICS");
         }
 
+        boolean relationsChanged = metricSubjectsVisible && !Objects.equals(relationKeys(activeContent.getRelations()), relationKeys(currentContent.getRelations()));
+        if (relationsChanged) {
+            diff.getModifiedComponents().add("TABLE_RELATIONS");
+        }
+
         // 5. Prompts Diff
         Map<String, McpServiceSnapshot.PromptDraft> activePrompts = activeContent.getPrompts() != null
                 ? activeContent.getPrompts().stream().collect(Collectors.toMap(McpServiceSnapshot.PromptDraft::name, Function.identity(), (a, b) -> a))
@@ -309,7 +317,7 @@ public class McpServicePublishService {
         }
 
         boolean hasChanges = diff.isBasicInfoChanged() || diff.isDataScopeChanged() || diff.isToolsChanged()
-                || diff.isMetricsChanged() || diff.isPromptsChanged();
+                || diff.isMetricsChanged() || diff.isPromptsChanged() || relationsChanged;
         diff.setHasChanges(hasChanges);
 
         return diff;
@@ -494,6 +502,11 @@ public class McpServicePublishService {
                 .sorted((a, b) -> a.code().compareTo(b.code()))
                 .toList();
 
+        List<McpServiceDataScope> publishedScopeItems = dataScopes.stream()
+                .map(McpServiceSnapshotMapper::toDataScope)
+                .toList();
+        List<McpServiceSnapshot.TableRelationDraft> relations = relationSnapshotService.buildRelationDrafts(subjectIds, publishedScopeItems);
+
         McpServiceSnapshot.SnapshotContent content = new McpServiceSnapshot.SnapshotContent();
         content.setServiceInfo(serviceInfo);
         content.setDataScopes(dataScopes);
@@ -501,9 +514,19 @@ public class McpServicePublishService {
         content.setCustomTools(customTools);
         content.setPrompts(prompts);
         content.setMetrics(metrics);
+        content.setRelations(relations);
         return content;
     }
 
+
+    private List<String> relationKeys(List<McpServiceSnapshot.TableRelationDraft> relations) {
+        return relations == null ? List.of() : relations.stream()
+                .map(row -> row.factDataSourceId() + "." + row.factSchema() + "." + row.factTableName() + "." + row.factColumn()
+                        + "->" + row.dimensionDataSourceId() + "." + row.dimensionSchema() + "." + row.dimensionTableName() + "." + row.dimensionColumn()
+                        + "|" + row.cardinality() + "|" + row.owner() + "|" + row.revision())
+                .sorted()
+                .toList();
+    }
 
     private McpServiceSnapshot.DataScopeDraft withResolvedTables(McpServiceSnapshot.DataScopeDraft draft) {
         if (draft.accessMode() == McpDataScopeAccessMode.SCHEMA_SCOPE) {

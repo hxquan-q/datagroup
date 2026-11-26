@@ -15,6 +15,7 @@ import com.dati.mcp.domain.model.McpServiceDataScope;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.model.ToolConfig;
 import com.dati.mcp.domain.model.param.ListTablesArgs;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.server.pojo.TableListData;
 import com.dati.semantic.domain.service.TermService;
 import org.junit.jupiter.api.BeforeEach;
@@ -341,5 +342,28 @@ class ListTablesExecutorTest {
 
         assertThat(data.dataSources()).isEmpty();
     }
+    @Test
+    @DisplayName("includes scoped governed table relations")
+    void includesScopedRelations() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(
+            new McpResolvedTable("ds-1", "public", "genre"),
+            new McpResolvedTable("ds-1", "public", "artist")));
+        TableInfoPO genre = importedTable("public", "genre", null, List.of());
+        TableInfoPO artist = importedTable("public", "artist", null, List.of());
+        when(tableInfoDAO.findByDataSourceId("ds-1")).thenReturn(List.of(genre, artist));
+        when(dataSourceService.getDataSourceBriefs(Set.of("ds-1")))
+            .thenReturn(Map.of("ds-1", new DataSourceService.DsBrief("music", DbType.POSTGRESQL, "public", null)));
+        McpServiceSnapshot.TableRelationDraft relation = new McpServiceSnapshot.TableRelationDraft(
+            "sub-1", "fact-1", "ds-1", "public", "genre", "artist_id",
+            "dim-1", "ds-1", "public", "artist", "id", "MANY_TO_ONE", "owner", 1);
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.LIST_TABLES,
+            new ToolConfig.ListTablesConfig(), new ListTablesArgs(), List.of(scope), List.of(), List.of(relation));
 
+        TableListData data = (TableListData) executor.execute(context);
+
+        assertThat(data.relations()).containsExactly(relation);
+    }
 }

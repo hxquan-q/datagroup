@@ -8,7 +8,9 @@ import com.dati.base.exception.ErrorCode;
 import com.dati.base.pojo.PageReq;
 import com.dati.datasource.domain.model.TableInfo;
 import com.dati.datasource.repository.dao.ColumnInfoDAO;
+import com.dati.datasource.repository.dao.TableForeignKeyDAO;
 import com.dati.datasource.repository.dao.TableInfoDAO;
+import com.dati.datasource.domain.service.TableStructureSyncService;
 import com.dati.datasource.repository.po.ColumnInfoPO;
 import com.dati.datasource.repository.po.TableInfoPO;
 import com.dati.datasource.server.pojo.AddTableRequest;
@@ -73,6 +75,12 @@ class TableServiceTest {
 
     @Mock
     private TableRelationDAO tableRelationDAO;
+
+    @Mock
+    private TableForeignKeyDAO tableForeignKeyDAO;
+
+    @Mock
+    private TableStructureSyncService tableStructureSyncService;
 
     @InjectMocks
     private TableService tableService;

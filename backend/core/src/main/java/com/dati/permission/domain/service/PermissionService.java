@@ -106,6 +106,16 @@ public class PermissionService {
         requireCurrentUser(ResourceType.SUBJECT, po.getId(), permission, po.getCreatedBy());
     }
 
+    /** Evaluate subject permission for the current user without throwing. */
+    public boolean canSubject(String subjectId, Permission permission) {
+        return subjectDAO.findById(subjectId)
+            .map(po -> {
+                User user = RequestContext.getUser();
+                return can(user.getId(), user.getName(), ResourceType.SUBJECT, po.getId(), permission, po.getCreatedBy());
+            })
+            .orElse(false);
+    }
+
     /** Require current user to have permission on a subject by ID. */
     public void requireSubject(String subjectId, Permission permission) {
         SubjectPO po = subjectDAO.findById(subjectId)

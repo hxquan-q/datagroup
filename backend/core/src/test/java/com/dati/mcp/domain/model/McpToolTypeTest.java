@@ -15,7 +15,7 @@ class McpToolTypeTest {
         assertThat(type.getToolName()).isEqualTo("search_tables_and_terms");
         assertThat(type.getTitle()).isEqualTo("Search Tables and Terms");
         assertThat(type.getDescription()).isEqualTo(
-            "Search relevant database tables, column names, sample values, and business terms by keywords. Always use this tool first to discover the right tables and terms instead of guessing tables or running exploratory SQL."
+            "Search published metrics, database tables, column names, sample values, governed table relations, and business terms by keywords. Always use this unified entry first; it returns confirmed join keys and copyable query_metric call examples instead of requiring guessed tables or exploratory SQL."
         );
         assertThat(type.isPrebuilt()).isTrue();
         assertThat(type.isDefaultEnabled()).isTrue();
@@ -28,7 +28,7 @@ class McpToolTypeTest {
         assertThat(type.getToolName()).isEqualTo("get_table_schema");
         assertThat(type.getTitle()).isEqualTo("Get Table Schema");
         assertThat(type.getDescription()).isEqualTo(
-            "Get detailed column schemas (names, types, comments, and sample values) for specified tables (up to 20 tables)."
+            "Get detailed column schemas (names, types, comments, and sample values) for specified tables (up to 20 tables), plus governed relation paths touching those tables. Use these confirmed join keys instead of guessing joins."
         );
         assertThat(type.isPrebuilt()).isTrue();
         assertThat(type.isDefaultEnabled()).isTrue();
@@ -41,7 +41,7 @@ class McpToolTypeTest {
         assertThat(type.getToolName()).isEqualTo("list_tables_and_terms");
         assertThat(type.getTitle()).isEqualTo("List Tables and Terms");
         assertThat(type.getDescription()).isEqualTo(
-            "List all available tables (with schema, name, and description; overview only, no columns) and business terms under the service scope. Use this tool when exploring the catalog or when keyword search returns no matches."
+            "List all available tables (with schema, name, and description; overview only, no columns), governed table relations, and business terms under the service scope. Use this tool when exploring the catalog, planning joins, or when keyword search returns no matches."
         );
         assertThat(type.isPrebuilt()).isTrue();
         assertThat(type.isDefaultEnabled()).isTrue();

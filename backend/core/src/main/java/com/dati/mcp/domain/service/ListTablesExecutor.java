@@ -10,6 +10,7 @@ import com.dati.db.Table;
 import com.dati.db.analysis.TableRef;
 import com.dati.mcp.domain.model.McpDataScopeType;
 import com.dati.mcp.domain.model.McpServiceDataScope;
+import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.server.pojo.TableListData;
 import com.dati.mcp.server.pojo.ToolTestData;
@@ -104,7 +105,10 @@ public class ListTablesExecutor implements ToolExecutor {
                 brief.description(),
                 tableDefs));
         }
-        return new TableListData(groups, termDefs);
+        List<McpServiceSnapshot.TableRelationDraft> relations = ctx.relations().stream()
+            .filter(relation -> McpScopeResolution.relationAllowed(ctx.scopeItems(), relation))
+            .toList();
+        return new TableListData(groups, termDefs, relations);
     }
 
     private List<TableDef> buildTableDefs(String dsId, List<TableInfoPO> importedTables,

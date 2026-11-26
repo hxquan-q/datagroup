@@ -16,7 +16,7 @@ public enum McpToolType {
     SEARCH_METADATA(
         "search_tables_and_terms",
         "Search Tables and Terms",
-        "Search relevant database tables, column names, sample values, and business terms by keywords. Always use this tool first to discover the right tables and terms instead of guessing tables or running exploratory SQL.",
+        "Search published metrics, database tables, column names, sample values, governed table relations, and business terms by keywords. Always use this unified entry first; it returns confirmed join keys and copyable query_metric call examples instead of requiring guessed tables or exploratory SQL.",
         SearchMetadataArgs.class,
         "{\"readOnlyHint\":true}",
         true
@@ -24,7 +24,7 @@ public enum McpToolType {
     GET_TABLE_INFO(
         "get_table_schema",
         "Get Table Schema",
-        "Get detailed column schemas (names, types, comments, and sample values) for specified tables (up to 20 tables).",
+        "Get detailed column schemas (names, types, comments, and sample values) for specified tables (up to 20 tables), plus governed relation paths touching those tables. Use these confirmed join keys instead of guessing joins.",
         GetTableInfoArgs.class,
         "{\"readOnlyHint\":true}",
         true
@@ -32,7 +32,7 @@ public enum McpToolType {
     LIST_TABLES(
         "list_tables_and_terms",
         "List Tables and Terms",
-        "List all available tables (with schema, name, and description; overview only, no columns) and business terms under the service scope. Use this tool when exploring the catalog or when keyword search returns no matches.",
+        "List all available tables (with schema, name, and description; overview only, no columns), governed table relations, and business terms under the service scope. Use this tool when exploring the catalog, planning joins, or when keyword search returns no matches.",
         ListTablesArgs.class,
         "{\"readOnlyHint\":true}",
         true
@@ -40,7 +40,7 @@ public enum McpToolType {
     SEARCH_SEMANTICS(
         "search_semantics",
         "Search Semantic Metrics",
-        "Search published business metrics by keywords, aliases, or question fragments. Use this before query_metric to discover the exact governed metric code, owner, grain, time field, dimensions, and required parameters.",
+        "Search published business metrics and governed table relations by keywords, aliases, or question fragments. Use this before query_metric or SQL planning to discover exact governed metric codes, required parameters, and confirmed join keys.",
         SearchSemanticsArgs.class,
         "{\"readOnlyHint\":true}",
         true

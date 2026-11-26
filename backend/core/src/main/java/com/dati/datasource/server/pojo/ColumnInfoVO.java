@@ -18,4 +18,8 @@ public class ColumnInfoVO extends BaseResourceVO {
 
     private Boolean extractValueEnabled;
 
+    private Boolean primaryKey;
+
+    private Boolean uniqueKey;
+
 }

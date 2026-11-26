@@ -18,4 +18,8 @@ public class ColumnInfo extends BaseResource {
 
     private Boolean extractValueEnabled;
 
+    private Boolean primaryKey;
+
+    private Boolean uniqueKey;
+
 }
