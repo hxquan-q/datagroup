@@ -24,7 +24,7 @@ class SearchSemanticsExecutorTest {
             "metric-1", "subject-1", "ds-1", "quality_daily_fpy", "质量日报 FPY",
             "Quality daily first pass yield", List.of("FPY", "质量合格率"), "owner",
             "day", "FDate", "Asia/Shanghai", List.of("workshop"),
-            "SELECT 1", List.of(), 30, 1000, 1);
+            "SELECT 1", List.of(new com.dati.semantic.domain.model.MetricParameter("start", "String", true, null, null)), 30, 1000, 1);
     }
 
     @Test
@@ -39,6 +39,8 @@ class SearchSemanticsExecutorTest {
         assertThat(result.metrics()).hasSize(1);
         assertThat(result.metrics().getFirst().code()).isEqualTo("quality_daily_fpy");
         assertThat(result.metrics().getFirst().allowedDimensions()).containsExactly("workshop");
+        assertThat(result.metrics().getFirst().callExample().metric()).isEqualTo("quality_daily_fpy");
+        assertThat(result.metrics().getFirst().callExample().arguments()).containsKey("start");
     }
 
     @Test

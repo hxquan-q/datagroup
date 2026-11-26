@@ -16,7 +16,7 @@ public enum McpToolType {
     SEARCH_METADATA(
         "search_tables_and_terms",
         "Search Tables and Terms",
-        "Search relevant database tables, column names, sample values, governed table relations, and business terms by keywords. Always use this tool first to discover the right tables, confirmed join keys, and terms instead of guessing tables or running exploratory SQL.",
+        "Search published metrics, database tables, column names, sample values, governed table relations, and business terms by keywords. Always use this unified entry first; it returns confirmed join keys and copyable query_metric call examples instead of requiring guessed tables or exploratory SQL.",
         SearchMetadataArgs.class,
         "{\"readOnlyHint\":true}",
         true

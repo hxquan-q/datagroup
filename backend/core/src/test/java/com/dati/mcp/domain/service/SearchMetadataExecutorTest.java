@@ -135,4 +135,26 @@ class SearchMetadataExecutorTest {
 
         assertThat(hit.relations()).containsExactly(visible);
     }
+    @Test
+    @DisplayName("unified search returns matching metrics with call examples")
+    void returnsMatchingMetricsWithExamples() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        when(semanticSearchService.search(List.of("close rate"), List.of(), List.of(), List.of()))
+            .thenReturn(new SearchResult(List.of(), List.of()));
+        com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft metric = new com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft(
+            "metric-1", "sub-1", "ds-1", "mo_close_rate", "工单关闭率", null,
+            List.of("close rate"), "owner", "day", "FCreateTime", "Asia/Shanghai", List.of(),
+            "SELECT 1", List.of(new com.dati.semantic.domain.model.MetricParameter("start", "String", true, null, null)),
+            30, 1000, 1);
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.SEARCH_METADATA,
+            new ToolConfig.SearchMetadataConfig(), new SearchMetadataArgs(List.of("close rate")), List.of(scope), List.of(metric));
+
+        SearchHit hit = (SearchHit) executor.execute(context);
+
+        assertThat(hit.metrics()).hasSize(1);
+        assertThat(hit.metrics().getFirst().code()).isEqualTo("mo_close_rate");
+        assertThat(hit.metrics().getFirst().callExample().arguments()).containsKey("start");
+    }
 }

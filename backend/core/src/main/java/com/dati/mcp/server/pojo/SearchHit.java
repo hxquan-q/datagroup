@@ -7,8 +7,14 @@ import java.util.List;
 
 public record SearchHit(List<String> keywords, List<DataSourceDef> dataSources,
                          List<TermDef> terms,
-                         List<McpServiceSnapshot.TableRelationDraft> relations) implements ToolTestData {
+                         List<McpServiceSnapshot.TableRelationDraft> relations,
+                         List<SemanticCatalog.SemanticMetric> metrics) implements ToolTestData {
     public SearchHit(List<String> keywords, List<DataSourceDef> dataSources, List<TermDef> terms) {
-        this(keywords, dataSources, terms, List.of());
+        this(keywords, dataSources, terms, List.of(), List.of());
+    }
+
+    public SearchHit(List<String> keywords, List<DataSourceDef> dataSources, List<TermDef> terms,
+                     List<McpServiceSnapshot.TableRelationDraft> relations) {
+        this(keywords, dataSources, terms, relations, List.of());
     }
 }
