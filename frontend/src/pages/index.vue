@@ -213,14 +213,14 @@ function go(path: string) {
       >
         <div class="module-topline">
           <span class="module-icon"><component :is="module.icon" :size="20" /></span>
-          <button
-            type="button"
+          <router-link
             class="module-arrow"
+            :to="module.path"
             :aria-label="`${t('home.openModule')}: ${module.statLabel}`"
-            @click.stop="go(module.path)"
+            @click.stop
           >
             <ArrowUpRight :size="17" />
-          </button>
+          </router-link>
         </div>
         <div class="module-stat-row">
           <div class="module-count">
