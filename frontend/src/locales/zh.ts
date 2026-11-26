@@ -325,6 +325,9 @@ export default {
     evidence: "推荐依据",
     confirm: "确认入库",
     confirmSuccess: "推荐关系已确认",
+    batchConfirm: "批量入库（{count}）",
+    batchConfirmSuccess: "已批量入库 {count} 条关系",
+    batchConfirmPartial: "{count} 条未入库，请检查是否重复或字段无效",
     emptyRecommendations: "暂无可推荐关系，请先完善字段别名、描述或字典值",
     evidenceLabels: {
       COLUMN_NAME_MATCH: "字段名匹配",

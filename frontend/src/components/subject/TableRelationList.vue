@@ -28,6 +28,8 @@ const recommendVisible = ref(false);
 const recommending = ref(false);
 const confirmingKey = ref("");
 const recommendations = ref<TableRelationRecommendationVO[]>([]);
+const selectedRecommendations = ref<TableRelationRecommendationVO[]>([]);
+const batchConfirming = ref(false);
 const tableOptions = computed(() => tables.value.map((table) => ({ label: table.name, value: table.id })));
 const cardinalityOptions = ["MANY_TO_ONE", "ONE_TO_ONE", "ONE_TO_MANY", "MANY_TO_MANY"];
 
@@ -132,6 +134,7 @@ async function openRecommendations() {
   recommendVisible.value = true;
   recommending.value = true;
   try {
+    selectedRecommendations.value = [];
     recommendations.value = await listTableRelationRecommendations(props.subjectId, 50);
   } catch (error) { notifyError(error, t("common.loadFailed")); }
   finally { recommending.value = false; }
@@ -153,6 +156,32 @@ async function confirmRecommendation(item: TableRelationRecommendationVO) {
     await loadRelations();
   } catch (error) { notifyError(error, t("common.operationFailed")); }
   finally { confirmingKey.value = ""; }
+}
+
+
+async function confirmSelectedRecommendations() {
+  if (!selectedRecommendations.value.length) return;
+  batchConfirming.value = true;
+  const results = await Promise.allSettled(selectedRecommendations.value.map((item) => createTableRelation(props.subjectId, {
+    fact_table_id: item.fact_table_id,
+    fact_column: item.fact_column,
+    dimension_table_id: item.dimension_table_id,
+    dimension_column: item.dimension_column,
+    cardinality: item.cardinality || "MANY_TO_ONE",
+  })));
+  const succeeded = new Set<string>();
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") succeeded.add(recommendationKey(selectedRecommendations.value[index]));
+  });
+  recommendations.value = recommendations.value.filter((item) => !succeeded.has(recommendationKey(item)));
+  selectedRecommendations.value = [];
+  batchConfirming.value = false;
+  if (succeeded.size) {
+    ElMessage.success(t("relation.batchConfirmSuccess", { count: succeeded.size }));
+    await loadRelations();
+  }
+  const failed = results.length - succeeded.size;
+  if (failed) ElMessage.warning(t("relation.batchConfirmPartial", { count: failed }));
 }
 
 async function remove(row: TableRelationVO) {
@@ -214,8 +243,14 @@ onMounted(() => { loadTables(); loadRelations(); });
     </div>
 
     <el-dialog v-model="recommendVisible" :title="t('relation.recommendTitle')" width="min(920px, calc(100vw - 32px))" destroy-on-close>
-      <div class="mb-3 text-xs leading-5 text-[var(--ep-text-color-secondary)]">{{ t("relation.recommendSubtitle") }}</div>
-      <el-table v-loading="recommending" :data="recommendations" border stripe max-height="520" class="w-full">
+      <div class="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="text-xs leading-5 text-[var(--ep-text-color-secondary)]">{{ t("relation.recommendSubtitle") }}</div>
+        <el-button type="primary" size="small" :disabled="!selectedRecommendations.length" :loading="batchConfirming" @click="confirmSelectedRecommendations">
+          {{ t("relation.batchConfirm", { count: selectedRecommendations.length }) }}
+        </el-button>
+      </div>
+      <el-table v-loading="recommending" :data="recommendations" border stripe max-height="520" class="w-full" @selection-change="selectedRecommendations = $event">
+        <el-table-column type="selection" width="42" />
         <el-table-column :label="t('relation.factTable')" min-width="170">
           <template #default="{ row }">
             <div class="font-medium">{{ row.fact_table_name || row.fact_table_id }}</div>

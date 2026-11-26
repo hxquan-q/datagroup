@@ -325,6 +325,9 @@ export default {
     evidence: "Evidence",
     confirm: "Confirm",
     confirmSuccess: "Recommended relation confirmed",
+    batchConfirm: "Confirm selected ({count})",
+    batchConfirmSuccess: "Confirmed {count} relations",
+    batchConfirmPartial: "{count} relations were not confirmed; check duplicates or invalid columns",
     emptyRecommendations: "No recommendations yet; enrich column aliases, descriptions, or dictionary values first",
     evidenceLabels: {
       COLUMN_NAME_MATCH: "Column names match",
