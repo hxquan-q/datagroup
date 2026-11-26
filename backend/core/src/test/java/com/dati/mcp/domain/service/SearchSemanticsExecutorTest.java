@@ -39,7 +39,7 @@ class SearchSemanticsExecutorTest {
         assertThat(result.metrics()).hasSize(1);
         assertThat(result.metrics().getFirst().code()).isEqualTo("quality_daily_fpy");
         assertThat(result.metrics().getFirst().allowedDimensions()).containsExactly("workshop");
-        assertThat(result.metrics().getFirst().callExample().metric()).isEqualTo("quality_daily_fpy");
+        assertThat(result.metrics().getFirst().callExample().metric()).isEqualTo("metric-1");
         assertThat(result.metrics().getFirst().callExample().arguments()).containsKey("start");
     }
 

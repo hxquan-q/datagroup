@@ -51,10 +51,19 @@ final class SemanticMetricSearch {
         Map<String, Object> arguments = new LinkedHashMap<>();
         for (MetricParameter parameter : metric.parameters()) {
             if (parameter != null && parameter.isRequired()) {
+                if (!supportsCopyableExample(parameter)) {
+                    return null;
+                }
                 arguments.put(parameter.getName(), exampleValue(parameter));
             }
         }
-        return new SemanticCatalog.MetricCallExample(metric.code(), arguments, List.of());
+        return new SemanticCatalog.MetricCallExample(metric.metricId(), arguments, List.of());
+    }
+
+    private static boolean supportsCopyableExample(MetricParameter parameter) {
+        String type = parameter.getType() == null ? "String" : parameter.getType().toLowerCase(Locale.ROOT);
+        return type.equals("string") || type.equals("number") || type.equals("integer")
+            || type.equals("boolean") || type.equals("datetime");
     }
 
     private static Object exampleValue(MetricParameter parameter) {
