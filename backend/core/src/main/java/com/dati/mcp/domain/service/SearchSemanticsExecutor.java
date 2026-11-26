@@ -23,6 +23,9 @@ public class SearchSemanticsExecutor implements ToolExecutor {
         SearchSemanticsArgs args = ctx.args(SearchSemanticsArgs.class);
         List<SemanticCatalog.SemanticMetric> metrics = SemanticMetricSearch.search(
             ctx.metrics(), args.keywords(), MAX_RESULTS);
-        return new SemanticCatalog(metrics, ctx.relations());
+        List<com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft> relations = ctx.relations().stream()
+            .filter(relation -> TableRelationSearch.relevant(relation, args.keywords(), List.of()))
+            .toList();
+        return new SemanticCatalog(metrics, relations);
     }
 }

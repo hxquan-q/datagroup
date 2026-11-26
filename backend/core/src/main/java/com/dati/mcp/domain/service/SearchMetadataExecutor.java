@@ -78,6 +78,7 @@ public class SearchMetadataExecutor implements ToolExecutor {
 
         List<McpServiceSnapshot.TableRelationDraft> relations = ctx.relations().stream()
                 .filter(relation -> McpScopeResolution.relationAllowed(ctx.scopeItems(), relation))
+                .filter(relation -> TableRelationSearch.relevant(relation, keywords, dataSources))
                 .toList();
 
         List<SemanticCatalog.SemanticMetric> metrics = SemanticMetricSearch.search(ctx.metrics(), keywords, 10);

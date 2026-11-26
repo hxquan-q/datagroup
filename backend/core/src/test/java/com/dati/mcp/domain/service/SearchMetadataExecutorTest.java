@@ -157,4 +157,26 @@ class SearchMetadataExecutorTest {
         assertThat(hit.metrics().getFirst().code()).isEqualTo("mo_close_rate");
         assertThat(hit.metrics().getFirst().callExample().arguments()).containsKey("start");
     }
+    @Test
+    @DisplayName("keyword search omits unrelated relations")
+    void keywordSearchOmitsUnrelatedRelations() {
+        McpServiceDataScope scope = new McpServiceDataScope();
+        scope.setScopeType(McpDataScopeType.DATA_SOURCE);
+        scope.setReferenceId("ds-1");
+        scope.setResolvedTables(List.of(
+            new McpResolvedTable("ds-1", "public", "orders"),
+            new McpResolvedTable("ds-1", "public", "customers"),
+            new McpResolvedTable("ds-1", "public", "payments")));
+        when(semanticSearchService.search(List.of("orders"), List.of(), List.of(), List.of()))
+            .thenReturn(new SearchResult(List.of(), List.of()));
+        TableRelationDraft unrelated = new TableRelationDraft(
+            "sub-1", "fact-id", "ds-1", "public", "payments", "customer_id",
+            "dim-id", "ds-1", "public", "customers", "id", "MANY_TO_ONE", "owner", 1);
+        ToolExecutionContext context = new ToolExecutionContext("svc-1", McpToolType.SEARCH_METADATA,
+            new ToolConfig.SearchMetadataConfig(), new SearchMetadataArgs(List.of("orders")), List.of(scope), List.of(), List.of(unrelated));
+
+        SearchHit hit = (SearchHit) executor.execute(context);
+
+        assertThat(hit.relations()).isEmpty();
+    }
 }
