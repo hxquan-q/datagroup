@@ -88,12 +88,19 @@ const visibleTableIds = computed(() => {
     props.tables.forEach((table) => ids.add(table.id));
     return ids;
   }
+  const directMatches = new Set<string>();
   for (const table of props.tables) {
-    if (tableMatches(table.id)) ids.add(table.id);
+    if (tableMatches(table.id)) directMatches.add(table.id);
   }
   for (const edge of relationEdges.value) {
-    if (ids.has(edge.factTableId)) ids.add(edge.dimensionTableId);
-    if (ids.has(edge.dimensionTableId)) ids.add(edge.factTableId);
+    if (directMatches.has(edge.factTableId)) {
+      ids.add(edge.factTableId);
+      ids.add(edge.dimensionTableId);
+    }
+    if (directMatches.has(edge.dimensionTableId)) {
+      ids.add(edge.dimensionTableId);
+      ids.add(edge.factTableId);
+    }
   }
   return ids;
 });
