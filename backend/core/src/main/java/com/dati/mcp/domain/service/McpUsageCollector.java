@@ -31,6 +31,7 @@ public class McpUsageCollector {
 
     private static final int MAX_QUEUE_CAPACITY = 10000;
     private static final int MAX_ERROR_LENGTH = 500;
+    private static final int MAX_EVIDENCE_LENGTH = 60000;
 
     private final McpInvocationLogDAO logDAO;
     private final McpUsageDailyStatDAO dailyStatDAO;
@@ -144,8 +145,8 @@ public class McpUsageCollector {
                         ? errorMessage.substring(0, MAX_ERROR_LENGTH)
                         : errorMessage);
                 }
-                po.setRequestParams(requestParams);
-                po.setExecutedSql(executedSql);
+                po.setRequestParams(truncate(requestParams, MAX_EVIDENCE_LENGTH));
+                po.setExecutedSql(truncate(executedSql, MAX_EVIDENCE_LENGTH));
                 po.setMetricCode(truncate(metricCode, 128));
                 po.setRowCount(rowCount);
                 logQueue.offer(po);

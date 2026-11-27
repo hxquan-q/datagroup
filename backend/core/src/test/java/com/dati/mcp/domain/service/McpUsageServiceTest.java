@@ -39,11 +39,14 @@ class McpUsageServiceTest {
     @Mock
     private McpUsageDailyStatDAO dailyStatDAO;
 
+    @Mock
+    private com.dati.permission.domain.service.PermissionService permissionService;
+
     private McpUsageService usageService;
 
     @BeforeEach
     void setUp() {
-        usageService = new McpUsageService(logDAO, dailyStatDAO, 15);
+        usageService = new McpUsageService(logDAO, dailyStatDAO, 15, permissionService);
     }
 
     @Test

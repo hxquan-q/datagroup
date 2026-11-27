@@ -80,14 +80,9 @@ public class McpReplayService {
         if (sqlProbe == null && arguments.get("sql") instanceof String paramSql) {
             sqlProbe = paramSql;
         }
-        if (sqlProbe != null) {
-            String normalized = sqlProbe.stripLeading().toLowerCase(java.util.Locale.ROOT);
-            boolean readOnly = normalized.startsWith("select") || normalized.startsWith("with")
-                || normalized.startsWith("explain") || normalized.startsWith("show");
-            if (!readOnly) {
-                throw new DatiException(ErrorCode.INVALID_PARAMETER,
-                    "Only read-only invocations can be replayed");
-            }
+        if (sqlProbe != null && !isReadOnlySql(sqlProbe)) {
+            throw new DatiException(ErrorCode.INVALID_PARAMETER,
+                "Only read-only invocations can be replayed");
         }
 
         McpReplayResultVO vo = new McpReplayResultVO();
@@ -130,6 +125,38 @@ public class McpReplayService {
         vo.setSqlChanged(log.getExecutedSql() != null && executedSql != null
             && !log.getExecutedSql().equals(executedSql));
         return vo;
+    }
+
+    /** Every statement in the batch must start with a read-only keyword after stripping comments. */
+    static boolean isReadOnlySql(String sql) {
+        for (String statement : sql.split(";")) {
+            String normalized = stripLeadingComments(statement).toLowerCase(java.util.Locale.ROOT);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            boolean readOnly = normalized.startsWith("select") || normalized.startsWith("with")
+                || normalized.startsWith("explain") || normalized.startsWith("show")
+                || normalized.startsWith("describe") || normalized.startsWith("desc");
+            if (!readOnly) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String stripLeadingComments(String sql) {
+        String remaining = sql.stripLeading();
+        while (true) {
+            if (remaining.startsWith("--")) {
+                int newline = remaining.indexOf('\n');
+                remaining = newline < 0 ? "" : remaining.substring(newline + 1).stripLeading();
+            } else if (remaining.startsWith("/*")) {
+                int end = remaining.indexOf("*/");
+                remaining = end < 0 ? "" : remaining.substring(end + 2).stripLeading();
+            } else {
+                return remaining;
+            }
+        }
     }
 
     private McpServiceSnapshot.SnapshotContent loadActiveSnapshot(McpServicePO service) {
