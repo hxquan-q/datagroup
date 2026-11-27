@@ -47,7 +47,7 @@ class McpProtocolHandlerTest {
             new ToolDefinitionConverter(new McpParameterSchemaGenerator()),
             new SnapshotToolResolver(),
             new ToolResultConverter(), new PromptDefinitionConverter(), List.of(executor),
-            new ToolParameterBinder());
+            new ToolParameterBinder(), new com.dati.mcp.domain.service.ToolResultCache());
         service = TestFixtures.createTestMcpServicePO();
         service.setStatus(com.dati.mcp.domain.model.McpServiceStatus.PUBLISHED);
         service.setActiveVersionId("snapshot-001");
