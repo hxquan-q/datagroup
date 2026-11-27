@@ -62,8 +62,8 @@
   --ep-border-radius-base: 10px;
   --xiaoai-motion: 160ms ease-out;
   --xiaoai-page-max: 1180px;
-  --xiaoai-surface-radius: 22px;
-  --xiaoai-surface-border: rgba(37, 99, 235, 0.12);
+  --xiaoai-surface-radius: 18px;
+  --xiaoai-surface-border: color-mix(in srgb, var(--ep-color-primary) 12%, transparent);
   --xiaoai-surface-shadow: 0 14px 40px rgba(15, 23, 42, 0.05);
 }
 
@@ -77,7 +77,7 @@ html.dark {
   --xiaoai-header-border: rgba(148, 163, 184, 0.12);
   --ep-color-primary: #60a5fa;
   --ep-color-primary-dark-2: #3b82f6;
-  --xiaoai-surface-border: rgba(96, 165, 250, 0.16);
+  --xiaoai-surface-border: color-mix(in srgb, var(--ep-color-primary) 18%, transparent);
   --xiaoai-surface-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
 }
 
@@ -226,7 +226,7 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
   border: 1px solid var(--xiaoai-surface-border);
   border-radius: var(--xiaoai-surface-radius);
   background:
-    linear-gradient(135deg, rgba(37, 99, 235, 0.07), transparent 46%),
+    linear-gradient(135deg, color-mix(in srgb, var(--ep-color-primary) 7%, transparent), transparent 46%),
     color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
   box-shadow: var(--xiaoai-surface-shadow);
 }
@@ -234,8 +234,8 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 .page-heading h1 {
   margin: 0;
   color: var(--ep-text-color-primary);
-  font-size: 26px;
-  font-weight: 760;
+  font-size: 24px;
+  font-weight: 720;
   letter-spacing: -0.03em;
   line-height: 1.15;
 }
@@ -284,6 +284,7 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
   border: 0;
   border-radius: 0;
   background: transparent;
+  box-shadow: none;
   padding: 0;
 }
 
@@ -303,6 +304,7 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
   border: 0;
   border-radius: 0;
   background: transparent;
+  box-shadow: none;
 }
 
 .scope-panel .data-table-footer {
