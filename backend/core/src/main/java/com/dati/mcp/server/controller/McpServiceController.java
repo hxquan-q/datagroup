@@ -12,6 +12,8 @@ import com.dati.mcp.domain.service.McpServiceDataScopeService;
 import com.dati.mcp.domain.service.McpServicePublishService;
 import com.dati.mcp.domain.service.McpServiceService;
 import com.dati.mcp.domain.service.McpUsageService;
+import com.dati.mcp.server.pojo.McpReplayResultVO;
+import com.dati.mcp.domain.service.McpReplayService;
 import com.dati.mcp.repository.po.McpInvocationLogPO;
 import com.dati.mcp.server.assembler.McpDataScopeAssembler;
 import com.dati.mcp.server.assembler.McpServiceAssembler;
@@ -19,6 +21,7 @@ import com.dati.mcp.server.assembler.McpUsageAssembler;
 import com.dati.mcp.server.pojo.DataScopeRequest;
 import com.dati.mcp.server.pojo.DataScopeResponse;
 import com.dati.mcp.server.pojo.McpInvocationLogVO;
+import com.dati.mcp.server.pojo.McpReplayResultVO;
 import com.dati.mcp.server.pojo.McpServiceCreateRequest;
 import com.dati.mcp.server.pojo.McpServiceDiffVO;
 import com.dati.mcp.server.pojo.McpServiceSnapshotVO;
@@ -58,6 +61,7 @@ public class McpServiceController {
     private final McpServicePublishService publishService;
     private final McpUsageService mcpUsageService;
     private final McpUsageAssembler mcpUsageAssembler;
+    private final McpReplayService mcpReplayService;
 
     public McpServiceController(McpServiceService mcpServiceService,
                                 McpServiceAssembler mcpServiceAssembler,
@@ -65,7 +69,8 @@ public class McpServiceController {
                                 McpDataScopeAssembler dataScopeAssembler,
                                 McpServicePublishService publishService,
                                 McpUsageService mcpUsageService,
-                                McpUsageAssembler mcpUsageAssembler) {
+                                McpUsageAssembler mcpUsageAssembler,
+                                McpReplayService mcpReplayService) {
         this.mcpServiceService = mcpServiceService;
         this.mcpServiceAssembler = mcpServiceAssembler;
         this.dataScopeService = dataScopeService;
@@ -73,6 +78,7 @@ public class McpServiceController {
         this.publishService = publishService;
         this.mcpUsageService = mcpUsageService;
         this.mcpUsageAssembler = mcpUsageAssembler;
+        this.mcpReplayService = mcpReplayService;
     }
 
     @DeleteMapping("/{id}")
@@ -191,6 +197,11 @@ public class McpServiceController {
     public McpUsageStatsVO getUsageStats(@PathVariable String id,
                                          @RequestParam(defaultValue = "15") int days) {
         return mcpUsageService.getUsageStats(id, days);
+    }
+
+    @PostMapping("/{id}/invocation-logs/{logId}/replay")
+    public McpReplayResultVO replayInvocationLog(@PathVariable String id, @PathVariable String logId) {
+        return mcpReplayService.replay(id, logId);
     }
 
     @GetMapping("/{id}/invocation-logs")

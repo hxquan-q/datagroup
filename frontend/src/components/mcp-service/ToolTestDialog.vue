@@ -150,6 +150,10 @@ const handleTestClick = async () => {
           v-else-if="tool?.tool_type === 'QUERY_METRIC'"
           ref="paramRef"
         />
+        <InspectMetricParams
+          v-else-if="tool?.tool_type === 'INSPECT_METRIC'"
+          ref="paramRef"
+        />
         <ListTablesParams
           v-else-if="tool?.tool_type === 'LIST_TABLES'"
           ref="paramRef"

@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -155,7 +156,97 @@ public class McpEndpointService {
         String callerId = user != null ? user.getId() : null;
         String callerName = user != null ? user.getName() : null;
 
-        usageCollector.record(serviceId, method, toolName, callerId, callerName, clientIp, success, durationMs, errorMessage);
+        String requestParams = extractArgumentsJson(req);
+        String executedSql = null;
+        String metricCode = extractMetricCode(req);
+        Integer rowCount = null;
+        if (resp != null && resp.result() instanceof McpSchema.CallToolResult callResult
+            && !Boolean.TRUE.equals(callResult.isError()) && callResult.structuredContent() instanceof Map<?, ?> structuredMap) {
+            executedSql = extractEvidenceSql((Map<String, Object>) structuredMap);
+            rowCount = extractEvidenceRowCount((Map<String, Object>) structuredMap);
+        }
+
+        usageCollector.record(serviceId, method, toolName, callerId, callerName, clientIp,
+            success, durationMs, errorMessage, requestParams, executedSql, metricCode, rowCount);
+    }
+
+
+    private String extractArgumentsJson(McpSchema.JSONRPCRequest req) {
+        try {
+            if (!McpSchema.METHOD_TOOLS_CALL.equals(req.method())) {
+                return null;
+            }
+            var callReq = jsonMapper.convertValue(req.params(), McpSchema.CallToolRequest.class);
+            if (callReq == null || callReq.arguments() == null || callReq.arguments().isEmpty()) {
+                return null;
+            }
+            return jsonMapper.writeValueAsString(callReq.arguments());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String extractMetricCode(McpSchema.JSONRPCRequest req) {
+        try {
+            if (!McpSchema.METHOD_TOOLS_CALL.equals(req.method())) {
+                return null;
+            }
+            var callReq = jsonMapper.convertValue(req.params(), McpSchema.CallToolRequest.class);
+            if (callReq == null || callReq.arguments() == null) {
+                return null;
+            }
+            Object metric = callReq.arguments().get("metric");
+            return metric instanceof String text && !text.isBlank() ? text : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractEvidenceSql(Map<String, Object> structured) {
+        Object sql = structured.get("executed_sql");
+        if (sql instanceof String text) {
+            return text;
+        }
+        Object execution = structured.get("execution");
+        if (execution instanceof Map<?, ?> executionMap) {
+            Object nested = ((Map<String, Object>) executionMap).get("executed_sql");
+            return nested instanceof String text ? text : null;
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Integer extractEvidenceRowCount(Map<String, Object> structured) {
+        Object execution = structured.containsKey("execution") ? structured.get("execution") : structured;
+        if (!(execution instanceof Map<?, ?> executionMap)) {
+            return null;
+        }
+        Object results = ((Map<String, Object>) executionMap).get("results");
+        if (!(results instanceof List<?> rows)) {
+            return null;
+        }
+        int total = 0;
+        boolean counted = false;
+        for (Object item : rows) {
+            if (item instanceof Map<?, ?> itemMap) {
+                Object count = ((Map<String, Object>) itemMap).get("row_count");
+                if (!(count instanceof Number)) {
+                    count = ((Map<String, Object>) itemMap).get("returned_rows");
+                }
+                if (count instanceof Number number) {
+                    total += number.intValue();
+                    counted = true;
+                } else {
+                    Object rowsData = ((Map<String, Object>) itemMap).get("rows");
+                    if (rowsData instanceof List<?> rowList) {
+                        total += rowList.size();
+                        counted = true;
+                    }
+                }
+            }
+        }
+        return counted ? total : null;
     }
 
     private String extractToolName(McpSchema.JSONRPCRequest req) {

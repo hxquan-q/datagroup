@@ -11,6 +11,7 @@ import type {
   TableListData,
   SemanticCatalog,
   MetricExecution,
+  MetricInspection,
 } from "~/api/mcp-tool-test";
 
 const props = defineProps<{
@@ -106,6 +107,10 @@ const errorAdvice = computed(() => {
       <MetricExecutionResult
         v-else-if="response.data?.type === 'METRIC_EXECUTION'"
         :data="response.data as MetricExecution"
+      />
+      <MetricInspectionResult
+        v-else-if="response.data?.type === 'METRIC_INSPECTION'"
+        :data="response.data as MetricInspection"
       />
     </template>
   </div>

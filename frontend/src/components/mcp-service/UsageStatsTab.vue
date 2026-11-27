@@ -19,6 +19,8 @@ const props = defineProps<{ serviceId: string }>();
 
 const selectedLog = ref<McpInvocationLogVO | null>(null);
 const logDetailVisible = ref(false);
+const replaying = ref(false);
+const replayResult = ref<any>(null);
 const isPhoneDrawer = useMediaQuery("(max-width: 440px)");
 const logDetailDrawerSize = computed(() => (isPhoneDrawer.value ? "100%" : "440px"));
 const chartColors = useChartColors();
@@ -256,8 +258,21 @@ const handleSizeChange = (newSize: number) => {
 };
 
 const openLogDetail = (log: McpInvocationLogVO) => {
+  replayResult.value = null;
   selectedLog.value = log;
   logDetailVisible.value = true;
+};
+
+const handleReplay = async () => {
+  if (!selectedLog.value || replaying.value) return;
+  replaying.value = true;
+  try {
+    replayResult.value = await replayInvocationLog(props.serviceId, selectedLog.value.id);
+  } catch {
+    replayResult.value = null;
+  } finally {
+    replaying.value = false;
+  }
 };
 
 watch(
@@ -562,6 +577,15 @@ watch(
               {{ selectedLog.success ? t("mcpService.stats.statusSuccess") : t("mcpService.stats.statusFailed") }}
             </el-tag>
             <el-button
+              v-if="selectedLog.method === 'tools/call' && selectedLog.request_params"
+              type="primary"
+              size="small"
+              :loading="replaying"
+              @click="handleReplay"
+            >
+              {{ t("mcpService.stats.replay") }}
+            </el-button>
+            <el-button
               link
               :icon="Close"
               :aria-label="t('common.close')"
@@ -608,9 +632,55 @@ watch(
           </dl>
         </div>
 
+        <div v-if="selectedLog.metric_code || selectedLog.row_count != null" class="detail-section">
+          <div class="detail-section-title">{{ t("mcpService.stats.evidence") }}</div>
+          <dl class="detail-list">
+            <div v-if="selectedLog.metric_code">
+              <dt>{{ t("mcpService.stats.hitMetric") }}</dt>
+              <dd class="font-mono">{{ selectedLog.metric_code }}</dd>
+            </div>
+            <div v-if="selectedLog.row_count != null">
+              <dt>{{ t("mcpService.stats.rowCount") }}</dt>
+              <dd>{{ selectedLog.row_count }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div v-if="selectedLog.executed_sql" class="detail-section">
+          <div class="detail-section-title">{{ t("mcpService.stats.executedSql") }}</div>
+          <pre>{{ selectedLog.executed_sql }}</pre>
+        </div>
+
+        <div v-if="selectedLog.request_params" class="detail-section">
+          <div class="detail-section-title">{{ t("mcpService.stats.requestParams") }}</div>
+          <pre>{{ selectedLog.request_params }}</pre>
+        </div>
+
         <div v-if="selectedLog.error_message" class="detail-section error-section">
           <div class="detail-section-title">{{ t("mcpService.stats.errorMessage") }}</div>
           <pre>{{ selectedLog.error_message }}</pre>
+        </div>
+
+        <div v-if="replayResult" class="detail-section">
+          <div class="detail-section-title">{{ t("mcpService.stats.replayResult") }}</div>
+          <dl class="detail-list">
+            <div>
+              <dt>{{ t("mcpService.stats.replaySuccess") }}</dt>
+              <dd>{{ replayResult.replay_success ? t("mcpService.stats.statusSuccess") : t("mcpService.stats.statusFailed") }}</dd>
+            </div>
+            <div v-if="replayResult.replay_row_count != null">
+              <dt>{{ t("mcpService.stats.rowCount") }}</dt>
+              <dd>
+                {{ replayResult.replay_row_count }}
+                <el-tag v-if="replayResult.row_count_match" size="small" type="success" effect="plain">{{ t("mcpService.stats.rowsMatch") }}</el-tag>
+                <el-tag v-else size="small" type="warning" effect="plain">{{ t("mcpService.stats.rowsDiffer") }}</el-tag>
+              </dd>
+            </div>
+            <div v-if="replayResult.sql_changed">
+              <dt>{{ t("mcpService.stats.sqlDrift") }}</dt>
+              <dd class="text-[var(--ep-color-warning)]">{{ t("mcpService.stats.sqlChanged") }}</dd>
+            </div>
+          </dl>
         </div>
       </div>
     </el-drawer>

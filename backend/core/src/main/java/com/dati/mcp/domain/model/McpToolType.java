@@ -2,6 +2,7 @@ package com.dati.mcp.domain.model;
 
 import com.dati.mcp.domain.model.param.ExecuteSqlArgs;
 import com.dati.mcp.domain.model.param.GetTableInfoArgs;
+import com.dati.mcp.domain.model.param.InspectMetricArgs;
 import com.dati.mcp.domain.model.param.ListTablesArgs;
 import com.dati.mcp.domain.model.param.SearchMetadataArgs;
 import com.dati.mcp.domain.model.param.SearchSemanticsArgs;
@@ -50,6 +51,14 @@ public enum McpToolType {
         "Query Metric",
         "Execute a published governed metric by metric ID, stable code, business name, or alias. Use search_semantics first; pass the metric-specific parameters in arguments.",
         QueryMetricArgs.class,
+        "{\"readOnlyHint\":true}",
+        true
+    ),
+    INSPECT_METRIC(
+        "inspect_metric",
+        "Inspect Metric",
+        "Inspect a published governed metric before querying: measure expression, fact table, allowed dimensions with table/column mappings, time field, confirmed join paths, parameters, and a copyable query_metric example. Use this after search_semantics when unsure about metric parameters or dimensions.",
+        InspectMetricArgs.class,
         "{\"readOnlyHint\":true}",
         true
     ),
@@ -118,6 +127,7 @@ public enum McpToolType {
             case LIST_TABLES -> new ToolConfig.ListTablesConfig();
             case SEARCH_SEMANTICS -> new ToolConfig.SearchSemanticsConfig();
             case QUERY_METRIC -> new ToolConfig.QueryMetricConfig();
+            case INSPECT_METRIC -> new ToolConfig.QueryMetricConfig();
             case EXECUTE_SQL -> new ToolConfig.ExecuteSqlConfig();
             case UPDATE_TABLE_INFO, UPDATE_COLUMN_INFO, UPSERT_TERM -> new ToolConfig.UpdateMetadataConfig();
             case PARAMETERIZED_SQL -> new ToolConfig.ParamSqlConfig();
