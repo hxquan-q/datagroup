@@ -14,7 +14,8 @@ import java.util.Set;
  */
 public final class ExplainGuardrail {
 
-    private static final Set<DbType> MYSQL_FAMILY = Set.of(DbType.MYSQL, DbType.MARIADB, DbType.DORIS);
+    /** Doris/ClickHouse column stores lack MySQL-format EXPLAIN JSON and scan columns by design. */
+    private static final Set<DbType> MYSQL_FAMILY = Set.of(DbType.MYSQL, DbType.MARIADB);
 
     private ExplainGuardrail() {
     }
