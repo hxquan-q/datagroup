@@ -104,7 +104,7 @@ const handleCopy = async (endpointPath: string) => {
       <template #default="{ row }">
         <div v-if="row.endpoint_path" class="flex items-center gap-1.5 min-w-0">
           <el-tooltip :content="row.endpoint_path" placement="top" :show-after="300">
-            <code class="text-xs px-1.5 py-0.5 rounded bg-[var(--ep-fill-color-light)] text-[var(--ep-text-color-primary)] font-mono truncate flex-1 min-w-0">
+            <code tabindex="0" class="text-xs px-1.5 py-0.5 rounded bg-[var(--ep-fill-color-light)] text-[var(--ep-text-color-primary)] font-mono truncate flex-1 min-w-0">
               {{ row.endpoint_path }}
             </code>
           </el-tooltip>
