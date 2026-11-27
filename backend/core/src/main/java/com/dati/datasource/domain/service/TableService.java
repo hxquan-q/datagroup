@@ -1,6 +1,7 @@
 package com.dati.datasource.domain.service;
 
 import com.dati.base.RequestContext;
+import com.dati.mcp.domain.service.ToolResultCache;
 import com.dati.base.exception.DatiException;
 import com.dati.base.exception.ErrorCode;
 import com.dati.base.pojo.BasePO;
@@ -30,6 +31,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -55,11 +58,12 @@ public class TableService {
     private final TableRelationDAO tableRelationDAO;
     private final TableForeignKeyDAO tableForeignKeyDAO;
     private final TableStructureSyncService tableStructureSyncService;
+    private final ToolResultCache toolResultCache;
 
     public TableService(TableInfoDAO tableInfoDAO, ColumnInfoDAO columnInfoDAO,
                         JdbcMetaService jdbcMetaService, SemanticIndexService semanticIndexService,
                         PermissionService permissionService, TermRelationDAO termRelationDAO, TableRelationDAO tableRelationDAO, TableForeignKeyDAO tableForeignKeyDAO,
-                        TableStructureSyncService tableStructureSyncService) {
+                        TableStructureSyncService tableStructureSyncService, ToolResultCache toolResultCache) {
         this.tableInfoDAO = tableInfoDAO;
         this.columnInfoDAO = columnInfoDAO;
         this.jdbcMetaService = jdbcMetaService;
@@ -69,6 +73,7 @@ public class TableService {
         this.tableRelationDAO = tableRelationDAO;
         this.tableForeignKeyDAO = tableForeignKeyDAO;
         this.tableStructureSyncService = tableStructureSyncService;
+        this.toolResultCache = toolResultCache;
     }
 
     public Page<TableInfo> getTables(PageReq pageReq, String datasourceId, String keyword) {
@@ -284,6 +289,7 @@ public class TableService {
         }
         // Flush before updating the derived table document.
         tableInfoDAO.saveAndFlush(existingPO);
+        invalidateToolResultsAfterCommit();
 
         EntityReference entity = EntityReference.builder()
                 .datasourceId(existingPO.getDataSourceId())
@@ -320,5 +326,19 @@ public class TableService {
             throw new DatiException(ErrorCode.DS_TABLE_NOT_FOUND, tableId);
         }
         return po;
+    }
+
+    /** Cached MCP SQL results were checked against the previous table settings. */
+    private void invalidateToolResultsAfterCommit() {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            toolResultCache.invalidateResults();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                toolResultCache.invalidateResults();
+            }
+        });
     }
 }
