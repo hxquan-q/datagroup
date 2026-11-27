@@ -22,7 +22,7 @@ defineEmits<{ (e: "update:modelValue", v: any): void }>();
     v-else-if="parameter.type === 'Number'"
     type="number"
     :model-value="modelValue"
-    @update:model-value="$emit('update:modelValue', $event === '' ? undefined : Number($event))"
+    @update:model-value="$emit('update:modelValue', $event === '' ? undefined : Number.isSafeInteger(Number($event)) ? Number($event) : $event)"
     :size="size"
     class="w-full"
   >

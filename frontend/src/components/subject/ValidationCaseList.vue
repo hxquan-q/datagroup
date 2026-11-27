@@ -115,23 +115,12 @@ function syncArgumentsJson() {
 
 function initializeArguments(existing?: Record<string, unknown>) {
   const source = { ...(existing || {}) } as Record<string, any>;
-  for (const parameter of metricParameters.value) {
-    if (source[parameter.name] === undefined && parameter.default_value !== undefined) {
-      source[parameter.name] = parameter.default_value;
-    }
-  }
   structuredArguments.value = source;
   syncArgumentsJson();
 }
 
 function onMetricChanged() {
   const current = { ...structuredArguments.value };
-  const allowed = new Set(metricParameters.value.map((parameter) => parameter.name));
-  if (metricParameters.value.length) {
-    for (const key of Object.keys(current)) {
-      if (!allowed.has(key)) delete current[key];
-    }
-  }
   initializeArguments(current);
 }
 
