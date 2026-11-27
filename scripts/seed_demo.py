@@ -20,8 +20,10 @@ Env overrides: SEED_BACKEND_URL, SEED_ADMIN_NAME, SEED_ADMIN_PASSWORD,
 
 import json
 import os
+import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -88,35 +90,65 @@ def docker_state(name):
     return r.stdout.strip() if r.returncode == 0 else None
 
 
+def container_on_port(port):
+    r = sh(f"docker ps --filter publish={port} --format '{{{{.Names}}}}'")
+    names = r.stdout.split()
+    return names[0] if names else None
+
+
+def port_open(port):
+    with socket.socket() as s:
+        s.settimeout(1)
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
 def ensure_containers():
+    """Start demo containers and return the name of the mysql container to seed.
+
+    A port already served by another docker container (e.g. one started with
+    docker compose per docs/development.md) is reused instead of failing."""
     if docker_state(ES_CONTAINER) is None:
-        log(f"creating {ES_CONTAINER} ({ES_IMAGE}, first pull may take minutes)")
-        r = sh(
-            f"docker run -d --name {ES_CONTAINER} -p {ES_PORT}:9200"
-            " -e discovery.type=single-node -e xpack.security.enabled=true"
-            f" -e ELASTIC_PASSWORD={ES_PASSWORD}"
-            ' -e "ES_JAVA_OPTS=-Xms512m -Xmx512m"'
-            f" {ES_IMAGE}"
-        )
-        if r.returncode != 0:
-            sys.exit(f"failed to start elasticsearch container: {r.stderr.strip()}")
+        owner = container_on_port(ES_PORT)
+        if owner:
+            log(f"port {ES_PORT} already served by container {owner}, reusing it")
+        elif port_open(ES_PORT):
+            sys.exit(f"port {ES_PORT} is in use by a non-docker service; set SEED_ES_PORT or stop it first")
+        else:
+            log(f"creating {ES_CONTAINER} ({ES_IMAGE}, first pull may take minutes)")
+            r = sh(
+                f"docker run -d --name {ES_CONTAINER} -p 127.0.0.1:{ES_PORT}:9200"
+                " -e discovery.type=single-node -e xpack.security.enabled=true"
+                f" -e ELASTIC_PASSWORD={ES_PASSWORD}"
+                ' -e "ES_JAVA_OPTS=-Xms512m -Xmx512m"'
+                f" {ES_IMAGE}"
+            )
+            if r.returncode != 0:
+                sys.exit(f"failed to start elasticsearch container: {r.stderr.strip()}")
     elif docker_state(ES_CONTAINER) != "running":
         sh(f"docker start {ES_CONTAINER}")
 
+    mysql = MYSQL_CONTAINER
     if docker_state(MYSQL_CONTAINER) is None:
-        log(f"creating {MYSQL_CONTAINER} ({MYSQL_IMAGE})")
-        r = sh(
-            f"docker run -d --name {MYSQL_CONTAINER} -p {MYSQL_PORT}:3306"
-            f" -e MYSQL_ROOT_PASSWORD={MYSQL_PASSWORD} -e MYSQL_DATABASE={PREFIX}_prod"
-            f" {MYSQL_IMAGE} --default-authentication-plugin=mysql_native_password"
-        )
-        if r.returncode != 0:
-            sys.exit(f"failed to start mysql container: {r.stderr.strip()}")
+        owner = container_on_port(MYSQL_PORT)
+        if owner:
+            log(f"port {MYSQL_PORT} already served by container {owner}, reusing it")
+            mysql = owner
+        elif port_open(MYSQL_PORT):
+            sys.exit(f"port {MYSQL_PORT} is in use by a non-docker service; set SEED_MYSQL_PORT or stop it first")
+        else:
+            log(f"creating {MYSQL_CONTAINER} ({MYSQL_IMAGE})")
+            r = sh(
+                f"docker run -d --name {MYSQL_CONTAINER} -p 127.0.0.1:{MYSQL_PORT}:3306"
+                f" -e MYSQL_ROOT_PASSWORD={MYSQL_PASSWORD} -e MYSQL_DATABASE={PREFIX}_prod"
+                f" {MYSQL_IMAGE} --default-authentication-plugin=mysql_native_password"
+            )
+            if r.returncode != 0:
+                sys.exit(f"failed to start mysql container: {r.stderr.strip()}")
     elif docker_state(MYSQL_CONTAINER) != "running":
         sh(f"docker start {MYSQL_CONTAINER}")
 
     for attempt in range(90):
-        if sh(f"docker exec {MYSQL_CONTAINER} mysqladmin ping -uroot -p{MYSQL_PASSWORD} 2>/dev/null").returncode == 0:
+        if sh(f"docker exec {mysql} mysqladmin ping -uroot -p{MYSQL_PASSWORD} 2>/dev/null").returncode == 0:
             break
         time.sleep(2)
     else:
@@ -131,15 +163,20 @@ def ensure_containers():
     else:
         sys.exit("elasticsearch did not become ready in time")
     log("elasticsearch is ready")
+    return mysql
 
 
-def seed_mysql():
-    sql_file = "/tmp/seed_demo.sql"
-    with open(sql_file, "w") as f:
-        f.write(SEED_SQL)
-    r = sh(f"docker exec -i {MYSQL_CONTAINER} mysql -uroot -p{MYSQL_PASSWORD} {PREFIX}_prod < {sql_file} 2>/dev/null")
-    if r.returncode != 0:
-        sys.exit(f"failed to seed mysql tables: {r.stderr.strip()}")
+def seed_mysql(mysql):
+    sql = f"CREATE DATABASE IF NOT EXISTS {PREFIX}_prod;\nUSE {PREFIX}_prod;\n" + SEED_SQL
+    fd, sql_file = tempfile.mkstemp(suffix=".sql", prefix="seed_demo_")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(sql)
+        r = sh(f"docker exec -i {mysql} mysql -uroot -p{MYSQL_PASSWORD} < {sql_file} 2>/dev/null")
+        if r.returncode != 0:
+            sys.exit(f"failed to seed mysql tables: {r.stderr.strip()}")
+    finally:
+        os.unlink(sql_file)
     log(f"mysql demo tables seeded in {PREFIX}_prod")
 
 
@@ -164,7 +201,7 @@ def api(method, path, body=None, token=None, tolerate=(400, 404, 409)):
     except urllib.error.URLError:
         sys.exit(
             f"backend unreachable at {BACKEND} — start it first, e.g.\n"
-            f"  JWT_SECRET=dev-secret SPRING_ELASTICSEARCH_PASSWORD={ES_PASSWORD}"
+            f"  JWT_SECRET=dev-secret-key-for-local-demo-seed-0123456789 SPRING_ELASTICSEARCH_PASSWORD={ES_PASSWORD}"
             f" SPRING_ELASTICSEARCH_URIS=http://localhost:{ES_PORT} ADMIN_USERS={ADMIN_NAME}"
             " mvn -q -pl app spring-boot:run   (from backend/)"
         )
@@ -176,8 +213,8 @@ def paged_get(path, token):
 
 
 def main():
-    ensure_containers()
-    seed_mysql()
+    mysql = ensure_containers()
+    seed_mysql(mysql)
 
     # User registration errors (already exists) are fine.
     api("POST", "/v1/auth/register", {"name": ADMIN_NAME, "password": ADMIN_PASSWORD, "display_name": ADMIN_NAME})
