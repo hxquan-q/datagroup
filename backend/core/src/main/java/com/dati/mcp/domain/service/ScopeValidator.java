@@ -63,9 +63,16 @@ public class ScopeValidator {
             if (tryResolve(ref, defaultSchema, allowed)) continue;
             boolean hasSubjectScope = scopeItems.stream()
                 .anyMatch(item -> item.getScopeType() == com.dati.mcp.domain.model.McpDataScopeType.SUBJECT);
-            String ownerAction = hasSubjectScope
-                ? "ask the service owner to import this table into the subject"
-                : "ask the service owner to widen the service's schema scope";
+            boolean hasSchemaWide = scopeItems.stream()
+                .anyMatch(item -> item.getAccessMode() == com.dati.mcp.domain.model.McpDataScopeAccessMode.SCHEMA_SCOPE);
+            String ownerAction;
+            if (hasSubjectScope) {
+                ownerAction = "ask the service owner to import this table into the subject";
+            } else if (hasSchemaWide) {
+                ownerAction = "ask the service owner to widen the service's schema scope";
+            } else {
+                ownerAction = "ask the service owner to import this table into the service's data scope";
+            }
             throw new ToolExecuteException(ToolError.SCOPE_VIOLATION,
                 "Table " + ref.qualifiedName() + " is outside this service's data scope"
                     + " (system catalogs are never accessible)."
