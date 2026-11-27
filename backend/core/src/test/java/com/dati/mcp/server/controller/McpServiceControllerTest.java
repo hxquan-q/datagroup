@@ -87,6 +87,9 @@ class McpServiceControllerTest {
     @MockitoBean
     private McpUsageAssembler mcpUsageAssembler;
 
+    @MockitoBean
+    private com.dati.mcp.domain.service.McpReplayService mcpReplayService;
+
     private McpService testService;
 
     @BeforeEach

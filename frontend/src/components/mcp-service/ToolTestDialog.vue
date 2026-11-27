@@ -115,6 +115,16 @@ const handleTestClick = async () => {
           ref="paramRef"
           :data-sources="dataSources"
         />
+        <ExecuteQueryBatchParams
+          v-else-if="tool?.tool_type === 'EXECUTE_QUERY_BATCH'"
+          ref="paramRef"
+          :data-sources="dataSources"
+        />
+        <GetSampleDataParams
+          v-else-if="tool?.tool_type === 'GET_SAMPLE_DATA'"
+          ref="paramRef"
+          :data-sources="dataSources"
+        />
         <ParameterizedSqlParams
           v-else-if="tool?.tool_type === 'PARAMETERIZED_SQL'"
           ref="paramRef"

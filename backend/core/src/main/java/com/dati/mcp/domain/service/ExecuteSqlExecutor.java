@@ -3,6 +3,7 @@ package com.dati.mcp.domain.service;
 import com.dati.datasource.domain.model.DataSource;
 import com.dati.datasource.domain.service.DataSourceService;
 import com.dati.db.HikariPoolManager;
+import com.dati.db.analysis.SqlOperationType;
 import com.dati.db.JdbcConnector;
 import com.dati.db.analysis.SqlAnalysisResult;
 import com.dati.db.analysis.SqlAnalyzer;
@@ -69,6 +70,7 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         try (Connection conn = HikariPoolManager.getConnection(connector);
              Statement stmt = conn.createStatement()) {
             stmt.setQueryTimeout(config.getTimeout());
+            enforcePlanGuardrail(conn, sql, analysis, config, dataSource.getType());
             stmt.setMaxRows(SqlExecutorHelper.probeRowLimit(config.getMaxRows()));
             stmt.execute(sql);
             results = SqlExecutorHelper.collect(stmt, config.getMaxRows());
@@ -79,6 +81,42 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         registerCreatedTables(dsId, analysis, dataSource.getDefaultSchema(), ctx.serviceId());
 
         return new SqlExecution(sql, results, null);
+    }
+
+    private void enforcePlanGuardrail(Connection conn, String sql, SqlAnalysisResult analysis,
+                                      ExecuteSqlConfig config, com.dati.db.DbType dbType) {
+        if (config.getMaxExplainRows() <= 0 || !ExplainGuardrail.supports(dbType)) {
+            return;
+        }
+        if (analysis.type() != SqlOperationType.SELECT) {
+            return;
+        }
+        try {
+            runExplain(conn, sql, config);
+        } catch (ToolExecuteException e) {
+            throw e;
+        } catch (Exception e) {
+            log.debug("EXPLAIN guardrail skipped: {}", e.getMessage());
+        }
+    }
+
+    private void runExplain(Connection conn, String sql, ExecuteSqlConfig config) throws SQLException {
+        try (Statement explain = conn.createStatement();
+             java.sql.ResultSet rs = explain.executeQuery("EXPLAIN FORMAT=JSON " + sql)) {
+            if (rs == null || !rs.next()) {
+                return;
+            }
+            String planJson = rs.getString(1);
+            if (planJson == null) {
+                return;
+            }
+            List<ExplainGuardrail.Offender> offenders =
+                ExplainGuardrail.inspectMySqlPlan(planJson, config.getMaxExplainRows());
+            if (!offenders.isEmpty()) {
+                throw new ToolExecuteException(ToolError.SCAN_LIMIT_EXCEEDED,
+                    ExplainGuardrail.rejectionMessage(offenders, config.getMaxExplainRows()));
+            }
+        }
     }
 
     private void registerCreatedTables(String dsId, SqlAnalysisResult analysis,

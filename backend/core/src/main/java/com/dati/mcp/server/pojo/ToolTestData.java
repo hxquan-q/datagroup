@@ -13,5 +13,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(value = SemanticCatalog.class, name = "SEMANTIC_CATALOG"),
     @JsonSubTypes.Type(value = MetricExecution.class, name = "METRIC_EXECUTION"),
     @JsonSubTypes.Type(value = MetricInspection.class, name = "METRIC_INSPECTION"),
+    @JsonSubTypes.Type(value = SampleData.class, name = "SAMPLE_DATA"),
+    @JsonSubTypes.Type(value = BatchExecution.class, name = "BATCH_EXECUTION"),
 })
 public interface ToolTestData {}
