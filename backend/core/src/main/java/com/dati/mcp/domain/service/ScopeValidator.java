@@ -61,11 +61,16 @@ public class ScopeValidator {
             }
             if (allowed.contains(ref)) continue;
             if (tryResolve(ref, defaultSchema, allowed)) continue;
+            boolean hasSubjectScope = scopeItems.stream()
+                .anyMatch(item -> item.getScopeType() == com.dati.mcp.domain.model.McpDataScopeType.SUBJECT);
+            String ownerAction = hasSubjectScope
+                ? "ask the service owner to import this table into the subject"
+                : "ask the service owner to widen the service's schema scope";
             throw new ToolExecuteException(ToolError.SCOPE_VIOLATION,
-                "Table " + ref.qualifiedName() + " not in service scope: it is not imported into any"
-                    + " subject this service exposes, and system catalogs are never accessible."
-                    + " Use list_tables_and_terms or search_tables_and_terms to discover available tables,"
-                    + " or ask the service owner to import this table into the subject.");
+                "Table " + ref.qualifiedName() + " is outside this service's data scope"
+                    + " (system catalogs are never accessible)."
+                    + " If the service exposes them, use list_tables_and_terms or search_tables_and_terms"
+                    + " to discover available tables, or " + ownerAction + ".");
         }
     }
 

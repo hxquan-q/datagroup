@@ -120,7 +120,7 @@ class ScopeValidatorTest {
             List.of(dataSourceScope(DS_ID)), DS_ID,
             Set.of(new TableRef("public", "orders")), Set.of(), "public"))
             .isInstanceOf(ToolExecuteException.class)
-            .hasMessageContaining("Table public.orders not in service scope")
+            .hasMessageContaining("Table public.orders is outside this service's data scope")
             .hasMessageContaining("list_tables_and_terms")
             .extracting(e -> ((ToolExecuteException) e).getToolError())
             .isEqualTo(ToolError.SCOPE_VIOLATION);
@@ -412,7 +412,7 @@ class ScopeValidatorTest {
         assertThatThrownBy(() -> validator.validate(List.of(scope), DS_ID,
             Set.of(new TableRef("public", "new_live_table")), Set.of(), "public"))
             .isInstanceOf(ToolExecuteException.class)
-            .hasMessageContaining("not in service scope");
+            .hasMessageContaining("data scope");
     }
 
     @Test
