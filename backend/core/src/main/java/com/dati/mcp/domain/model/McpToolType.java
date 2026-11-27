@@ -83,7 +83,7 @@ public enum McpToolType {
     EXECUTE_SQL(
         "execute_sql",
         "Execute SQL",
-        "Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. Prefer binding filter values with ? placeholders and the params field over inline literals. Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates.",
+        "Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. For single statements, prefer binding filter values with ? placeholders and the params field over inline literals (params are not supported in multi-statement SQL). Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates.",
         ExecuteSqlArgs.class,
         null,
         true
