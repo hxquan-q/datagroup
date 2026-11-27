@@ -103,6 +103,34 @@ class ToolResultCacheTest {
     }
 
     @Test
+    @DisplayName("A write that returns rows is not cached and clears cached reads")
+    void rowReturningWriteNotCached() {
+        AtomicInteger calls = new AtomicInteger();
+        run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, select(1)));
+
+        Map<String, Object> args = Map.of("sql", "insert into t (c) values (1) returning id");
+        ToolTestData returning = new SqlExecution("insert into t (c) values (1) returning id",
+            List.of(StatementResult.select(List.of("id"), List.of(List.<Object>of(7)), false)), null);
+        AtomicInteger writes = new AtomicInteger();
+        run("svc", "u1", McpToolType.EXECUTE_SQL, args, counting(writes, returning));
+        run("svc", "u1", McpToolType.EXECUTE_SQL, args, counting(writes, returning));
+        assertEquals(2, writes.get());
+
+        run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, select(2)));
+        assertEquals(2, calls.get());
+    }
+
+    @Test
+    @DisplayName("Clearing result tiers forces SQL and metric calls to execute again")
+    void invalidateResultsClearsSqlTier() {
+        AtomicInteger calls = new AtomicInteger();
+        run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, select(1)));
+        cache.invalidateResults();
+        run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, select(1)));
+        assertEquals(2, calls.get());
+    }
+
+    @Test
     @DisplayName("Failed statements and failed batch steps are not cached")
     void failuresNotCached() {
         AtomicInteger calls = new AtomicInteger();

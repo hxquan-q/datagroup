@@ -2,6 +2,8 @@ package com.dati.mcp.domain.service;
 
 import com.dati.auth.authentication.User;
 import com.dati.base.RequestContext;
+import com.dati.db.analysis.SqlAnalyzer;
+import com.dati.db.analysis.SqlOperationType;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.server.pojo.BatchExecution;
 import com.dati.mcp.server.pojo.MetricExecution;
@@ -45,9 +47,12 @@ import java.util.function.Supplier;
  * canonical arguments: services and callers never share entries, and publishing
  * a new version makes every older entry unreachable.
  *
- * Only fully successful, read-only results are stored. A result that contains a
- * write clears every SQL and metric result tier, because the written rows may
- * back any cached query. A metadata update tool clears the metadata tier.
+ * Only fully successful results whose executed SQL parses as SELECT-only are
+ * stored. A result that contains a write, or whose SQL is not SELECT-only, clears
+ * every SQL and metric result tier, because the written rows may back any cached
+ * query. A metadata update tool clears the metadata tier, and a table settings
+ * change clears the SQL and metric tiers so free-SQL blocks and time-window rules
+ * apply to the next call.
  *
  * Concurrent identical calls share one in-flight execution. The loader runs on
  * the caller's thread; a caller that joins an execution whose result is not
@@ -191,9 +196,7 @@ public class ToolResultCache {
             metadataTier.cache().synchronous().invalidateAll();
         }
         if (containsWrite(data)) {
-            sqlTier.cache().synchronous().invalidateAll();
-            metricHotTier.cache().synchronous().invalidateAll();
-            metricColdTier.cache().synchronous().invalidateAll();
+            invalidateResults();
         }
         return data;
     }
@@ -224,14 +227,50 @@ public class ToolResultCache {
                 return false;
             }
         }
+        if (!executedSqlOf(data).stream().allMatch(ToolResultCache::isSelectOnly)) {
+            return false;
+        }
         boolean rowCapped = type == McpToolType.EXECUTE_SQL || type == McpToolType.EXECUTE_QUERY_BATCH;
         return !rowCapped || countRows(statements) < SQL_CACHE_ROW_CAP;
     }
 
     private boolean containsWrite(ToolTestData data) {
         List<StatementResult> statements = statementsOf(data);
-        return statements != null
-            && statements.stream().anyMatch(StatementResult.WriteResult.class::isInstance);
+        if (statements == null) {
+            return false;
+        }
+        return statements.stream().anyMatch(StatementResult.WriteResult.class::isInstance)
+            || !executedSqlOf(data).stream().allMatch(ToolResultCache::isSelectOnly);
+    }
+
+    /** Clears the SQL and metric result tiers. */
+    public void invalidateResults() {
+        sqlTier.cache().synchronous().invalidateAll();
+        metricHotTier.cache().synchronous().invalidateAll();
+        metricColdTier.cache().synchronous().invalidateAll();
+    }
+
+    private static boolean isSelectOnly(String sql) {
+        List<SqlOperationType> types = SqlAnalyzer.analyze(sql).statementTypes();
+        return !types.isEmpty() && types.stream().allMatch(SqlOperationType.SELECT::equals);
+    }
+
+    /** SQL text that produced the statements of SQL-backed tool data. */
+    private List<String> executedSqlOf(ToolTestData data) {
+        if (data instanceof SqlExecution execution) {
+            return List.of(execution.executedSql() == null ? "" : execution.executedSql());
+        }
+        if (data instanceof MetricExecution metric) {
+            return metric.execution() == null ? List.of("") : executedSqlOf(metric.execution());
+        }
+        if (data instanceof BatchExecution batch) {
+            ArrayList<String> all = new ArrayList<>();
+            for (BatchExecution.StepResult step : batch.steps()) {
+                all.add(step.sql() == null ? "" : step.sql());
+            }
+            return all;
+        }
+        return List.of();
     }
 
     /**

@@ -82,6 +82,9 @@ class TableServiceTest {
     @Mock
     private TableStructureSyncService tableStructureSyncService;
 
+    @Mock
+    private com.dati.mcp.domain.service.ToolResultCache toolResultCache;
+
     @InjectMocks
     private TableService tableService;
 
@@ -468,6 +471,7 @@ class TableServiceTest {
         assertThat(testTableInfoPO.getUpdatedBy()).isEqualTo("user-2");
         verify(tableInfoDAO).saveAndFlush(testTableInfoPO);
         verify(semanticIndexService).save(any());
+        verify(toolResultCache).invalidateResults();
     }
 
     @Test
