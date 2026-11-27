@@ -84,6 +84,41 @@ function sparklineOption(points: DashboardDailyCount[], color: string): EChartsC
   };
 }
 
+const onboardingSteps = computed(() => [
+  {
+    id: "datasource",
+    icon: Database,
+    title: t("home.onboarding.step1"),
+    desc: t("home.onboarding.step1Desc"),
+    path: "/datasources",
+    done: datasourceCount.value > 0,
+  },
+  {
+    id: "subject",
+    icon: Layers,
+    title: t("home.onboarding.step2"),
+    desc: t("home.onboarding.step2Desc"),
+    path: "/subjects",
+    done: subjectCount.value > 0,
+  },
+  {
+    id: "metrics",
+    icon: ShieldCheck,
+    title: t("home.onboarding.step3"),
+    desc: t("home.onboarding.step3Desc"),
+    path: "/subjects",
+    done: subjectCount.value > 0,
+  },
+  {
+    id: "publish",
+    icon: Cable,
+    title: t("home.onboarding.step4"),
+    desc: t("home.onboarding.step4Desc"),
+    path: featuredService.value ? `/mcp-services/${featuredService.value.id}` : "/mcp-services",
+    done: mcpServiceCount.value > 0,
+  },
+]);
+
 const modules = computed(() => {
   const colors = chartColors.value;
   return [
@@ -285,7 +320,7 @@ function go(path: string) {
       </div>
       <div class="workflow-steps">
         <button
-          v-for="(module, index) in modules"
+          v-for="(module, index) in onboardingSteps"
           :key="module.id"
           type="button"
           class="workflow-step"
@@ -297,6 +332,7 @@ function go(path: string) {
             <strong>{{ module.title }}</strong>
             <small>{{ module.desc }}</small>
           </span>
+          <span class="step-status" :class="{ done: module.done }">{{ module.done ? t("home.onboarding.done") : t("home.onboarding.pending") }}</span>
         </button>
       </div>
     </section>
@@ -742,6 +778,22 @@ function go(path: string) {
   margin: 6px 0 0;
   color: var(--ep-text-color-secondary);
   font-size: 13px;
+}
+
+.step-status {
+  margin-left: auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ep-fill-color);
+  color: var(--ep-text-color-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.step-status.done {
+  background: var(--ep-color-success-light-9);
+  color: var(--ep-color-success);
 }
 
 .workflow-steps {

@@ -198,11 +198,12 @@ onMounted(() => {
           </el-icon>
           <div class="flex min-w-0 flex-col gap-1.5">
             <div class="flex min-w-0 flex-wrap items-center gap-2">
-              <span
-                class="truncate text-sm font-semibold text-[var(--ep-text-color-primary)]"
+              <router-link
+                class="truncate text-sm font-semibold text-[var(--ep-color-primary)] hover:underline"
+                :to="item.scope_type === 'SUBJECT' ? `/subjects/${item.reference_id}` : `/datasources/${item.reference_id}/tables`"
               >
                 {{ item.reference_name }}
-              </span>
+              </router-link>
               <el-tag
                 size="small"
                 :type="

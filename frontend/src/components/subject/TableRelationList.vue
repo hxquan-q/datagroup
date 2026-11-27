@@ -74,6 +74,7 @@ async function loadTables() {
       items.push(...(await getSubjectTables(props.subjectId, next, 100)).data);
     }
     tables.value = items;
+    if (items.length > 24) viewMode.value = "table";
   } catch (error) { notifyError(error, t("common.loadFailed")); }
 }
 
@@ -260,11 +261,15 @@ onMounted(() => { loadTables(); loadRelations(); loadGraphRelations(); loadRecom
 
     <el-table v-show="viewMode === 'table'" v-loading="loading" :data="relations" stripe class="w-full">
       <el-table-column :label="t('relation.factTable')" min-width="170">
-        <template #default="{ row }">{{ row.fact_table_name || row.fact_table_id }}</template>
+        <template #default="{ row }">
+          <router-link class="table-link" :to="`/datasources/${props.datasourceId}/tables/${row.fact_table_id}/columns`">{{ row.fact_table_name || row.fact_table_id }}</router-link>
+        </template>
       </el-table-column>
       <el-table-column prop="fact_column" :label="t('relation.factColumn')" min-width="140" />
       <el-table-column :label="t('relation.dimensionTable')" min-width="170">
-        <template #default="{ row }">{{ row.dimension_table_name || row.dimension_table_id }}</template>
+        <template #default="{ row }">
+          <router-link class="table-link" :to="`/datasources/${props.datasourceId}/tables/${row.dimension_table_id}/columns`">{{ row.dimension_table_name || row.dimension_table_id }}</router-link>
+        </template>
       </el-table-column>
       <el-table-column prop="dimension_column" :label="t('relation.dimensionColumn')" min-width="140" />
       <el-table-column prop="cardinality" :label="t('relation.cardinality')" width="140" align="center">
@@ -384,3 +389,13 @@ onMounted(() => { loadTables(); loadRelations(); loadGraphRelations(); loadRecom
     </el-dialog>
   </div>
 </template>
+<style scoped>
+.table-link {
+  color: var(--ep-color-primary);
+  font-weight: 500;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+</style>

@@ -91,6 +91,7 @@ declare module 'vue' {
     PromptList: typeof import('./components/mcp-service/PromptList.vue')['default']
     PromptsTab: typeof import('./components/mcp-service/PromptsTab.vue')['default']
     PromptTemplateEditor: typeof import('./components/common/editors/PromptTemplateEditor.vue')['default']
+    PublishHealthCheck: typeof import('./components/mcp-service/PublishHealthCheck.vue')['default']
     QueryMetricParams: typeof import('./components/mcp-service/tool-test/params/QueryMetricParams.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

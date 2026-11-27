@@ -22,6 +22,7 @@ import {
 import { notifyError } from "~/api/http";
 import { listPrompts } from "~/api/mcp-prompt";
 import DiffSummaryList from "~/components/mcp-service/DiffSummaryList.vue";
+import PublishHealthCheck from "~/components/mcp-service/PublishHealthCheck.vue";
 import McpAccessConfigCard from "~/components/mcp-service/McpAccessConfigCard.vue";
 import { formatDateTime } from "~/composables";
 
@@ -166,6 +167,11 @@ const refreshAll = async () => {
 const openPublishDialog = () => {
   releaseNote.value = "";
   publishDialogVisible.value = true;
+};
+
+const handleHealthNavigate = (tab: string) => {
+  publishDialogVisible.value = false;
+  activeTab.value = tab;
 };
 
 const confirmPublish = async () => {
@@ -458,6 +464,12 @@ const handleSave = async () => {
                 ? t('mcpService.publishDisabledConfirmDesc')
                 : t('mcpService.publishConfirmDesc') }}
         </p>
+
+        <PublishHealthCheck
+          v-if="publishDialogVisible"
+          :service-id="serviceId"
+          @navigate="handleHealthNavigate"
+        />
 
         <!-- 将发布内容摘要 -->
         <div
