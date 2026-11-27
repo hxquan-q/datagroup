@@ -251,7 +251,7 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-5 px-5 py-6 md:px-8 md:py-7 overflow-hidden">
+  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-6 px-5 py-6 md:px-8 md:py-7 overflow-hidden">
     <DetailPageShell
       :breadcrumbs="breadcrumbs"
       :title="service?.name || serviceId"
@@ -362,39 +362,14 @@ const handleSave = async () => {
       </template>
     </DetailPageShell>
 
-    <!-- Top Horizontal Underline Tabs -->
-    <div class="border-b border-[var(--ep-border-color-lighter)] shrink-0">
-      <nav class="flex items-center gap-6 -mb-px overflow-x-auto">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          type="button"
-          class="py-2.5 px-1 relative text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap border-b-2 bg-transparent"
-          :class="activeTab === tab.key
-            ? 'text-[var(--ep-color-primary)] border-[var(--ep-color-primary)] font-semibold'
-            : 'text-[var(--ep-text-color-secondary)] border-transparent hover:text-[var(--ep-text-color-primary)] hover:border-[var(--ep-border-color)]'"
-          @click="activeTab = tab.key"
-        >
-          <span>{{ tab.label }}</span>
-          <span
-            v-if="tab.badge !== undefined"
-            class="text-[11px] px-2 py-0.5 rounded-full font-mono transition-colors font-semibold"
-            :class="activeTab === tab.key
-              ? 'bg-[var(--ep-color-primary-light-9)] text-[var(--ep-color-primary)]'
-              : 'bg-[var(--ep-fill-color-light)] text-[var(--ep-text-color-secondary)]'"
-          >
-            {{ tab.badge }}
-          </span>
-        </button>
-      </nav>
-    </div>
+    <SegmentedTabs v-model="activeTab" :tabs="tabs" class="shrink-0" />
 
     <!-- Tab Content Body -->
     <main class="detail-main min-w-0 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
       <!-- Full-Width Responsive Dual-Card Grid Layout (1:1 Equal Split) -->
       <div v-if="activeTab === 'basic'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
         <!-- Left Card: Basic Settings Form -->
-        <section class="panel p-6 flex flex-col justify-between border border-[var(--ep-border-color-lighter)] rounded-2xl bg-[var(--ep-bg-color)]">
+        <section class="panel p-6 flex flex-col justify-between">
           <el-form label-position="top" class="detail-form flex flex-col gap-4">
             <!-- 只读元数据：服务标识 / 服务 ID -->
             <el-form-item :label="t('mcpService.serviceCodeWithFormat')" class="!mb-0">
@@ -536,12 +511,17 @@ const handleSave = async () => {
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
 }
 
+.mcp-detail-page {
+  width: min(var(--xiaoai-page-max), 100%);
+  margin: 0 auto;
+}
+
 .panel,
 .scope-panel {
-  border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--xiaoai-surface-border);
+  border-radius: var(--xiaoai-surface-radius);
+  background: var(--ep-bg-color);
+  box-shadow: var(--xiaoai-surface-shadow);
 }
 
 .panel-heading h2 {

@@ -74,7 +74,7 @@ const goToApiKeys = () => {
 
 <template>
   <aside
-    class="mcp-access-card panel p-6 flex flex-col justify-between border border-[var(--ep-border-color-lighter)] rounded-xl bg-[var(--ep-bg-color)]"
+    class="mcp-access-card panel p-6 flex flex-col justify-between"
   >
     <!-- Top Configuration Content Area -->
     <div class="flex flex-col gap-4">

@@ -23,16 +23,16 @@ The product uses one consistent shell for authenticated pages:
 │ Header — 64px, brand, theme/locale/help/user actions        │
 ├───────────┬────────────────────────────────────────────────┤
 │ Sidebar   │ Main content — the only vertical scrolling area │
-│ 236/72px  │                                                │
+│ 216/72px  │                                                │
 └───────────┴────────────────────────────────────────────────┘
 ```
 
 Rules:
 
 - Keep the header and sidebar fixed in the application frame; only `.app-main` scrolls.
-- Sidebar width is `236px` expanded and `72px` collapsed. Persist the collapsed state.
+- Sidebar width is `216px` expanded and `72px` collapsed. Persist the collapsed state.
 - Sidebar navigation uses 18px Lucide icons. Labels are hidden when collapsed; every item keeps a `title`.
-- Active navigation uses a blue/cyan gradient and a 3px cyan inset indicator.
+- Active navigation uses a pale-blue pill with a blue icon/text treatment; do not reintroduce heavy gradient menu items.
 - Do not place page content inside extra nested white frames. Pages should sit directly on the canvas.
 
 ## 3. Color Tokens
@@ -131,7 +131,7 @@ Shape and elevation:
 
 ### 6.2 Sidebar
 
-- Deep navy gradient in both light and dark themes.
+- The sidebar is a light neutral navigation rail in light mode and a deep navy rail in dark mode.
 - Section caption (`Workspace`) is subtle and collapses to a minimal marker.
 - Collapse control sits at the bottom and has an accessible label.
 - Icons should remain legible at 18px in both expanded and collapsed states.
@@ -150,18 +150,28 @@ Module cards are clickable, keyboard-focusable, and navigate on Enter.
 
 ### 6.4 Tables and list pages
 
-- List pages use generous outer spacing (`28–32px`) and a clear page heading.
-- Toolbar and table are separate rounded surfaces.
-- Tables use quiet headers, subtle row borders, and compact action buttons.
-- Table shells use `DataTableShell`; do not create one-off table frames.
+- List pages use a flat page heading, not an elevated or gradient header card.
+- Toolbar controls belong in `DataTableShell`'s `toolbar` slot so search/filter, table, and pagination read as one workbench surface.
+- Table surfaces are white/neutral panels with a thin border, `14px` radius, and very low-contrast shadow. Do not box a table inside another card.
+- Tables use quiet light-gray headers, horizontal row separators, compact action links, and no zebra striping.
+- Table body text is `13px`; standard operational rows should remain close to `40px` high unless content genuinely requires expansion.
 - Loading uses `v-loading`; empty states use `el-empty` with contextual copy.
 
 ### 6.5 Detail pages
 
-- Start with breadcrumb, title, status, and primary actions in one elevated header.
-- Avoid multiple nested frames. Panels sit directly in the main content canvas.
-- Use cards for independent configuration areas; related fields can share one panel.
+- Start with a flat breadcrumb/title/action header directly on the canvas. Do not wrap it in a card.
+- Use `SegmentedTabs` for detail-page navigation: a full-width neutral rail, equal visual weight across tabs, rectangular active state, and keyboard navigation.
+- Content panels are independent quiet surfaces; avoid multiple nested frames and avoid colored gradient panel borders.
 - MCP detail actions are semantically distinct: publish uses `Rocket`, test uses `Play`, enable/disable use `Power`/`PowerOff`.
+
+### 6.6 Semantic chips and overflow
+
+- Alias chips use `.semantic-alias-tag`: neutral gray fill, neutral border, non-monospace text.
+- Linked-entity chips use `.semantic-entity-tag`: pale blue fill, blue text, monospace only for technical entity references.
+- Table cells use `.semantic-chip-row` with fixed column proportions. Chips truncate instead of stretching columns or rows.
+- Show a small representative set (normally three aliases or one linked entity), then collapse count overflow into a keyboard-accessible `+N` control. When there is no count overflow, keep a compact detail control so clipped text remains keyboard/touch accessible.
+- Overflow/detail controls open a detail card that exposes every item and the supported edit/remove/add actions. Never hide information behind a bare count.
+- Prefer the shared `AliasOverflowCell` for alias columns; use feature-specific detail cards only when the cell needs custom entity actions.
 
 ## 7. Icons
 

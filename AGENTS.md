@@ -99,7 +99,7 @@ The project follows an **enterprise data-console** style: calm, spacious, precis
 | **Colors** | Use `var(--ep-color-*)` semantic variables plus `var(--xiaoai-*)` brand tokens. Never raw hex in component templates or scoped styles. |
 | **Typography** | Page title `24px/700+`, section title `18–20px/700`, card title `15–17px`, body `13–14px`, meta `11–13px`. |
 | **Spacing** | Tailwind 4px base unit: `gap-1`=`4px`, `gap-2`=`8px`, `gap-4`=`16px`. |
-| **Page layout** | Fixed header + dark collapsible sidebar; only main content scrolls. List pages use generous spacing → toolbar → `DataTableShell`; avoid nested page frames. |
+| **Page layout** | Fixed header + light collapsible sidebar; only main content scrolls. List/detail pages use flat headings. Toolbar controls belong in `DataTableShell`'s toolbar slot; detail tabs use full-width `SegmentedTabs`; avoid nested page frames. |
 | **Buttons** | Primary CTA: `el-button type="primary"`. Table actions: `type="primary" link`. Danger: `type="danger" link`. |
 | **Icons** | Prefer Lucide SVG icons via `@lucide/vue`; Element Plus icons only where established. **Never emoji as structural icons.** |
 | **Loading** | Tables: `v-loading="loading"`. Card grids: `el-skeleton`. Buttons: `:loading="loading"`. |

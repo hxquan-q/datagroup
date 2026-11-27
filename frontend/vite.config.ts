@@ -19,6 +19,12 @@ export default defineConfig({
   },
   server: {
     allowedHosts: ['.trycloudflare.com', '.preview.devinapps.com'],
+    warmup: {
+      clientFiles: [
+        "./src/pages/**/*.vue",
+        "./src/components/**/*.vue",
+      ],
+    },
     proxy: {
       "/docs": {
         target: "http://localhost:5174",

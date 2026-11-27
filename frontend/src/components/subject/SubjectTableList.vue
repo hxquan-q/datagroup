@@ -239,7 +239,7 @@ onMounted(() => {
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
     >
-      <el-table :data="tableList" stripe>
+      <el-table :data="tableList">
         <el-table-column
           prop="name"
           :label="t('common.tableName')"
@@ -270,21 +270,9 @@ onMounted(() => {
           :label="t('common.schema')"
           min-width="120"
         />
-        <el-table-column :label="t('common.aliases')" min-width="160">
+        <el-table-column :label="t('common.aliases')" min-width="280">
           <template #default="{ row }">
-            <template v-if="row.aliases && row.aliases.length > 0">
-              <el-tag
-                v-for="alias in row.aliases"
-                :key="alias"
-                size="small"
-                class="mr-1"
-              >
-                {{ alias }}
-              </el-tag>
-            </template>
-            <span v-else class="text-[var(--ep-text-color-placeholder)]"
-              >-</span
-            >
+            <AliasOverflowCell :aliases="row.aliases" :owner-name="row.name" />
           </template>
         </el-table-column>
         <el-table-column

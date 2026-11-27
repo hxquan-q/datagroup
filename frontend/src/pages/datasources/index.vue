@@ -144,26 +144,6 @@ const handleDialogSuccess = () => {
       </div>
     </div>
 
-    <div class="toolbar">
-      <div class="toolbar-fields">
-        <el-input
-          v-model="searchKeyword"
-          :placeholder="t('datasource.searchPlaceholder')"
-          clearable
-          class="toolbar-search"
-          @keyup.enter="handleSearch"
-          @clear="handleClearSearch"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-button type="primary" plain :icon="Search" @click="handleSearch">
-          {{ t("common.search") }}
-        </el-button>
-      </div>
-    </div>
-
     <DataTableShell
       :loading="loading"
       :total="total"
@@ -172,6 +152,27 @@ const handleDialogSuccess = () => {
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
     >
+      <template #toolbar>
+      <div class="toolbar toolbar--compact">
+        <div class="toolbar-fields">
+          <el-input
+            v-model="searchKeyword"
+            :placeholder="t('datasource.searchPlaceholder')"
+            clearable
+            class="toolbar-search"
+            @keyup.enter="handleSearch"
+            @clear="handleClearSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-button type="primary" plain :icon="Search" @click="handleSearch">
+            {{ t("common.search") }}
+          </el-button>
+        </div>
+      </div>
+      </template>
       <DatasourceTable
         :data="datasourceList"
         @edit="handleEdit"

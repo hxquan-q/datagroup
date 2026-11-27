@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AliasOverflowCell: typeof import('./components/common/AliasOverflowCell.vue')['default']
     AuthDialog: typeof import('./components/common/AuthDialog.vue')['default']
     AuthShell: typeof import('./components/common/AuthShell.vue')['default']
     BaseChart: typeof import('./components/common/BaseChart.vue')['default']
@@ -92,6 +93,7 @@ declare module 'vue' {
     ScopePicker: typeof import('./components/mcp-service/ScopePicker.vue')['default']
     SearchHitResult: typeof import('./components/mcp-service/tool-test/results/SearchHitResult.vue')['default']
     SearchMetadataParams: typeof import('./components/mcp-service/tool-test/params/SearchMetadataParams.vue')['default']
+    SegmentedTabs: typeof import('./components/common/SegmentedTabs.vue')['default']
     SemanticCatalogResult: typeof import('./components/mcp-service/tool-test/results/SemanticCatalogResult.vue')['default']
     SqlEditor: typeof import('./components/common/editors/SqlEditor.vue')['default']
     SqlExecutionResult: typeof import('./components/mcp-service/tool-test/results/SqlExecutionResult.vue')['default']

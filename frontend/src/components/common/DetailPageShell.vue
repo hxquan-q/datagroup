@@ -48,16 +48,17 @@ defineProps<{
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 4px 2px 0;
+  padding: 2px 2px 0;
   border: 0;
   background: transparent;
+  box-shadow: none;
 }
 
 .detail-shell-main {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 9px;
 }
 
 .detail-shell-breadcrumb {
@@ -86,7 +87,7 @@ defineProps<{
   color: var(--ep-text-color-primary);
   font-size: 24px;
   font-weight: 720;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   line-height: 1.25;
 }
 
@@ -117,7 +118,7 @@ defineProps<{
 @media (max-width: 768px) {
   .detail-shell {
     flex-direction: column;
-    padding: 14px;
+    padding: 2px 2px 0;
   }
 
   .detail-shell-actions {

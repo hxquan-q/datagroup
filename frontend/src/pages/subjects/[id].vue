@@ -121,7 +121,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-loading="loading" class="subject-detail-page flex flex-col flex-1 min-h-0 gap-5 p-6 overflow-hidden">
+  <div v-loading="loading" class="subject-detail-page flex flex-col flex-1 min-h-0 gap-6 p-6 overflow-hidden">
     <!-- Top Navigation Header -->
     <DetailPageShell
       :breadcrumbs="breadcrumbs"
@@ -140,23 +140,12 @@ onMounted(() => {
     </DetailPageShell>
 
     <!-- Top Horizontal Underline Tabs -->
-    <div class="tabs-bar">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="tab-item"
-        :class="{ 'is-active': activeTab === tab.key }"
-        @click="activeTab = tab.key"
-      >
-        <span>{{ tab.label }}</span>
-
-      </button>
-    </div>
+    <SegmentedTabs v-model="activeTab" :tabs="tabs" />
 
     <!-- Tab Content Container -->
     <main class="main-content flex-1 min-w-0 min-h-0 overflow-y-auto pr-1 pb-2">
       <!-- Tab 1: Basic Info (Single Panel Container) -->
-      <div v-if="activeTab === 'basic'" class="panel p-6 shadow-sm flex flex-col gap-6 rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)]">
+      <div v-if="activeTab === 'basic'" class="panel p-6 flex flex-col gap-6">
         <!-- Form Fields -->
         <el-form label-position="top" class="subject-form flex flex-col gap-5">
           <!-- Static Readonly ID Field -->
@@ -270,65 +259,21 @@ onMounted(() => {
 <style scoped>
 .subject-detail-page {
   width: 100%;
-  max-width: 1280px;
+  max-width: var(--xiaoai-page-max);
   margin: 0 auto;
 }
 
-.tabs-bar {
-  display: flex;
-  width: fit-content;
-  max-width: 100%;
-  flex-wrap: nowrap;
-  gap: 2px;
-  overflow-x: auto;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--ep-fill-color-light);
-  scrollbar-width: none;
-}
-
-.tabs-bar::-webkit-scrollbar {
-  display: none;
-}
-
-.tab-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ep-text-color-secondary);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: color var(--xiaoai-motion), background-color var(--xiaoai-motion);
-  white-space: nowrap;
-}
-
-.tab-item:hover {
-  color: var(--ep-text-color-primary);
-}
-
-.tab-item.is-active {
-  background: var(--ep-bg-color);
-  color: var(--ep-color-primary);
-  font-weight: 650;
-}
-
-.tab-item:focus-visible {
-  outline: 2px solid var(--ep-color-primary-light-5);
-  outline-offset: 2px;
-}
-
+.panel,
 .scope-panel {
   padding: 18px;
-  border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 14px;
+  border: 1px solid var(--xiaoai-surface-border);
+  border-radius: var(--xiaoai-surface-radius);
   background: var(--ep-bg-color);
+  box-shadow: var(--xiaoai-surface-shadow);
+}
+
+.panel {
+  padding: 22px;
 }
 .validation-panel {
   min-height: 320px;

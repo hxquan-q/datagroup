@@ -45,14 +45,11 @@ defineEmits<Emits>()
         </div>
       </template>
     </el-table-column>
-    <el-table-column :label="t('common.aliases')" min-width="180">
+    <el-table-column :label="t('common.aliases')" min-width="260">
       <template #default="{ row }">
-        <template v-if="row.aliases && row.aliases.length > 0">
-          <el-tag v-for="alias in row.aliases" :key="alias" size="small" class="mr-1">
-            {{ alias }}
-          </el-tag>
-        </template>
-        <span v-else class="text-sm text-[var(--ep-text-color-placeholder)]">-</span>
+        <div @click.stop>
+          <AliasOverflowCell :aliases="row.aliases" :owner-name="row.name" editable @edit="$emit('edit', row)" />
+        </div>
       </template>
     </el-table-column>
     <el-table-column :label="t('subject.datasource')" min-width="140">
