@@ -127,7 +127,11 @@ public class McpReplayService {
         return vo;
     }
 
-    /** Every statement in the batch must start with a read-only keyword after stripping comments. */
+    private static final java.util.regex.Pattern WRITE_KEYWORD = java.util.regex.Pattern.compile(
+        "\\b(insert|update|delete|merge|drop|alter|create|truncate|grant|revoke|replace|execute|call|set)\\b",
+        java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /** Every statement must start with a read-only keyword and contain no write operation anywhere. */
     static boolean isReadOnlySql(String sql) {
         for (String statement : sql.split(";")) {
             String normalized = stripLeadingComments(statement).toLowerCase(java.util.Locale.ROOT);
@@ -137,7 +141,7 @@ public class McpReplayService {
             boolean readOnly = normalized.startsWith("select") || normalized.startsWith("with")
                 || normalized.startsWith("explain") || normalized.startsWith("show")
                 || normalized.startsWith("describe") || normalized.startsWith("desc");
-            if (!readOnly) {
+            if (!readOnly || WRITE_KEYWORD.matcher(normalized).find()) {
                 return false;
             }
         }
