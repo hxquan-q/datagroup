@@ -78,6 +78,7 @@ public class ExecuteSqlExecutor implements ToolExecutor {
             String validationSql = params.isEmpty() ? sql : inlineBindValues(sql, params);
             enforceTimeWindows(validationSql, analysis, dsId);
             enforcePlanGuardrail(conn, sql, params, analysis, config, dataSource.getType());
+            sql = applyServerSideTimeout(sql, analysis, dataSource.getType(), config.getTimeout());
             if (!params.isEmpty()) {
                 if (analysis.type() == SqlOperationType.MULTI) {
                     throw new ToolExecuteException(ToolError.SQL_EXECUTION_ERROR,
@@ -341,6 +342,16 @@ public class ExecuteSqlExecutor implements ToolExecutor {
             }
             }
         }
+    }
+
+    /** Server-side execution cap for MySQL: the optimizer hint aborts the query
+     * inside the engine even when the client-side timeout cannot reach it. */
+    static String applyServerSideTimeout(String sql, SqlAnalysisResult analysis, com.dati.db.DbType type, int timeoutSeconds) {
+        if (type != com.dati.db.DbType.MYSQL || analysis.type() != SqlOperationType.SELECT || timeoutSeconds <= 0) {
+            return sql;
+        }
+        int ms = timeoutSeconds * 1000;
+        return sql.replaceFirst("(?is)^(\s*(?:/\\*.*?\\*/\s*)*select)\s", "$1 /*+ MAX_EXECUTION_TIME(" + ms + ") */ ");
     }
 
     private void registerCreatedTables(String dsId, SqlAnalysisResult analysis,
