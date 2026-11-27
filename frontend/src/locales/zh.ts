@@ -103,6 +103,7 @@ export default {
     update: "更新",
     remove: "移除",
     add: "添加",
+    addAlias: "添加别名",
     search: "搜索",
     testConnection: "测试连接",
     refresh: "刷新",

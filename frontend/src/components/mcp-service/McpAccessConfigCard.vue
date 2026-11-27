@@ -155,7 +155,7 @@ const goToApiKeys = () => {
         <!-- Code block container with embedded top-right copy button -->
         <div v-else-if="jsonConfigSnippet" class="relative group">
           <pre
-            class="m-0 font-mono text-xs text-[var(--ep-text-color-primary)] whitespace-pre-wrap break-all leading-relaxed select-text rounded-lg bg-[var(--ep-fill-color-light)] border border-[var(--ep-border-color-lighter)] p-3.5 pr-10"
+            class="m-0 font-mono text-xs text-[var(--ep-text-color-primary)] whitespace-pre overflow-x-auto leading-relaxed select-text rounded-lg bg-[var(--ep-fill-color-light)] border border-[var(--ep-border-color-lighter)] p-3.5 pr-10"
             >{{ jsonConfigSnippet }}</pre
           >
           <el-tooltip :trigger-keys="[]" :content="t('mcpService.accessConfig.copyConfig')" placement="top">

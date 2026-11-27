@@ -509,20 +509,6 @@ const handleSave = async () => {
 </template>
 
 <style scoped>
-.detail-hero {
-  background:
-    linear-gradient(90deg, rgba(37, 99, 235, 0.07), transparent 42%),
-    var(--ep-bg-color);
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
-}
-
-:global(html.dark) .detail-hero {
-  background:
-    linear-gradient(90deg, rgba(37, 99, 235, 0.14), transparent 46%),
-    var(--ep-bg-color);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
-}
-
 .mcp-detail-page {
   width: min(var(--xiaoai-page-max), 100%);
   margin: 0 auto;
