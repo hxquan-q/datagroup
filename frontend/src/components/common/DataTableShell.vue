@@ -65,9 +65,10 @@ const emit = defineEmits<{
   flex-shrink: 1;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--ep-border-color-lighter);
-  border-radius: 16px;
+  border: 1px solid var(--xiaoai-surface-border);
+  border-radius: var(--xiaoai-surface-radius);
   background: color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
+  box-shadow: var(--xiaoai-surface-shadow);
 }
 
 .data-table-body {

@@ -48,9 +48,13 @@ defineProps<{
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 4px 2px 0;
-  border: 0;
-  background: transparent;
+  padding: 20px 22px;
+  border: 1px solid var(--xiaoai-surface-border);
+  border-radius: var(--xiaoai-surface-radius);
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.07), transparent 46%),
+    color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
+  box-shadow: var(--xiaoai-surface-shadow);
 }
 
 .detail-shell-main {
@@ -84,9 +88,9 @@ defineProps<{
 .detail-shell-title-row h1 {
   margin: 0;
   color: var(--ep-text-color-primary);
-  font-size: 24px;
-  font-weight: 720;
-  letter-spacing: -0.02em;
+  font-size: 26px;
+  font-weight: 760;
+  letter-spacing: -0.03em;
   line-height: 1.25;
 }
 
