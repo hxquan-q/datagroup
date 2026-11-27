@@ -128,13 +128,17 @@ public class McpReplayService {
     }
 
     private static final java.util.regex.Pattern WRITE_KEYWORD = java.util.regex.Pattern.compile(
-        "\\b(insert|update|delete|merge|drop|alter|create|truncate|grant|revoke|replace|execute|call|set)\\b",
-        java.util.regex.Pattern.CASE_INSENSITIVE);
+        "\\b(insert|update|delete|merge)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
 
-    /** Every statement must start with a read-only keyword and contain no write operation anywhere. */
+    /**
+     * Every statement must start with a read-only keyword, and no data-modifying CTE or subquery
+     * write (insert/update/delete/merge) may appear anywhere. Literals, quoted identifiers, and
+     * comments are stripped before scanning, so read-only SQL mentioning those words still replays.
+     */
     static boolean isReadOnlySql(String sql) {
-        for (String statement : sql.split(";")) {
-            String normalized = stripLeadingComments(statement).toLowerCase(java.util.Locale.ROOT);
+        String sanitized = sanitize(sql);
+        for (String statement : sanitized.split(";")) {
+            String normalized = statement.stripLeading().toLowerCase(java.util.Locale.ROOT);
             if (normalized.isEmpty()) {
                 continue;
             }
@@ -148,20 +152,42 @@ public class McpReplayService {
         return true;
     }
 
-    private static String stripLeadingComments(String sql) {
-        String remaining = sql.stripLeading();
-        while (true) {
-            if (remaining.startsWith("--")) {
-                int newline = remaining.indexOf('\n');
-                remaining = newline < 0 ? "" : remaining.substring(newline + 1).stripLeading();
-            } else if (remaining.startsWith("/*")) {
-                int end = remaining.indexOf("*/");
-                remaining = end < 0 ? "" : remaining.substring(end + 2).stripLeading();
+    /** Removes line/block comments and single/double/backtick-quoted literals. */
+    private static String sanitize(String sql) {
+        StringBuilder out = new StringBuilder(sql.length());
+        int i = 0;
+        int n = sql.length();
+        while (i < n) {
+            char c = sql.charAt(i);
+            if (c == '-' && i + 1 < n && sql.charAt(i + 1) == '-') {
+                int newline = sql.indexOf('\n', i);
+                i = newline < 0 ? n : newline + 1;
+            } else if (c == '/' && i + 1 < n && sql.charAt(i + 1) == '*') {
+                int end = sql.indexOf("*/", i + 2);
+                i = end < 0 ? n : end + 2;
+            } else if (c == '\'' || c == '"' || c == '`') {
+                char quote = c;
+                i++;
+                while (i < n) {
+                    if (sql.charAt(i) == quote) {
+                        if (i + 1 < n && sql.charAt(i + 1) == quote) {
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                out.append(' ');
             } else {
-                return remaining;
+                out.append(c);
+                i++;
             }
         }
+        return out.toString();
     }
+
 
     private McpServiceSnapshot.SnapshotContent loadActiveSnapshot(McpServicePO service) {
         if (service.getActiveVersionId() == null) {

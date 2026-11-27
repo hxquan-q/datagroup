@@ -31,8 +31,11 @@ class McpReplayServiceTest {
     }
 
     @Test
-    @DisplayName("write-looking column names do not false-positive")
+    @DisplayName("write-looking identifiers, literals, and comments do not false-positive")
     void writeLookingColumnNamesPass() {
         assertThat(McpReplayService.isReadOnlySql("SELECT update_time, created_by FROM t")).isTrue();
+        assertThat(McpReplayService.isReadOnlySql("SELECT REPLACE(FName, 'a', 'b') FROM t")).isTrue();
+        assertThat(McpReplayService.isReadOnlySql("SELECT * FROM t WHERE note = 'delete this row'")).isTrue();
+        assertThat(McpReplayService.isReadOnlySql("SELECT * FROM t -- deletes happen here sometimes")).isTrue();
     }
 }
