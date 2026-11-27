@@ -130,6 +130,8 @@ def ensure_containers():
     mysql = MYSQL_CONTAINER
     if docker_state(MYSQL_CONTAINER) is None:
         owner = container_on_port(MYSQL_PORT)
+        if owner and not port_open(MYSQL_PORT):
+            sys.exit(f"container {owner} publishes port {MYSQL_PORT} but not on localhost; the backend cannot reach it — set SEED_MYSQL_PORT")
         if owner:
             log(f"port {MYSQL_PORT} already served by container {owner}, reusing it")
             mysql = owner
@@ -167,7 +169,19 @@ def ensure_containers():
 
 
 def seed_mysql(mysql):
-    sql = f"CREATE DATABASE IF NOT EXISTS {PREFIX}_prod;\nUSE {PREFIX}_prod;\n" + SEED_SQL
+    db = f"{PREFIX}_prod"
+    r = sh(
+        f"docker exec -i {mysql} mysql -uroot -p{MYSQL_PASSWORD} -N -B"
+        f" -e \"SELECT table_name FROM information_schema.tables WHERE table_schema='{db}'\" 2>/dev/null"
+    )
+    if r.returncode == 0:
+        foreign = sorted(set(r.stdout.split()) - set(DEMO_TABLES))
+        if foreign:
+            sys.exit(
+                f"database {db} already contains non-demo tables ({', '.join(foreign[:5])});"
+                " refusing to seed demo data into it — use a different SEED_PREFIX"
+            )
+    sql = f"CREATE DATABASE IF NOT EXISTS `{db}`;\nUSE `{db}`;\n" + SEED_SQL
     fd, sql_file = tempfile.mkstemp(suffix=".sql", prefix="seed_demo_")
     try:
         with os.fdopen(fd, "w") as f:
@@ -177,7 +191,7 @@ def seed_mysql(mysql):
             sys.exit(f"failed to seed mysql tables: {r.stderr.strip()}")
     finally:
         os.unlink(sql_file)
-    log(f"mysql demo tables seeded in {PREFIX}_prod")
+    log(f"mysql demo tables seeded in {db}")
 
 
 def api(method, path, body=None, token=None, tolerate=(400, 404, 409)):
