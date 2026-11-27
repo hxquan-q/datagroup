@@ -312,6 +312,10 @@ class McpEndpointControllerTest {
             eq("192.168.1.100"),
             eq(true),
             anyLong(),
+            isNull(),
+            isNull(),
+            isNull(),
+            isNull(),
             isNull()
         );
     }

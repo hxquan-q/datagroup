@@ -111,7 +111,7 @@ class ExecuteSqlExecutorSchemaScopeIntegrationTest {
         TableAutoRegistrationService autoRegistrationService = new TableAutoRegistrationService(
                 tableInfoDAO, columnInfoDAO, jdbcMetaService, semanticIndexService);
         ScopeValidator scopeValidator = new ScopeValidator(subjectDAO);
-        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, autoRegistrationService);
+        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, autoRegistrationService, tableInfoDAO);
     }
 
     @AfterEach
@@ -126,7 +126,7 @@ class ExecuteSqlExecutorSchemaScopeIntegrationTest {
         config.getSqlPolicy().setAllowSelect(true);
         config.getSqlPolicy().setAllowInsert(true);
         return new ToolExecutionContext("svc-h2", McpToolType.EXECUTE_SQL, config,
-                new ExecuteSqlArgs(DS_ID, sql), schemaScope("PUBLIC"));
+                new ExecuteSqlArgs(DS_ID, sql, null), schemaScope("PUBLIC"));
     }
 
     private List<McpServiceDataScope> schemaScope(String... schemas) {

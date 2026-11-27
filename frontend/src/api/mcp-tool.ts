@@ -37,6 +37,12 @@ export interface McpToolVO {
   tool_type:
     | "SEARCH_METADATA"
     | "GET_TABLE_INFO"
+    | "LIST_TABLES"
+    | "SEARCH_SEMANTICS"
+    | "QUERY_METRIC"
+    | "INSPECT_METRIC"
+    | "GET_SAMPLE_DATA"
+    | "EXECUTE_QUERY_BATCH"
     | "EXECUTE_SQL"
     | "UPDATE_TABLE_INFO"
     | "UPDATE_COLUMN_INFO"

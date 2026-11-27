@@ -39,6 +39,8 @@ class ExecuteSqlExecutorTest {
 
     @Mock
     private ScopeValidator scopeValidator;
+    @Mock
+    private com.dati.datasource.repository.dao.TableInfoDAO tableInfoDAO;
 
     @Mock
     private DataSourceService dataSourceService;
@@ -50,7 +52,7 @@ class ExecuteSqlExecutorTest {
 
     @BeforeEach
     void setUp() {
-        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, tableAutoRegistrationService);
+        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, tableAutoRegistrationService, tableInfoDAO);
     }
 
     private Statement mockSuccessfulStatement() throws SQLException {
@@ -64,7 +66,7 @@ class ExecuteSqlExecutorTest {
         ExecuteSqlConfig config = new ExecuteSqlConfig();
         config.getSqlPolicy().setAllowDdl(true);
         return new ToolExecutionContext("svc-1", McpToolType.EXECUTE_SQL, config,
-            new ExecuteSqlArgs("ds-1", sql), List.of());
+            new ExecuteSqlArgs("ds-1", sql, null), List.of());
     }
 
     private ToolExecutionContext ctx(ExecuteSqlArgs args) {
@@ -75,7 +77,7 @@ class ExecuteSqlExecutorTest {
     @Test
     @DisplayName("SQL policy still enforced before execution")
     void policyStillEnforced() {
-        ExecuteSqlArgs args = new ExecuteSqlArgs("ds-1", "DELETE FROM orders");
+        ExecuteSqlArgs args = new ExecuteSqlArgs("ds-1", "DELETE FROM orders", null);
 
         assertThatThrownBy(() -> executor.execute(ctx(args)))
             .isInstanceOf(ToolExecuteException.class)
@@ -87,7 +89,7 @@ class ExecuteSqlExecutorTest {
     @DisplayName("missing data source is reported as DATA_SOURCE_NOT_FOUND")
     void missingDataSource_shouldReportDataSourceNotFound() {
         when(dataSourceService.getDataSourceInternal("ghost")).thenReturn(Optional.empty());
-        ExecuteSqlArgs args = new ExecuteSqlArgs("ghost", "SELECT * FROM orders");
+        ExecuteSqlArgs args = new ExecuteSqlArgs("ghost", "SELECT * FROM orders", null);
 
         assertThatThrownBy(() -> executor.execute(ctx(args)))
             .isInstanceOf(ToolExecuteException.class)
@@ -105,7 +107,7 @@ class ExecuteSqlExecutorTest {
             .thenReturn(Optional.of(TestFixtures.createTestDataSource()));
         doThrow(new ToolExecuteException(ToolError.SCOPE_VIOLATION, "orders not in service scope"))
             .when(scopeValidator).validate(anyList(), eq("ds-1"), anySet(), anySet(), eq("public"));
-        ExecuteSqlArgs args = new ExecuteSqlArgs("ds-1", "SELECT * FROM orders");
+        ExecuteSqlArgs args = new ExecuteSqlArgs("ds-1", "SELECT * FROM orders", null);
 
         assertThatThrownBy(() -> executor.execute(ctx(args)))
             .isInstanceOf(ToolExecuteException.class)
@@ -125,7 +127,7 @@ class ExecuteSqlExecutorTest {
         ExecuteSqlConfig config = new ExecuteSqlConfig();
         config.getSqlPolicy().setAllowDdl(true);
         ToolExecutionContext ctx = new ToolExecutionContext("svc-1", McpToolType.EXECUTE_SQL,
-            config, new ExecuteSqlArgs("ds-1", "CREATE TABLE tmp (id INT)"), List.of());
+            config, new ExecuteSqlArgs("ds-1", "CREATE TABLE tmp (id INT)", null), List.of());
 
         assertThatThrownBy(() -> executor.execute(ctx)).hasMessageContaining("stop");
 
@@ -137,7 +139,7 @@ class ExecuteSqlExecutorTest {
     @DisplayName("DDL is rejected by SQL policy when allowDdl is false")
     void ddlRejectedByPolicyWhenAllowDdlFalse() {
         ToolExecutionContext ctx = new ToolExecutionContext("svc-1", McpToolType.EXECUTE_SQL,
-            new ExecuteSqlConfig(), new ExecuteSqlArgs("ds-1", "CREATE TABLE tmp (id INT)"), List.of());
+            new ExecuteSqlConfig(), new ExecuteSqlArgs("ds-1", "CREATE TABLE tmp (id INT)", null), List.of());
 
         assertThatThrownBy(() -> executor.execute(ctx))
             .isInstanceOf(ToolExecuteException.class)
@@ -149,7 +151,7 @@ class ExecuteSqlExecutorTest {
     @DisplayName("unparseable SQL is rejected by SQL policy")
     void unparseableSqlRejectedByPolicy() {
         ToolExecutionContext ctx = new ToolExecutionContext("svc-1", McpToolType.EXECUTE_SQL,
-            new ExecuteSqlConfig(), new ExecuteSqlArgs("ds-1", "NOT A SQL STATEMENT !!!"), List.of());
+            new ExecuteSqlConfig(), new ExecuteSqlArgs("ds-1", "NOT A SQL STATEMENT !!!", null), List.of());
 
         assertThatThrownBy(() -> executor.execute(ctx))
             .isInstanceOf(ToolExecuteException.class)
@@ -188,7 +190,7 @@ class ExecuteSqlExecutorTest {
         try (MockedStatic<HikariPoolManager> hpm = mockStatic(HikariPoolManager.class)) {
             hpm.when(() -> HikariPoolManager.getConnection(any(JdbcConnector.class))).thenReturn(conn);
 
-            executor.execute(ctx(new ExecuteSqlArgs("ds-1", "SELECT 1")));
+            executor.execute(ctx(new ExecuteSqlArgs("ds-1", "SELECT 1", null)));
         }
 
         verifyNoInteractions(tableAutoRegistrationService);
@@ -246,7 +248,7 @@ class ExecuteSqlExecutorTest {
         Connection conn = mock(Connection.class);
         when(conn.createStatement()).thenReturn(stmt);
 
-        ExecuteSqlArgs args = new ExecuteSqlArgs("ds-1", "SELECT 1");
+        ExecuteSqlArgs args = new ExecuteSqlArgs("ds-1", "SELECT 1", null);
         try (MockedStatic<HikariPoolManager> hpm = mockStatic(HikariPoolManager.class)) {
             hpm.when(() -> HikariPoolManager.getConnection(any(JdbcConnector.class))).thenReturn(conn);
 
@@ -283,7 +285,7 @@ class ExecuteSqlExecutorTest {
         ExecuteSqlConfig config = new ExecuteSqlConfig();
         config.setMaxRows(2);
         ToolExecutionContext ctx = new ToolExecutionContext("svc-1", McpToolType.EXECUTE_SQL, config,
-            new ExecuteSqlArgs("ds-1", "SELECT id FROM orders"), List.of());
+            new ExecuteSqlArgs("ds-1", "SELECT id FROM orders", null), List.of());
 
         try (MockedStatic<HikariPoolManager> hpm = mockStatic(HikariPoolManager.class)) {
             hpm.when(() -> HikariPoolManager.getConnection(any(JdbcConnector.class))).thenReturn(conn);
@@ -312,7 +314,7 @@ class ExecuteSqlExecutorTest {
         ExecuteSqlConfig config = new ExecuteSqlConfig();
         config.setMaxRows(0);
         ToolExecutionContext ctx = new ToolExecutionContext("svc-1", McpToolType.EXECUTE_SQL, config,
-            new ExecuteSqlArgs("ds-1", "SELECT 1"), List.of());
+            new ExecuteSqlArgs("ds-1", "SELECT 1", null), List.of());
 
         try (MockedStatic<HikariPoolManager> hpm = mockStatic(HikariPoolManager.class)) {
             hpm.when(() -> HikariPoolManager.getConnection(any(JdbcConnector.class))).thenReturn(conn);

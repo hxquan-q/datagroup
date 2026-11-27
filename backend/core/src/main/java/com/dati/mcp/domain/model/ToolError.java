@@ -13,7 +13,8 @@ public enum ToolError {
     // Scope errors carry the complete, resource-specific message supplied by the caller.
     SCOPE_VIOLATION       ("SCOPE_ERROR",       "{0}"),
     SQL_POLICY_VIOLATION  ("PERMISSION_DENIED", "SQL operation not allowed by policy: {0}"),
-    SQL_EXECUTION_ERROR   ("SQL_ERROR",         "SQL execution failed: {0}");
+    SQL_EXECUTION_ERROR   ("SQL_ERROR",         "SQL execution failed: {0}"),
+    SCAN_LIMIT_EXCEEDED   ("SQL_ERROR",         "{0}");
     // TIMEOUT 预留，待超时检测功能实现后加入
 
     @Getter

@@ -29,7 +29,9 @@ export type ToolTestData =
   | TableListData
   | SemanticCatalog
   | MetricExecution
-  | MetricInspection;
+  | MetricInspection
+  | SampleData
+  | BatchExecution;
 
 export interface SemanticCatalog {
   type: "SEMANTIC_CATALOG";
@@ -49,6 +51,19 @@ export interface SemanticMetric {
   time_zone?: string;
   allowed_dimensions?: string[];
   revision?: number;
+}
+
+export interface SampleData {
+  type: "SAMPLE_DATA";
+  table: string;
+  columns: string[];
+  rows: any[][];
+  masked_columns?: string[];
+}
+
+export interface BatchExecution {
+  type: "BATCH_EXECUTION";
+  steps: { sql: string; success: boolean; execution?: SqlExecution; error?: string }[];
 }
 
 export interface MetricInspection {

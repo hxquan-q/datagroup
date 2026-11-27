@@ -22,6 +22,10 @@ public class TableAssembler extends BaseAssembler {
         tableInfoVO.setDatasourceId(tableInfo.getDatasourceId());
         tableInfoVO.setSchema(tableInfo.getSchema());
         tableInfoVO.setAliases(tableInfo.getAliases());
+        tableInfoVO.setTimeColumn(tableInfo.getTimeColumn());
+        tableInfoVO.setTimeWindowRequired(Boolean.TRUE.equals(tableInfo.getTimeWindowRequired()));
+        tableInfoVO.setMaxRangeDays(tableInfo.getMaxRangeDays());
+        tableInfoVO.setSqlBlocked(Boolean.TRUE.equals(tableInfo.getSqlBlocked()));
         return tableInfoVO;
     }
 
@@ -43,6 +47,10 @@ public class TableAssembler extends BaseAssembler {
         TableInfo tableInfo = new TableInfo();
         tableInfo.setAliases(request.getAliases());
         tableInfo.setDescription(request.getDescription());
+        tableInfo.setTimeColumn(request.getTimeColumn());
+        tableInfo.setTimeWindowRequired(request.getTimeWindowRequired());
+        tableInfo.setMaxRangeDays(request.getMaxRangeDays());
+        tableInfo.setSqlBlocked(request.getSqlBlocked());
         return tableInfo;
     }
 

@@ -24,7 +24,12 @@ public class SnapshotToolResolver {
         if (content.getPrebuiltTools() != null) {
             for (McpServiceSnapshot.PrebuiltToolDraft t : content.getPrebuiltTools()) {
                 if (t.enabled() && t.toolType() != null && toolName.equals(t.toolType().getToolName())) {
-                    return Optional.of(new ResolvedTool(t.toolType(), t.config(), t.toolType().getToolName()));
+                    ToolConfig config = t.config();
+                    if (t.toolType() == McpToolType.EXECUTE_QUERY_BATCH) {
+                        ToolConfig sqlConfig = findEnabledPrebuiltConfig(content, McpToolType.EXECUTE_SQL);
+                        config = sqlConfig != null ? sqlConfig : McpToolType.EXECUTE_SQL.getDefaultConfig();
+                    }
+                    return Optional.of(new ResolvedTool(t.toolType(), config, t.toolType().getToolName()));
                 }
             }
         }
@@ -54,6 +59,18 @@ public class SnapshotToolResolver {
             }
         }
         return items;
+    }
+
+    private static ToolConfig findEnabledPrebuiltConfig(McpServiceSnapshot.SnapshotContent content, McpToolType type) {
+        if (content.getPrebuiltTools() == null) {
+            return null;
+        }
+        for (McpServiceSnapshot.PrebuiltToolDraft t : content.getPrebuiltTools()) {
+            if (t.enabled() && t.toolType() == type) {
+                return t.config();
+            }
+        }
+        return null;
     }
 
     public record ResolvedTool(McpToolType toolType, ToolConfig config, String name) {

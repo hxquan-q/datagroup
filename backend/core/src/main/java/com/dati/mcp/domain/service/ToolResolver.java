@@ -45,7 +45,15 @@ public class ToolResolver {
         if (!cfg.isEnabled()) {
             throw new ToolExecuteException(ToolError.TOOL_DISABLED, toolId);
         }
-        return new ResolvedTool(toolType, true, cfg.getConfig(), true);
+        ToolConfig config = cfg.getConfig();
+        if (toolType == McpToolType.EXECUTE_QUERY_BATCH) {
+            config = prebuiltDAO.findByServiceIdAndToolType(serviceId, McpToolType.EXECUTE_SQL)
+                .map(McpPrebuiltToolConfigMapper::toModel)
+                .filter(McpPrebuiltToolConfig::isEnabled)
+                .map(McpPrebuiltToolConfig::getConfig)
+                .orElseGet(McpToolType.EXECUTE_SQL::getDefaultConfig);
+        }
+        return new ResolvedTool(toolType, true, config, true);
     }
 
     private ResolvedTool resolveCustom(String serviceId, String toolId) {

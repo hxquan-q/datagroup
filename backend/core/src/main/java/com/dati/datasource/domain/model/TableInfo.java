@@ -17,4 +17,12 @@ public class TableInfo extends BaseResource {
 
     private List<String> aliases = new ArrayList<>();
 
+    private String timeColumn;
+
+    private Boolean timeWindowRequired;
+
+    private Integer maxRangeDays;
+
+    private Boolean sqlBlocked;
+
 }
