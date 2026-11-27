@@ -23,4 +23,6 @@ public class TableInfo extends BaseResource {
 
     private Integer maxRangeDays;
 
+    private Boolean sqlBlocked;
+
 }

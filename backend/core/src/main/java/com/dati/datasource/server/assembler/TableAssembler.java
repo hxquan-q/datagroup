@@ -25,6 +25,7 @@ public class TableAssembler extends BaseAssembler {
         tableInfoVO.setTimeColumn(tableInfo.getTimeColumn());
         tableInfoVO.setTimeWindowRequired(Boolean.TRUE.equals(tableInfo.getTimeWindowRequired()));
         tableInfoVO.setMaxRangeDays(tableInfo.getMaxRangeDays());
+        tableInfoVO.setSqlBlocked(Boolean.TRUE.equals(tableInfo.getSqlBlocked()));
         return tableInfoVO;
     }
 
@@ -49,6 +50,7 @@ public class TableAssembler extends BaseAssembler {
         tableInfo.setTimeColumn(request.getTimeColumn());
         tableInfo.setTimeWindowRequired(request.getTimeWindowRequired());
         tableInfo.setMaxRangeDays(request.getMaxRangeDays());
+        tableInfo.setSqlBlocked(request.getSqlBlocked());
         return tableInfo;
     }
 

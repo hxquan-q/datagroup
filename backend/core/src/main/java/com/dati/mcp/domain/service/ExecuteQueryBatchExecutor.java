@@ -38,7 +38,7 @@ public class ExecuteQueryBatchExecutor implements ToolExecutor {
             }
             ToolExecutionContext stepCtx = new ToolExecutionContext(
                 ctx.serviceId(), McpToolType.EXECUTE_SQL, ctx.config(),
-                new ExecuteSqlArgs(args.dataSourceId(), sql),
+                new ExecuteSqlArgs(args.dataSourceId(), sql, null),
                 ctx.scopeItems(), ctx.metrics(), ctx.relations());
             try {
                 SqlExecution execution = (SqlExecution) delegate.execute(stepCtx);

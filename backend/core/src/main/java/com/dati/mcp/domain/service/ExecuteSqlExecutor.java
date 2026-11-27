@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 
@@ -68,16 +69,36 @@ public class ExecuteSqlExecutor implements ToolExecutor {
             analysis.referencedTables(), analysis.createdTables(),
             dataSource.getDefaultSchema());
 
+        enforceBlockedTables(analysis, dsId);
+
         JdbcConnector connector = new JdbcConnector(dataSource);
         List<StatementResult> results;
-        try (Connection conn = HikariPoolManager.getConnection(connector);
-             Statement stmt = conn.createStatement()) {
-            stmt.setQueryTimeout(config.getTimeout());
+        try (Connection conn = HikariPoolManager.getConnection(connector)) {
+            List<Object> params = args.params() != null ? args.params() : List.of();
             enforceTimeWindows(sql, analysis, dsId);
             enforcePlanGuardrail(conn, sql, analysis, config, dataSource.getType());
-            stmt.setMaxRows(SqlExecutorHelper.probeRowLimit(config.getMaxRows()));
-            stmt.execute(sql);
-            results = SqlExecutorHelper.collect(stmt, config.getMaxRows());
+            if (!params.isEmpty()) {
+                if (analysis.type() == SqlOperationType.MULTI) {
+                    throw new ToolExecuteException(ToolError.SQL_EXECUTION_ERROR,
+                        "Bind parameters are only supported for single-statement SQL");
+                }
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setQueryTimeout(config.getTimeout());
+                    ps.setMaxRows(SqlExecutorHelper.probeRowLimit(config.getMaxRows()));
+                    for (int i = 0; i < params.size(); i++) {
+                        ps.setObject(i + 1, params.get(i));
+                    }
+                    ps.execute();
+                    results = SqlExecutorHelper.collect(ps, config.getMaxRows());
+                }
+            } else {
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.setQueryTimeout(config.getTimeout());
+                    stmt.setMaxRows(SqlExecutorHelper.probeRowLimit(config.getMaxRows()));
+                    stmt.execute(sql);
+                    results = SqlExecutorHelper.collect(stmt, config.getMaxRows());
+                }
+            }
         } catch (SQLException e) {
             throw new ToolExecuteException(ToolError.SQL_EXECUTION_ERROR, e.getMessage());
         }
@@ -85,6 +106,35 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         registerCreatedTables(dsId, analysis, dataSource.getDefaultSchema(), ctx.serviceId());
 
         return new SqlExecution(sql, results, null);
+    }
+
+    /** Rejects free SQL on tables closed to it; they are reachable only through parameterized tools. */
+    private void enforceBlockedTables(SqlAnalysisResult analysis, String dsId) {
+        if (analysis.referencedTables().isEmpty()) {
+            return;
+        }
+        java.util.List<com.dati.datasource.repository.po.TableInfoPO> registered =
+            tableInfoDAO.findByDataSourceId(dsId);
+        java.util.Set<String> blocked = new java.util.HashSet<>();
+        for (com.dati.datasource.repository.po.TableInfoPO po : registered) {
+            if (po.isSqlBlocked()) {
+                blocked.add(po.getName().toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        if (blocked.isEmpty()) {
+            return;
+        }
+        java.util.List<String> hits = new java.util.ArrayList<>();
+        for (com.dati.db.analysis.TableRef ref : analysis.referencedTables()) {
+            if (ref.name() != null && blocked.contains(ref.name().toLowerCase(java.util.Locale.ROOT))) {
+                hits.add(ref.name());
+            }
+        }
+        if (!hits.isEmpty()) {
+            throw new ToolExecuteException(ToolError.SQL_EXECUTION_ERROR,
+                "Free SQL is not allowed on large tables: " + String.join(", ", hits)
+                    + ". Use the service's parameterized tools or query a narrower aggregation instead.");
+        }
     }
 
     /**

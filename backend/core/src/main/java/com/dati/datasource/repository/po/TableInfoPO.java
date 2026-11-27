@@ -44,4 +44,8 @@ public class TableInfoPO extends BaseResourcePO {
     /** Maximum allowed span in days for the required time filter; null means unbounded width. */
     private Integer maxRangeDays;
 
+    /** Huge tables closed to free SQL; reachable only through parameterized tools. */
+    @Column(nullable = false)
+    private boolean sqlBlocked = false;
+
 }

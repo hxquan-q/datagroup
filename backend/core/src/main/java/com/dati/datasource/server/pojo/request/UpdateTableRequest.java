@@ -21,4 +21,6 @@ public class UpdateTableRequest {
 
     private Integer maxRangeDays;
 
+    private Boolean sqlBlocked;
+
 }

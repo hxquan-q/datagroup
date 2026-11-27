@@ -19,4 +19,6 @@ public class TableInfoVO extends BaseResourceVO {
     private boolean timeWindowRequired;
 
     private Integer maxRangeDays;
+
+    private boolean sqlBlocked;
 }

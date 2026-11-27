@@ -276,6 +276,9 @@ public class TableService {
         if (tableInfo.getMaxRangeDays() != null) {
             existingPO.setMaxRangeDays(tableInfo.getMaxRangeDays());
         }
+        if (tableInfo.getSqlBlocked() != null) {
+            existingPO.setSqlBlocked(tableInfo.getSqlBlocked());
+        }
         if (tableInfo.getUpdatedBy() != null) {
             existingPO.setUpdatedBy(tableInfo.getUpdatedBy());
         }

@@ -15,6 +15,7 @@ public class TableMapper {
         tableInfo.setTimeColumn(tableInfoPO.getTimeColumn());
         tableInfo.setTimeWindowRequired(tableInfoPO.isTimeWindowRequired());
         tableInfo.setMaxRangeDays(tableInfoPO.getMaxRangeDays());
+        tableInfo.setSqlBlocked(tableInfoPO.isSqlBlocked());
         return tableInfo;
     }
 
@@ -27,6 +28,7 @@ public class TableMapper {
         tableInfoPO.setTimeColumn(tableInfo.getTimeColumn());
         tableInfoPO.setTimeWindowRequired(Boolean.TRUE.equals(tableInfo.getTimeWindowRequired()));
         tableInfoPO.setMaxRangeDays(tableInfo.getMaxRangeDays());
+        tableInfoPO.setSqlBlocked(Boolean.TRUE.equals(tableInfo.getSqlBlocked()));
         return tableInfoPO;
     }
 
