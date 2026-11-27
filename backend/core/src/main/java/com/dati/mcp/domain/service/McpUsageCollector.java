@@ -144,8 +144,8 @@ public class McpUsageCollector {
                         ? errorMessage.substring(0, MAX_ERROR_LENGTH)
                         : errorMessage);
                 }
-                po.setRequestParams(truncate(requestParams, 2000));
-                po.setExecutedSql(truncate(executedSql, 4000));
+                po.setRequestParams(requestParams);
+                po.setExecutedSql(executedSql);
                 po.setMetricCode(truncate(metricCode, 128));
                 po.setRowCount(rowCount);
                 logQueue.offer(po);

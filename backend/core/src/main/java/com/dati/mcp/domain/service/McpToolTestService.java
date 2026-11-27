@@ -67,7 +67,7 @@ public class McpToolTestService {
                 .toList();
             List<com.dati.mcp.domain.model.McpServiceSnapshot.MetricDraft> metrics = List.of();
             if (tool.toolType() == McpToolType.SEARCH_SEMANTICS || tool.toolType() == McpToolType.QUERY_METRIC
-                    || tool.toolType() == McpToolType.SEARCH_METADATA) {
+                    || tool.toolType() == McpToolType.INSPECT_METRIC || tool.toolType() == McpToolType.SEARCH_METADATA) {
                 metrics = metricService.getMetricsBySubjectIds(readableSubjectIds).stream()
                     .map(McpServiceSnapshotMapper::toMetricDraft)
                     .toList();
@@ -75,7 +75,7 @@ public class McpToolTestService {
             List<com.dati.mcp.domain.model.McpServiceSnapshot.TableRelationDraft> relations = List.of();
             if (tool.toolType() == McpToolType.SEARCH_METADATA || tool.toolType() == McpToolType.LIST_TABLES
                     || tool.toolType() == McpToolType.GET_TABLE_INFO || tool.toolType() == McpToolType.SEARCH_SEMANTICS
-                    || tool.toolType() == McpToolType.QUERY_METRIC) {
+                    || tool.toolType() == McpToolType.QUERY_METRIC || tool.toolType() == McpToolType.INSPECT_METRIC) {
                 relations = relationSnapshotService.buildRelationDrafts(readableSubjectIds, scopeItems);
             }
             ToolExecutionContext ctx = new ToolExecutionContext(

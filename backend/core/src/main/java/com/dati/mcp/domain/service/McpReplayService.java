@@ -12,6 +12,8 @@ import com.dati.mcp.repository.po.McpServicePO;
 import com.dati.mcp.repository.po.McpServiceSnapshotPO;
 import com.dati.mcp.server.endpoint.McpProtocolHandler;
 import com.dati.mcp.server.pojo.McpReplayResultVO;
+import com.dati.permission.domain.service.PermissionService;
+import com.dati.permission.domain.model.Permission;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.springframework.stereotype.Service;
 
@@ -28,19 +30,26 @@ public class McpReplayService {
     private final McpServiceDAO serviceDAO;
     private final McpServiceSnapshotDAO snapshotDAO;
     private final McpProtocolHandler protocolHandler;
+    private final PermissionService permissionService;
+
+    private static final java.util.Set<String> WRITE_TOOLS = java.util.Set.of(
+        "upsert_business_term", "update_table_info", "update_column_info");
 
     public McpReplayService(McpInvocationLogDAO logDAO,
                             McpServiceDAO serviceDAO,
                             McpServiceSnapshotDAO snapshotDAO,
-                            McpProtocolHandler protocolHandler) {
+                            McpProtocolHandler protocolHandler,
+                            PermissionService permissionService) {
         this.logDAO = logDAO;
         this.serviceDAO = serviceDAO;
         this.snapshotDAO = snapshotDAO;
         this.protocolHandler = protocolHandler;
+        this.permissionService = permissionService;
     }
 
     @SuppressWarnings("unchecked")
     public McpReplayResultVO replay(String serviceId, String logId) {
+        permissionService.requireMcpService(serviceId, Permission.EDIT);
         McpInvocationLogPO log = logDAO.findById(logId)
             .filter(entry -> serviceId.equals(entry.getServiceId()))
             .orElseThrow(() -> new DatiException(ErrorCode.NOT_FOUND));
@@ -57,11 +66,28 @@ public class McpReplayService {
             throw new DatiException(ErrorCode.INVALID_PARAMETER, "Service has no active published version");
         }
 
+        if (WRITE_TOOLS.contains(log.getToolName())) {
+            throw new DatiException(ErrorCode.INVALID_PARAMETER,
+                "Write tools cannot be replayed: " + log.getToolName());
+        }
         Map<String, Object> arguments;
         try {
             arguments = com.dati.common.JsonUtils.fromJson(log.getRequestParams(), Map.class);
         } catch (Exception e) {
             throw new DatiException(ErrorCode.INVALID_PARAMETER, "Recorded parameters are not valid JSON");
+        }
+        String sqlProbe = log.getExecutedSql();
+        if (sqlProbe == null && arguments.get("sql") instanceof String paramSql) {
+            sqlProbe = paramSql;
+        }
+        if (sqlProbe != null) {
+            String normalized = sqlProbe.stripLeading().toLowerCase(java.util.Locale.ROOT);
+            boolean readOnly = normalized.startsWith("select") || normalized.startsWith("with")
+                || normalized.startsWith("explain") || normalized.startsWith("show");
+            if (!readOnly) {
+                throw new DatiException(ErrorCode.INVALID_PARAMETER,
+                    "Only read-only invocations can be replayed");
+            }
         }
 
         McpReplayResultVO vo = new McpReplayResultVO();
