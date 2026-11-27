@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AuthDialog: typeof import('./components/common/AuthDialog.vue')['default']
     AuthShell: typeof import('./components/common/AuthShell.vue')['default']
+    BaseChart: typeof import('./components/common/BaseChart.vue')['default']
     BaseHeader: typeof import('./components/layouts/BaseHeader.vue')['default']
     BaseSide: typeof import('./components/layouts/BaseSide.vue')['default']
     CustomToolDialog: typeof import('./components/mcp-service/CustomToolDialog.vue')['default']
@@ -50,7 +51,6 @@ declare module 'vue' {
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPagination: typeof import('element-plus/es')['ElPagination']
     ElPopover: typeof import('element-plus/es')['ElPopover']
-    ElProgress: typeof import('element-plus/es')['ElProgress']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']

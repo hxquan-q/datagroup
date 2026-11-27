@@ -67,6 +67,11 @@ import { get, post, put, del } from './http'
 - Use `placeholderData: keepPreviousData` for paginated tables so rows do not disappear while changing pages
 - Query errors are reported by the shared query client; mutations still use their own contextual `notifyError`
 
+**Charts**:
+- Use `BaseChart` (`vue-echarts`) for operational charts; keep `echarts/core` imports limited to the chart types/components actually used
+- Chart colors must come from `useChartColors()` so light/dark mode follows Element Plus tokens
+- Charts must visualize real API data; do not add decorative or hard-coded data series
+
 **Domain API conventions**:
 - VO types extend `BaseResourceVO`; field names `snake_case`
 - `Create*Request` / `Update*Request` types co-located in the same file

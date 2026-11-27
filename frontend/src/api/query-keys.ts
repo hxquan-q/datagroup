@@ -5,3 +5,32 @@ export const datasourceKeys = {
     [...datasourceKeys.lists(), { page, size, keyword }] as const,
   detail: (id: string) => [...datasourceKeys.all, "detail", id] as const,
 };
+
+export const mcpUsageKeys = {
+  all: ["mcp-usage"] as const,
+  stats: (serviceId: string, days: number) =>
+    [...mcpUsageKeys.all, "stats", serviceId, days] as const,
+  logs: (
+    serviceId: string,
+    page: number,
+    size: number,
+    toolName: string,
+    success: boolean | null,
+  ) =>
+    [
+      ...mcpUsageKeys.all,
+      "logs",
+      serviceId,
+      { page, size, toolName, success },
+    ] as const,
+};
+
+export const dashboardKeys = {
+  all: ["dashboard"] as const,
+  overview: (days: number) => [...dashboardKeys.all, "overview", days] as const,
+};
+
+export const mcpServiceKeys = {
+  all: ["mcp-services"] as const,
+  featured: () => [...mcpServiceKeys.all, "featured"] as const,
+};

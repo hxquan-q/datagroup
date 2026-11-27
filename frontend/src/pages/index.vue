@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, defineAsyncComponent } from "vue";
+import type { EChartsCoreOption } from "echarts/core";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { useQuery } from "@tanstack/vue-query";
 import {
   ArrowUpRight,
   BookOpen,
@@ -13,69 +15,113 @@ import {
   SquareTerminal,
   Zap,
 } from "@lucide/vue";
-import { listDataSources } from "~/api/datasource";
-import { listSubjects } from "~/api/subject";
+import { getDashboardOverview, type DashboardDailyCount } from "~/api/dashboard";
 import { listMcpServices } from "~/api/mcp-service";
+import { dashboardKeys, mcpServiceKeys } from "~/api/query-keys";
+import { useChartColors } from "~/composables";
+import { escapeHtml } from "~/utils/html";
+
+const BaseChart = defineAsyncComponent(() => import("~/components/common/BaseChart.vue"));
 
 const { t, locale } = useI18n();
 const router = useRouter();
+const chartColors = useChartColors();
 
 const docLink = computed(() => (locale.value === "en" ? "/docs/en/" : "/docs/"));
-const loadingStats = ref(true);
-const datasourceCount = ref(0);
-const subjectCount = ref(0);
-const mcpServiceCount = ref(0);
-const featuredService = ref<{ name?: string; endpoint_path?: string; status?: string } | null>(null);
+const { data: overview, isPending: overviewPending } = useQuery({
+  queryKey: dashboardKeys.overview(15),
+  queryFn: ({ signal }) => getDashboardOverview(15, signal),
+  staleTime: 0,
+});
+const { data: featuredPage, isPending: featuredPending } = useQuery({
+  queryKey: mcpServiceKeys.featured(),
+  queryFn: ({ signal }) => listMcpServices(1, 1, undefined, undefined, signal),
+  staleTime: 0,
+});
 
-async function fetchOverview() {
-  loadingStats.value = true;
-  try {
-    const [dsRes, subRes, mcpRes] = await Promise.allSettled([
-      listDataSources(1, 1),
-      listSubjects(1, 1),
-      listMcpServices(1, 1),
-    ]);
+const loadingStats = computed(() => overviewPending.value);
+const loadingFeatured = computed(() => featuredPending.value);
+const datasourceCount = computed(() => overview.value?.data_sources?.total ?? 0);
+const subjectCount = computed(() => overview.value?.subjects?.total ?? 0);
+const mcpServiceCount = computed(() => overview.value?.mcp_services?.total ?? 0);
+const featuredService = computed(() => featuredPage.value?.data?.[0] || null);
 
-    if (dsRes.status === "fulfilled") datasourceCount.value = dsRes.value.total ?? 0;
-    if (subRes.status === "fulfilled") subjectCount.value = subRes.value.total ?? 0;
-    if (mcpRes.status === "fulfilled") {
-      mcpServiceCount.value = mcpRes.value.total ?? 0;
-      featuredService.value = mcpRes.value.data?.[0] || null;
-    }
-  } finally {
-    loadingStats.value = false;
-  }
+function sparklineOption(points: DashboardDailyCount[], color: string): EChartsCoreOption {
+  const colors = chartColors.value;
+  return {
+    animationDuration: 250,
+    grid: { left: 0, right: 0, top: 5, bottom: 1 },
+    tooltip: {
+      trigger: "axis",
+      confine: true,
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      textStyle: { color: colors.textPrimary, fontSize: 11 },
+      formatter: (params: any) => {
+        const item = Array.isArray(params) ? params[0] : params;
+        if (!item) return "";
+        return `${escapeHtml(String(item.axisValue || ""))}: ${item.value}`;
+      },
+    },
+    xAxis: {
+      type: "category",
+      show: false,
+      boundaryGap: false,
+      data: points.map((item) => item.date),
+    },
+    yAxis: { type: "value", show: false, min: 0, minInterval: 1 },
+    series: [
+      {
+        type: "line",
+        data: points.map((item) => item.count),
+        smooth: true,
+        symbol: "none",
+        lineStyle: { width: 2, color },
+        itemStyle: { color },
+        areaStyle: { color, opacity: 0.14 },
+      },
+    ],
+  };
 }
 
-const modules = computed(() => [
-  {
-    id: "datasource",
-    icon: Database,
-    title: t("home.workflow.step1Title"),
-    desc: t("home.workflow.step1Desc"),
-    statLabel: t("home.stats.dataSources"),
-    count: datasourceCount.value,
-    path: "/datasources",
-  },
-  {
-    id: "subject",
-    icon: Layers,
-    title: t("home.workflow.step2Title"),
-    desc: t("home.workflow.step2Desc"),
-    statLabel: t("home.stats.subjects"),
-    count: subjectCount.value,
-    path: "/subjects",
-  },
-  {
-    id: "mcp",
-    icon: SquareTerminal,
-    title: t("home.workflow.step3Title"),
-    desc: t("home.workflow.step3Desc"),
-    statLabel: t("home.stats.mcpServices"),
-    count: mcpServiceCount.value,
-    path: "/mcp-services",
-  },
-]);
+const modules = computed(() => {
+  const colors = chartColors.value;
+  return [
+    {
+      id: "datasource",
+      icon: Database,
+      title: t("home.workflow.step1Title"),
+      desc: t("home.workflow.step1Desc"),
+      statLabel: t("home.stats.dataSources"),
+      count: datasourceCount.value,
+      trend: overview.value?.data_sources?.daily_created || [],
+      color: colors.primary,
+      path: "/datasources",
+    },
+    {
+      id: "subject",
+      icon: Layers,
+      title: t("home.workflow.step2Title"),
+      desc: t("home.workflow.step2Desc"),
+      statLabel: t("home.stats.subjects"),
+      count: subjectCount.value,
+      trend: overview.value?.subjects?.daily_created || [],
+      color: colors.success,
+      path: "/subjects",
+    },
+    {
+      id: "mcp",
+      icon: SquareTerminal,
+      title: t("home.workflow.step3Title"),
+      desc: t("home.workflow.step3Desc"),
+      statLabel: t("home.stats.mcpServices"),
+      count: mcpServiceCount.value,
+      trend: overview.value?.mcp_services?.daily_created || [],
+      color: colors.warning,
+      path: "/mcp-services",
+    },
+  ];
+});
 
 const features = computed(() => [
   {
@@ -98,8 +144,6 @@ const features = computed(() => [
 function go(path: string) {
   router.push(path);
 }
-
-onMounted(fetchOverview);
 </script>
 
 <template>
@@ -129,7 +173,7 @@ onMounted(fetchOverview);
           <div class="signal-card-header">
             <span></span><span></span><span></span>
           </div>
-          <div v-if="loadingStats" class="signal-service signal-empty">
+          <div v-if="loadingFeatured" class="signal-service signal-empty">
             <div class="service-icon"><Zap :size="17" /></div>
             <div class="signal-service-copy">
               <span class="text-skeleton text-skeleton-title"></span>
@@ -165,18 +209,66 @@ onMounted(fetchOverview);
         v-for="module in modules"
         :key="module.id"
         class="module-card"
-        role="link"
-        tabindex="0"
         @click="go(module.path)"
-        @keydown.enter.prevent="go(module.path)"
       >
         <div class="module-topline">
           <span class="module-icon"><component :is="module.icon" :size="20" /></span>
-          <ArrowUpRight class="module-arrow" :size="17" />
+          <router-link
+            class="module-arrow"
+            :to="module.path"
+            :aria-label="`${t('home.openModule')}: ${module.statLabel}`"
+            @click.stop
+          >
+            <ArrowUpRight :size="17" />
+          </router-link>
         </div>
-        <div class="module-count">
-          <span v-if="loadingStats" class="count-skeleton"></span>
-          <template v-else>{{ module.count }}</template>
+        <div class="module-stat-row">
+          <div class="module-count">
+            <span v-if="loadingStats" class="count-skeleton"></span>
+            <template v-else>{{ module.count }}</template>
+          </div>
+          <div v-if="!loadingStats && module.trend.length" class="module-sparkline-wrap">
+            <div
+              class="module-sparkline"
+              role="img"
+              :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
+            >
+              <BaseChart :option="sparklineOption(module.trend, module.color)" height="42px" />
+            </div>
+            <div @click.stop @keydown.enter.stop @keydown.space.stop>
+              <el-popover placement="bottom-end" :width="230" trigger="click">
+                <template #reference>
+                  <button
+                    type="button"
+                    class="module-trend-caption"
+                    :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
+                  >
+                    {{ t("home.stats.trendCaption") }}
+                  </button>
+                </template>
+                <div
+                  class="module-trend-table-wrap"
+                  tabindex="0"
+                  :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
+                >
+                  <table class="module-trend-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">{{ t("home.stats.trendDate") }}</th>
+                        <th scope="col">{{ t("home.stats.trendCount") }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="point in module.trend" :key="point.date">
+                        <td>{{ point.date }}</td>
+                        <td>{{ point.count }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </el-popover>
+            </div>
+          </div>
         </div>
         <h2>{{ module.statLabel }}</h2>
         <p>{{ module.desc }}</p>
@@ -497,8 +589,20 @@ onMounted(fetchOverview);
 }
 
 .module-arrow {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--ep-text-color-placeholder);
+  cursor: pointer;
   transition: transform var(--xiaoai-motion), color var(--xiaoai-motion);
+}
+
+.module-arrow:focus-visible {
+  outline: 2px solid var(--ep-color-primary);
+  outline-offset: 2px;
 }
 
 .module-card:hover .module-arrow {
@@ -506,8 +610,74 @@ onMounted(fetchOverview);
   transform: translate(2px, -2px);
 }
 
-.module-count {
+.module-stat-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
   margin-top: 16px;
+}
+
+.module-sparkline-wrap {
+  width: 112px;
+  flex: 0 0 112px;
+  text-align: right;
+}
+
+.module-sparkline {
+  height: 42px;
+}
+
+.module-trend-caption {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ep-text-color-placeholder);
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1.2;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.module-trend-caption:focus-visible {
+  outline: 2px solid var(--ep-color-primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.module-trend-table-wrap {
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.module-trend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.module-trend-table th,
+.module-trend-table td {
+  padding: 5px 6px;
+  text-align: left;
+}
+
+.module-trend-table th {
+  color: var(--ep-text-color-secondary);
+  font-weight: 650;
+}
+
+.module-trend-table td {
+  color: var(--ep-text-color-regular);
+}
+
+.module-trend-table th:last-child,
+.module-trend-table td:last-child {
+  text-align: right;
+}
+
+.module-count {
   color: var(--ep-text-color-primary);
   font-size: 32px;
   font-weight: 760;

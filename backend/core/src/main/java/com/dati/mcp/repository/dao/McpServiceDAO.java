@@ -9,7 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -88,6 +90,21 @@ public interface McpServiceDAO extends JpaRepository<McpServicePO, String> {
                                                              @Param("userId") String userId,
                                                              @Param("groupIds") Collection<String> groupIds,
                                                              Pageable pageable);
+
+    @Query("SELECT m.createdAt FROM McpServicePO m")
+    List<Instant> findAllCreatedAt();
+
+    @Query("""
+            SELECT m.createdAt FROM McpServicePO m
+            WHERE m.createdBy = :userId
+               OR EXISTS (SELECT 1 FROM ResourceAclPO a
+                          WHERE a.resourceType = 'MCP_SERVICE'
+                            AND a.resourceId = m.id
+                            AND ((a.principalType = 'USER' AND a.principalId = :userId)
+                                 OR (a.principalType = 'GROUP' AND a.principalId IN :groupIds)))
+            """)
+    List<Instant> findAccessibleCreatedAt(@Param("userId") String userId,
+                                          @Param("groupIds") Collection<String> groupIds);
 
     @Query("""
             SELECT m FROM McpServicePO m
