@@ -280,6 +280,7 @@ onMounted(() => {
                 size="small"
                 type="info"
                 class="semantic-alias-tag mr-1"
+                :title="alias"
               >
                 {{ alias }}
               </el-tag>

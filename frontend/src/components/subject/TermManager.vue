@@ -676,6 +676,7 @@ onMounted(() => {
                 size="small"
                 type="info"
                 class="semantic-alias-tag mr-1"
+                :title="alias"
               >
                 {{ alias }}
               </el-tag>
@@ -731,18 +732,16 @@ onMounted(() => {
                   type="primary"
                   size="small"
                   class="semantic-entity-tag"
-                  closable
-                  @close="handleRemoveRelation(row.id, rel)"
                 >
                   <Link2 class="semantic-entity-link-icon" :size="11" />
                   <span class="truncate">{{ getRelationDisplayText(rel) }}</span>
                 </el-tag>
 
-                <template v-if="getTermRelations(row).length > 1">
+                <template v-if="getTermRelations(row).length > 0">
                   <el-popover trigger="click" placement="bottom" :width="340">
                     <template #reference>
                       <el-button link type="primary" size="small">
-                        +{{ getTermRelations(row).length - 1 }}
+                        {{ getTermRelations(row).length > 1 ? `+${getTermRelations(row).length - 1}` : t("common.detail") }}
                       </el-button>
                     </template>
                     <div class="chip-detail-card">
