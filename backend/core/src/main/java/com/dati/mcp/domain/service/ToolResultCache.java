@@ -198,8 +198,6 @@ public class ToolResultCache {
         return data;
     }
 
-    }
-
     private Tier tierFor(McpToolType type, Map<String, Object> arguments) {
         if (METADATA_TOOLS.contains(type)) {
             return metadataTier;
