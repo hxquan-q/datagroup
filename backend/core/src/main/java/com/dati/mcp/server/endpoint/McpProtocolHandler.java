@@ -3,6 +3,7 @@ package com.dati.mcp.server.endpoint;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.service.ToolExecuteException;
+import com.dati.mcp.domain.service.ToolResultCache;
 import com.dati.mcp.domain.service.ToolExecutionContext;
 import com.dati.mcp.domain.service.ToolExecutor;
 import com.dati.mcp.domain.service.ToolParameterBinder;
@@ -10,6 +11,7 @@ import com.dati.mcp.repository.po.McpServicePO;
 import com.dati.mcp.server.converter.ToolDefinitionConverter;
 import com.dati.mcp.server.converter.PromptDefinitionConverter;
 import com.dati.mcp.server.converter.ToolResultConverter;
+import com.dati.mcp.server.pojo.ToolTestData;
 import com.dati.mcp.server.resolver.SnapshotToolResolver;
 import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.json.McpJsonMapper;
@@ -37,6 +39,7 @@ public class McpProtocolHandler {
     private final ToolResultConverter toolResultConverter;
     private final PromptDefinitionConverter promptDefinitionConverter;
     private final ToolParameterBinder parameterBinder;
+    private final ToolResultCache resultCache;
     private final Map<McpToolType, ToolExecutor> executorMap;
     private final McpJsonMapper jsonMapper = McpJsonDefaults.getMapper();
 
@@ -45,12 +48,14 @@ public class McpProtocolHandler {
                               ToolResultConverter toolResultConverter,
                               PromptDefinitionConverter promptDefinitionConverter,
                               List<ToolExecutor> toolExecutorList,
-                              ToolParameterBinder parameterBinder) {
+                              ToolParameterBinder parameterBinder,
+                              ToolResultCache resultCache) {
         this.toolDefinitionConverter = toolDefinitionConverter;
         this.snapshotToolResolver = snapshotToolResolver;
         this.toolResultConverter = toolResultConverter;
         this.promptDefinitionConverter = promptDefinitionConverter;
         this.parameterBinder = parameterBinder;
+        this.resultCache = resultCache;
         this.executorMap = toolExecutorList.stream()
             .collect(Collectors.toMap(ToolExecutor::getToolType, Function.identity()));
     }
@@ -63,7 +68,7 @@ public class McpProtocolHandler {
                 case McpSchema.METHOD_INITIALIZE -> handleInitialize(service, content, request);
                 case McpSchema.METHOD_PING -> McpSchema.JSONRPCResponse.result(request.id(), Map.of());
                 case McpSchema.METHOD_TOOLS_LIST -> handleToolsList(content, request);
-                case McpSchema.METHOD_TOOLS_CALL -> handleToolsCall(service.getId(), content, request);
+                case McpSchema.METHOD_TOOLS_CALL -> handleToolsCall(service.getId(), service.getActiveVersionNumber(), content, request);
                 case McpSchema.METHOD_PROMPT_LIST -> handlePromptsList(content, request);
                 case McpSchema.METHOD_PROMPT_GET -> handlePromptsGet(content, request);
                 default -> McpSchema.JSONRPCResponse.error(request.id(), methodNotImplemented(request.method()));
@@ -114,6 +119,7 @@ public class McpProtocolHandler {
     }
 
     private McpSchema.JSONRPCResponse handleToolsCall(String serviceId,
+                                                      Integer versionNumber,
                                                       McpServiceSnapshot.SnapshotContent content,
                                                       McpSchema.JSONRPCRequest request) {
         McpSchema.CallToolRequest callReq = parseParams(request, McpSchema.CallToolRequest.class);
@@ -133,6 +139,11 @@ public class McpProtocolHandler {
                 new McpSchema.JSONRPCResponse.JSONRPCError(McpSchema.ErrorCodes.INTERNAL_ERROR, "No executor for tool type: " + tool.toolType(), null));
         }
         Map<String, Object> arguments = callReq.arguments() == null ? Map.of() : callReq.arguments();
+        String cacheKey = resultCache.key(versionNumber, name, arguments);
+        Object cached = resultCache.get(tool.toolType(), arguments, cacheKey);
+        if (cached != null) {
+            return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult((ToolTestData) cached));
+        }
         ToolExecutionContext ctx = new ToolExecutionContext(
             serviceId, tool.toolType(), tool.config(),
             parameterBinder.bind(tool.toolType().getParameterType(), arguments),
@@ -140,6 +151,7 @@ public class McpProtocolHandler {
             content.getMetrics() == null ? List.of() : content.getMetrics(),
             content.getRelations() == null ? List.of() : content.getRelations());
         var data = executor.execute(ctx);
+        resultCache.store(tool.toolType(), arguments, cacheKey, data);
         return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult(data));
     }
 
