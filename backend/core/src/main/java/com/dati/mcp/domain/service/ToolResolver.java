@@ -47,14 +47,11 @@ public class ToolResolver {
         }
         ToolConfig config = cfg.getConfig();
         if (toolType == McpToolType.EXECUTE_QUERY_BATCH) {
-            ToolConfig sqlConfig = prebuiltDAO.findByServiceIdAndToolType(serviceId, McpToolType.EXECUTE_SQL)
+            config = prebuiltDAO.findByServiceIdAndToolType(serviceId, McpToolType.EXECUTE_SQL)
                 .map(McpPrebuiltToolConfigMapper::toModel)
                 .filter(McpPrebuiltToolConfig::isEnabled)
                 .map(McpPrebuiltToolConfig::getConfig)
-                .orElse(null);
-            if (sqlConfig != null) {
-                config = sqlConfig;
-            }
+                .orElseGet(McpToolType.EXECUTE_SQL::getDefaultConfig);
         }
         return new ResolvedTool(toolType, true, config, true);
     }

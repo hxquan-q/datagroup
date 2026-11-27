@@ -27,9 +27,7 @@ public class SnapshotToolResolver {
                     ToolConfig config = t.config();
                     if (t.toolType() == McpToolType.EXECUTE_QUERY_BATCH) {
                         ToolConfig sqlConfig = findEnabledPrebuiltConfig(content, McpToolType.EXECUTE_SQL);
-                        if (sqlConfig != null) {
-                            config = sqlConfig;
-                        }
+                        config = sqlConfig != null ? sqlConfig : McpToolType.EXECUTE_SQL.getDefaultConfig();
                     }
                     return Optional.of(new ResolvedTool(t.toolType(), config, t.toolType().getToolName()));
                 }

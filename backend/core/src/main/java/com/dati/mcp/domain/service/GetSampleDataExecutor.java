@@ -61,12 +61,21 @@ public class GetSampleDataExecutor implements ToolExecutor {
         DataSource dataSource = dataSourceService.getDataSourceInternal(args.dataSourceId())
             .orElseThrow(() -> new ToolExecuteException(ToolError.DATA_SOURCE_NOT_FOUND, args.dataSourceId()));
 
-        scopeValidator.validate(ctx.scopeItems(), args.dataSourceId(),
-            Set.of(new TableRef(schema, table)), Set.of(), dataSource.getDefaultSchema());
-
         boolean mysqlFamily = dataSource.getType() == com.dati.db.DbType.MYSQL
             || dataSource.getType() == com.dati.db.DbType.MARIADB
             || dataSource.getType() == com.dati.db.DbType.DORIS;
+        if (!mysqlFamily) {
+            table = table.toLowerCase(java.util.Locale.ROOT);
+            if (schema != null) {
+                schema = schema.toLowerCase(java.util.Locale.ROOT);
+            }
+            columns = columns.stream().map(c -> c.trim().toLowerCase(java.util.Locale.ROOT))
+                .collect(java.util.stream.Collectors.toList());
+        }
+
+        scopeValidator.validate(ctx.scopeItems(), args.dataSourceId(),
+            Set.of(new TableRef(schema, table)), Set.of(), dataSource.getDefaultSchema());
+
         String quote = mysqlFamily ? "`" : "\"";
         java.util.function.Function<String, String> q = id -> quote + id + quote;
         String columnSql = columns.isEmpty() ? "*"
