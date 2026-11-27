@@ -8,6 +8,7 @@ import { computed, defineAsyncComponent, nextTick, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
+import { Info as InfoFilled } from "@lucide/vue";
 import type { SubjectVO, UpdateSubjectRequest } from "~/api/subject";
 import { getSubject, updateSubject } from "~/api/subject";
 import { notifyError } from "~/api/http";
@@ -130,7 +131,6 @@ onMounted(() => {
     >
       <template #meta>
         <span>{{ t("subject.datasource") }}: {{ subject?.datasource_name || subject?.datasource_id || '-' }}</span>
-        <span>{{ t("common.lastModifiedAt", { time: subject?.updated_at ? formatDateTime(subject.updated_at) : '-' }) }}</span>
       </template>
       <template #actions>
         <el-button @click="authDialogVisible = true">
@@ -150,7 +150,7 @@ onMounted(() => {
         <el-form label-position="top" class="subject-form flex flex-col gap-5">
           <!-- Static Readonly ID Field -->
           <el-form-item label="ID" class="!mb-0">
-            <span class="font-mono text-sm text-[var(--ep-text-color-primary)] font-medium select-all">{{ subject?.id || '-' }}</span>
+            <span class="font-mono text-xs text-[var(--ep-text-color-secondary)] select-all">{{ subject?.id || '-' }}</span>
           </el-form-item>
 
           <el-form-item :label="t('common.name')" required class="!mb-0">
@@ -178,7 +178,7 @@ onMounted(() => {
                 @blur="handleNewAliasConfirm"
               />
               <el-button v-else size="small" class="!px-2.5" @click="showNewAliasInput">
-                + {{ t('common.aliases') }}
+                + {{ t('common.addAlias') }}
               </el-button>
             </div>
           </el-form-item>
@@ -194,7 +194,7 @@ onMounted(() => {
 
           <!-- Static Readonly Datasource Field -->
           <el-form-item :label="t('subject.datasource')" class="!mb-0">
-            <span class="text-sm text-[var(--ep-text-color-primary)] font-medium">
+            <span class="font-mono text-xs text-[var(--ep-text-color-secondary)] select-all">
               {{ subject?.datasource_name || subject?.datasource_id || '-' }}
             </span>
           </el-form-item>
@@ -212,7 +212,9 @@ onMounted(() => {
           </el-button>
 
           <div class="flex items-center gap-3 text-xs text-[var(--ep-text-color-secondary)]">
-            <span v-if="isDirty" class="text-amber-500 font-medium">{{ t("common.unsavedChanges") }}</span>
+            <span v-if="isDirty" class="text-[var(--ep-color-warning)] font-medium flex items-center gap-1">
+              <el-icon><InfoFilled /></el-icon> {{ t("common.unsavedChanges") }}
+            </span>
             <span>{{ t("common.lastModifiedAt", { time: subject?.updated_at ? formatDateTime(subject.updated_at) : '-' }) }}</span>
           </div>
         </div>
@@ -273,7 +275,7 @@ onMounted(() => {
 }
 
 .panel {
-  padding: 22px;
+  padding: 24px;
 }
 .validation-panel {
   min-height: 320px;
@@ -294,10 +296,6 @@ onMounted(() => {
 
   .scope-panel {
     padding: 14px;
-  }
-
-  .tabs-bar {
-    width: 100%;
   }
 }
 </style>

@@ -796,15 +796,24 @@ function go(path: string) {
   color: var(--ep-color-success);
 }
 
+/* Four steps always balance: 4-wide, 2x2 mid, stacked narrow — never an orphaned row. */
 .workflow-steps {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+}
+
+/* Content width is viewport minus the fixed sidebar, so the 2x2 fallback
+   must trigger well before the cards would squeeze below ~280px each. */
+@media (max-width: 1400px) {
+  .workflow-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .workflow-step {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 14px;

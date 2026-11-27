@@ -103,6 +103,7 @@ export default {
     update: "Update",
     remove: "Remove",
     add: "Add",
+    addAlias: "Add alias",
     search: "Search",
     testConnection: "Test Connection",
     refresh: "Refresh",

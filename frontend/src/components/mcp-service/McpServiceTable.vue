@@ -29,7 +29,7 @@ const statusType = (status: string) => {
     case "PUBLISHED":
       return "success";
     case "DISABLED":
-      return "danger";
+      return "warning";
     default:
       return "info";
   }
@@ -99,13 +99,15 @@ const handleCopy = async (endpointPath: string) => {
     <el-table-column
       prop="endpoint_path"
       :label="t('mcpService.endpointPath')"
-      min-width="160"
+      min-width="200"
     >
       <template #default="{ row }">
         <div v-if="row.endpoint_path" class="flex items-center gap-1.5 min-w-0">
-          <code class="text-xs px-1.5 py-0.5 rounded bg-[var(--ep-fill-color-light)] text-[var(--ep-text-color-primary)] font-mono truncate max-w-[120px]">
-            {{ row.endpoint_path }}
-          </code>
+          <el-tooltip :content="row.endpoint_path" placement="top" :show-after="300">
+            <code tabindex="0" class="text-xs px-1.5 py-0.5 rounded bg-[var(--ep-fill-color-light)] text-[var(--ep-text-color-primary)] font-mono truncate flex-1 min-w-0">
+              {{ row.endpoint_path }}
+            </code>
+          </el-tooltip>
           <el-button
             link
             type="primary"

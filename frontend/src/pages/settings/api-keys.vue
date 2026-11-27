@@ -139,7 +139,7 @@ onMounted(loadKeys);
     <!-- Page Heading -->
     <div class="page-heading">
       <div>
-        <h1 class="text-2xl font-semibold">{{ t("apiKeys.title") }}</h1>
+        <h1>{{ t("apiKeys.title") }}</h1>
         <p>{{ t("apiKeys.subtitle") }}</p>
       </div>
       <div class="heading-actions">
