@@ -69,6 +69,36 @@ class TimeWindowEnforcerTest {
     }
 
     @Test
+    @DisplayName("rejects bounds hidden behind OR branches")
+    void rejectsOrBranches() {
+        assertThat(TimeWindowEnforcer.check(
+            "SELECT * FROM t_barcode WHERE FType = 'X' OR (FCreateTime >= '2025-09-01' AND FCreateTime < '2025-09-05')",
+            RULES)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("rejects NOT BETWEEN as it admits rows outside the range")
+    void rejectsNotBetween() {
+        assertThat(TimeWindowEnforcer.check(
+            "SELECT * FROM t_barcode WHERE FCreateTime NOT BETWEEN '2025-09-01' AND '2025-09-10'", RULES))
+            .hasSize(1);
+    }
+
+    @Test
+    @DisplayName("credits bounded filters on UPDATE statements")
+    void creditsUpdateWhere() {
+        assertThat(TimeWindowEnforcer.check(
+            "UPDATE t_barcode SET FType = 'X' WHERE FCreateTime >= '2025-09-01' AND FCreateTime < '2025-09-05'",
+            RULES)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("rejects unfiltered DELETE statements")
+    void rejectsUnfilteredDelete() {
+        assertThat(TimeWindowEnforcer.check("DELETE FROM t_barcode WHERE FType = 'X'", RULES)).hasSize(1);
+    }
+
+    @Test
     @DisplayName("passes queries when no rules configured")
     void passesWithoutRules() {
         assertThat(TimeWindowEnforcer.check("SELECT * FROM t_barcode", Map.of())).isEmpty();

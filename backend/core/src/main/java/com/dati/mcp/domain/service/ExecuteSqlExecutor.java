@@ -92,21 +92,28 @@ public class ExecuteSqlExecutor implements ToolExecutor {
      * lacks a bounded filter on the table's configured time column.
      */
     private void enforceTimeWindows(String sql, SqlAnalysisResult analysis, String dsId) {
-        java.util.Set<String> names = new java.util.HashSet<>();
-        for (com.dati.db.analysis.TableRef ref : analysis.referencedTables()) {
-            if (ref.name() != null) {
-                names.add(ref.name());
-            }
-        }
-        if (names.isEmpty()) {
+        if (analysis.referencedTables().isEmpty()) {
             return;
         }
         java.util.List<com.dati.datasource.repository.po.TableInfoPO> registered =
-            tableInfoDAO.findByDataSourceIdAndNameIn(dsId, names);
+            tableInfoDAO.findByDataSourceId(dsId);
         java.util.Map<String, TimeWindowEnforcer.Rule> rules = new java.util.HashMap<>();
-        for (com.dati.datasource.repository.po.TableInfoPO po : registered) {
-            if (po.isTimeWindowRequired() && po.getTimeColumn() != null && !po.getTimeColumn().isBlank()) {
-                rules.put(po.getName().toLowerCase(java.util.Locale.ROOT),
+        for (com.dati.db.analysis.TableRef ref : analysis.referencedTables()) {
+            if (ref.name() == null) {
+                continue;
+            }
+            for (com.dati.datasource.repository.po.TableInfoPO po : registered) {
+                if (!po.isTimeWindowRequired() || po.getTimeColumn() == null || po.getTimeColumn().isBlank()) {
+                    continue;
+                }
+                if (!po.getName().equalsIgnoreCase(ref.name())) {
+                    continue;
+                }
+                if (ref.schema() != null && po.getSchema() != null
+                        && !po.getSchema().equalsIgnoreCase(ref.schema())) {
+                    continue;
+                }
+                rules.putIfAbsent(po.getName().toLowerCase(java.util.Locale.ROOT),
                     new TimeWindowEnforcer.Rule(po.getName(), po.getTimeColumn(), po.getMaxRangeDays()));
             }
         }

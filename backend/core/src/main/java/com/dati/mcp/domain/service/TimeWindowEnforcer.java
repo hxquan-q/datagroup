@@ -64,6 +64,18 @@ public final class TimeWindowEnforcer {
     }
 
     private static void collectWheres(Statement statement, List<Expression> out) {
+        if (statement instanceof net.sf.jsqlparser.statement.update.Update update) {
+            if (update.getWhere() != null) {
+                out.add(update.getWhere());
+            }
+            return;
+        }
+        if (statement instanceof net.sf.jsqlparser.statement.delete.Delete delete) {
+            if (delete.getWhere() != null) {
+                out.add(delete.getWhere());
+            }
+            return;
+        }
         if (statement instanceof PlainSelect plain) {
             if (plain.getWhere() != null) {
                 out.add(plain.getWhere());
@@ -155,7 +167,10 @@ public final class TimeWindowEnforcer {
                     }
                 }
             }
-        } else if (expr instanceof Between between) {
+        } else if (expr instanceof net.sf.jsqlparser.expression.operators.relational.Between between) {
+            if (between.isNot()) {
+                return;
+            }
             if (isTimeColumn(between.getLeftExpression(), timeColumn)) {
                 result[0] = 1;
                 result[1] = 1;
@@ -168,6 +183,14 @@ public final class TimeWindowEnforcer {
                     result[3] = hi;
                 }
             }
+        }
+        if (expr instanceof net.sf.jsqlparser.expression.operators.relational.ParenthesedExpressionList<?> parens) {
+            scanInto(parens.get(0) instanceof Expression e ? e : null, timeColumn, result);
+            return;
+        }
+        if (expr instanceof net.sf.jsqlparser.expression.operators.conditional.OrExpression) {
+            // bounds under OR do not constrain every row, so they never qualify
+            return;
         }
         if (expr instanceof BinaryExpression binary) {
             scanInto(binary.getLeftExpression(), timeColumn, result);
