@@ -5,24 +5,42 @@ export interface SegmentedTabItem {
   badge?: number | string;
 }
 
-defineProps<{
+const props = defineProps<{
   tabs: SegmentedTabItem[];
 }>();
 
 const activeKey = defineModel<string>({ required: true });
+
+function handleKeydown(event: KeyboardEvent, index: number) {
+  let nextIndex: number | null = null;
+
+  if (event.key === "ArrowRight") nextIndex = (index + 1) % props.tabs.length;
+  if (event.key === "ArrowLeft") nextIndex = (index - 1 + props.tabs.length) % props.tabs.length;
+  if (event.key === "Home") nextIndex = 0;
+  if (event.key === "End") nextIndex = props.tabs.length - 1;
+  if (nextIndex === null || !props.tabs[nextIndex]) return;
+
+  event.preventDefault();
+  activeKey.value = props.tabs[nextIndex].key;
+
+  const tablist = (event.currentTarget as HTMLElement).closest('[role="tablist"]');
+  tablist?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
+}
 </script>
 
 <template>
   <div class="segmented-tabs" role="tablist">
     <button
-      v-for="tab in tabs"
+      v-for="(tab, index) in tabs"
       :key="tab.key"
       type="button"
       role="tab"
       :aria-selected="activeKey === tab.key"
+      :tabindex="activeKey === tab.key ? 0 : -1"
       class="segmented-tab"
       :class="{ 'is-active': activeKey === tab.key }"
       @click="activeKey = tab.key"
+      @keydown="handleKeydown($event, index)"
     >
       <span>{{ tab.label }}</span>
       <span v-if="tab.badge !== undefined" class="segmented-tab-badge">{{ tab.badge }}</span>
