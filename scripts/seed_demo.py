@@ -20,6 +20,7 @@ Env overrides: SEED_BACKEND_URL, SEED_ADMIN_NAME, SEED_ADMIN_PASSWORD,
 
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -174,13 +175,14 @@ def seed_mysql(mysql):
         f"docker exec -i {mysql} mysql -uroot -p{MYSQL_PASSWORD} -N -B"
         f" -e \"SELECT table_name FROM information_schema.tables WHERE table_schema='{db}'\" 2>/dev/null"
     )
-    if r.returncode == 0:
-        foreign = sorted(set(r.stdout.split()) - set(DEMO_TABLES))
-        if foreign:
-            sys.exit(
-                f"database {db} already contains non-demo tables ({', '.join(foreign[:5])});"
-                " refusing to seed demo data into it — use a different SEED_PREFIX"
-            )
+    if r.returncode != 0:
+        sys.exit(f"cannot inspect database {db} before seeding — aborting to protect existing data")
+    foreign = sorted(set(r.stdout.split()) - set(DEMO_TABLES))
+    if foreign:
+        sys.exit(
+            f"database {db} already contains non-demo tables ({', '.join(foreign[:5])});"
+            " refusing to seed demo data into it — use a different SEED_PREFIX"
+        )
     sql = f"CREATE DATABASE IF NOT EXISTS `{db}`;\nUSE `{db}`;\n" + SEED_SQL
     fd, sql_file = tempfile.mkstemp(suffix=".sql", prefix="seed_demo_")
     try:
@@ -227,6 +229,8 @@ def paged_get(path, token):
 
 
 def main():
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", PREFIX):
+        sys.exit(f"invalid SEED_PREFIX {PREFIX!r}: use letters, digits, hyphens, underscores only")
     mysql = ensure_containers()
     seed_mysql(mysql)
 
