@@ -59,7 +59,7 @@ public enum McpToolType {
     EXECUTE_QUERY_BATCH(
         "execute_query_batch",
         "Execute Query Batch",
-        "Run up to 10 ordered read-only SELECT statements in one call. Use for multi-step attribution analysis: each statement is validated and executed independently with the same policy, scope, and execution-plan guardrails as execute_sql; per-step errors do not abort the batch.",
+        "Run up to 10 ordered read-only SELECT statements in one call. Use for multi-step attribution analysis: each statement is validated and executed independently with the same policy, scope, and execution-plan guardrails as execute_sql; per-step errors do not abort the batch. Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates.",
         ExecuteQueryBatchArgs.class,
         "{\"readOnlyHint\":true}",
         true
@@ -83,7 +83,7 @@ public enum McpToolType {
     EXECUTE_SQL(
         "execute_sql",
         "Execute SQL",
-        "Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task.",
+        "Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. Prefer binding filter values with ? placeholders and the params field over inline literals. Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates.",
         ExecuteSqlArgs.class,
         null,
         true
