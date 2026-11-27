@@ -1,5 +1,7 @@
 package com.dati.mcp.domain.service;
 
+import com.dati.auth.authentication.User;
+import com.dati.base.RequestContext;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.server.pojo.BatchExecution;
 import com.dati.mcp.server.pojo.MetricExecution;
@@ -9,6 +11,7 @@ import com.dati.mcp.server.pojo.ToolTestData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Ticker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -22,9 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 /**
@@ -48,12 +52,18 @@ import java.util.function.Supplier;
  * Concurrent identical calls share one in-flight execution. The loader runs on
  * the caller's thread; a caller that joins an execution whose result is not
  * cacheable (a write, a failure, or an exception) runs its own loader.
+ *
+ * Stale-while-revalidate: a hit older than 80% of its tier TTL is returned
+ * immediately and reloaded on a background thread that carries the caller's
+ * request user. The reload replaces the entry only if it is still the entry
+ * that was served, so a refresh never restores data cleared by a write.
  */
 @Slf4j
 @Component
 public class ToolResultCache {
 
     private static final int SQL_CACHE_ROW_CAP = 500;
+    private static final double REFRESH_AFTER_FRACTION = 0.8;
 
     private static final Set<McpToolType> METADATA_TOOLS = Set.of(
         McpToolType.GET_TABLE_INFO, McpToolType.LIST_TABLES, McpToolType.SEARCH_METADATA,
@@ -65,16 +75,42 @@ public class ToolResultCache {
     private static final Set<McpToolType> METADATA_WRITE_TOOLS = Set.of(
         McpToolType.UPDATE_TABLE_INFO, McpToolType.UPDATE_COLUMN_INFO, McpToolType.UPSERT_TERM);
 
-    private final AsyncCache<String, ToolTestData> metadataCache = Caffeine.newBuilder()
-        .maximumSize(2_000).expireAfterWrite(Duration.ofMinutes(15)).buildAsync();
-    private final AsyncCache<String, ToolTestData> metricHotCache = Caffeine.newBuilder()
-        .maximumSize(2_000).expireAfterWrite(Duration.ofMinutes(5)).buildAsync();
-    private final AsyncCache<String, ToolTestData> metricColdCache = Caffeine.newBuilder()
-        .maximumSize(5_000).expireAfterWrite(Duration.ofHours(6)).buildAsync();
-    private final AsyncCache<String, ToolTestData> sqlCache = Caffeine.newBuilder()
-        .maximumSize(2_000).expireAfterWrite(Duration.ofSeconds(90)).buildAsync();
+    private record Entry(ToolTestData data, long writtenAt) {
+    }
 
+    private record Tier(AsyncCache<String, Entry> cache, Duration ttl) {
+    }
+
+    private final Ticker ticker;
+    private final Executor refreshExecutor;
+    private final Tier metadataTier;
+    private final Tier metricHotTier;
+    private final Tier metricColdTier;
+    private final Tier sqlTier;
+    private final Set<String> refreshing = ConcurrentHashMap.newKeySet();
     private final ObjectMapper mapper = new ObjectMapper();
+
+    public ToolResultCache() {
+        this(Ticker.systemTicker(), Executors.newFixedThreadPool(2, runnable -> {
+            Thread thread = new Thread(runnable, "mcp-cache-refresh");
+            thread.setDaemon(true);
+            return thread;
+        }));
+    }
+
+    ToolResultCache(Ticker ticker, Executor refreshExecutor) {
+        this.ticker = ticker;
+        this.refreshExecutor = refreshExecutor;
+        this.metadataTier = tier(2_000, Duration.ofMinutes(15));
+        this.metricHotTier = tier(2_000, Duration.ofMinutes(5));
+        this.metricColdTier = tier(5_000, Duration.ofHours(6));
+        this.sqlTier = tier(2_000, Duration.ofSeconds(90));
+    }
+
+    private Tier tier(long maxSize, Duration ttl) {
+        return new Tier(Caffeine.newBuilder().maximumSize(maxSize).expireAfterWrite(ttl)
+            .ticker(ticker).buildAsync(), ttl);
+    }
 
     /**
      * Returns the cached result for this call, or runs {@code loader} and caches
@@ -85,29 +121,58 @@ public class ToolResultCache {
     public ToolTestData getOrExecute(String serviceId, Integer versionNumber, String userId,
                                      McpToolType type, String toolName, Map<String, Object> arguments,
                                      Supplier<ToolTestData> loader) {
-        AsyncCache<String, ToolTestData> cache = cacheFor(type, arguments);
-        String key = cache == null ? null : key(serviceId, versionNumber, userId, toolName, arguments);
+        Tier tier = tierFor(type, arguments);
+        String key = tier == null ? null : key(serviceId, versionNumber, userId, toolName, arguments);
         if (key == null) {
             return execute(type, loader);
         }
 
-        CompletableFuture<ToolTestData> pending = new CompletableFuture<>();
-        CompletableFuture<ToolTestData> existing = cache.asMap().putIfAbsent(key, pending);
+        CompletableFuture<Entry> pending = new CompletableFuture<>();
+        CompletableFuture<Entry> existing = tier.cache().asMap().putIfAbsent(key, pending);
         if (existing != null) {
-            ToolTestData shared = joinQuietly(existing);
-            return shared != null ? shared : execute(type, loader);
+            Entry shared = existing.join();
+            if (shared == null) {
+                return execute(type, loader);
+            }
+            refreshIfStale(tier, type, key, existing, shared, loader);
+            return shared.data();
         }
 
-        ToolTestData data;
+        ToolTestData data = null;
         try {
             data = execute(type, loader);
-        } catch (RuntimeException e) {
-            pending.completeExceptionally(e);
-            throw e;
+            return data;
+        } finally {
+            // Completing with null makes Caffeine drop the entry; a throwing loader
+            // leaves data null, so waiters run their own loader.
+            pending.complete(isCacheable(type, data) ? new Entry(data, ticker.read()) : null);
         }
-        // Completing with null makes Caffeine drop the entry.
-        pending.complete(isCacheable(type, data) ? data : null);
-        return data;
+    }
+
+    private void refreshIfStale(Tier tier, McpToolType type, String key, CompletableFuture<Entry> served,
+                                Entry entry, Supplier<ToolTestData> loader) {
+        long age = ticker.read() - entry.writtenAt();
+        if (age <= tier.ttl().toNanos() * REFRESH_AFTER_FRACTION || !refreshing.add(key)) {
+            return;
+        }
+        User user = RequestContext.getUser();
+        refreshExecutor.execute(() -> {
+            RequestContext.setUser(user);
+            try {
+                ToolTestData refreshed = execute(type, loader);
+                if (isCacheable(type, refreshed)) {
+                    tier.cache().asMap().replace(key, served,
+                        CompletableFuture.completedFuture(new Entry(refreshed, ticker.read())));
+                } else {
+                    tier.cache().asMap().remove(key, served);
+                }
+            } catch (RuntimeException e) {
+                log.debug("Background cache refresh failed for {}: {}", key, e.getMessage());
+            } finally {
+                RequestContext.clear();
+                refreshing.remove(key);
+            }
+        });
     }
 
     String key(String serviceId, Integer versionNumber, String userId,
@@ -123,33 +188,27 @@ public class ToolResultCache {
     private ToolTestData execute(McpToolType type, Supplier<ToolTestData> loader) {
         ToolTestData data = loader.get();
         if (METADATA_WRITE_TOOLS.contains(type)) {
-            metadataCache.synchronous().invalidateAll();
+            metadataTier.cache().synchronous().invalidateAll();
         }
         if (containsWrite(data)) {
-            sqlCache.synchronous().invalidateAll();
-            metricHotCache.synchronous().invalidateAll();
-            metricColdCache.synchronous().invalidateAll();
+            sqlTier.cache().synchronous().invalidateAll();
+            metricHotTier.cache().synchronous().invalidateAll();
+            metricColdTier.cache().synchronous().invalidateAll();
         }
         return data;
     }
 
-    private ToolTestData joinQuietly(CompletableFuture<ToolTestData> future) {
-        try {
-            return future.join();
-        } catch (CompletionException | CancellationException e) {
-            return null;
-        }
     }
 
-    private AsyncCache<String, ToolTestData> cacheFor(McpToolType type, Map<String, Object> arguments) {
+    private Tier tierFor(McpToolType type, Map<String, Object> arguments) {
         if (METADATA_TOOLS.contains(type)) {
-            return metadataCache;
+            return metadataTier;
         }
         if (type == McpToolType.QUERY_METRIC) {
-            return isHistorical(arguments) ? metricColdCache : metricHotCache;
+            return isHistorical(arguments) ? metricColdTier : metricHotTier;
         }
         if (SQL_TOOLS.contains(type)) {
-            return sqlCache;
+            return sqlTier;
         }
         return null;
     }
@@ -172,7 +231,7 @@ public class ToolResultCache {
     }
 
     private boolean containsWrite(ToolTestData data) {
-        List<StatementResult> statements = data == null ? null : statementsOf(data);
+        List<StatementResult> statements = statementsOf(data);
         return statements != null
             && statements.stream().anyMatch(StatementResult.WriteResult.class::isInstance);
     }

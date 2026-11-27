@@ -37,6 +37,7 @@ const focusedColumn = ref("");
 const focusedColumnTableId = ref("");
 const searchQuery = ref("");
 const showAllTables = ref(false);
+const confirmedOnly = ref(false);
 const batchKeys = ref<Set<string>>(new Set());
 const flowNodes = ref<RelationNode[]>([]);
 const flowEdges = ref<RelationFlowEdge[]>([]);
@@ -79,6 +80,7 @@ const relationEdges = computed<GraphEdge[]>(() => {
   return rows;
 });
 const visibleEdges = computed(() => relationEdges.value.filter((edge) => {
+  if (confirmedOnly.value && edge.kind !== "confirmed") return false;
   if (!searchQuery.value.trim()) return true;
   return tableMatches(edge.factTableId) || tableMatches(edge.dimensionTableId);
 }));
@@ -331,7 +333,7 @@ function applyVisualState() {
 function focusedNeighbors() {
   if (!focusedTableId.value) return null;
   const ids = new Set([focusedTableId.value]);
-  for (const edge of relationEdges.value) {
+  for (const edge of displayEdges.value) {
     if (edge.factTableId === focusedTableId.value) ids.add(edge.dimensionTableId);
     if (edge.dimensionTableId === focusedTableId.value) ids.add(edge.factTableId);
   }
@@ -406,6 +408,7 @@ watch(focusedTableId, () => { rebuildLayout(); });
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <el-input v-model="searchQuery" size="small" clearable :prefix-icon="Search" :placeholder="t('relation.searchTables')" class="w-56" />
+        <el-button size="small" :type="confirmedOnly ? 'primary' : 'default'" plain @click="confirmedOnly = !confirmedOnly">{{ t("relation.confirmedOnly") }}</el-button>
         <el-button size="small" @click="toggleShowAll">{{ showAllTables ? t("relation.focusedOnly") : t("relation.showAll") }}</el-button>
         <el-button size="small" :icon="RotateCcw" @click="resetView">{{ t("relation.resetView") }}</el-button>
         <el-button size="small" type="primary" plain :icon="Sparkles" :loading="layoutLoading" @click="relayout">{{ t("relation.relayout") }}</el-button>

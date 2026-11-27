@@ -115,6 +115,49 @@ public class ValidationCaseService {
     }
 
     @Transactional
+    /** Runs every enabled case of the subject and aggregates pass/fail counts. */
+    public BatchRunSummary runCasesBySubject(String subjectId) {
+        SubjectPO subject = requireSubject(subjectId);
+        permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.VIEW, subject.getCreatedBy());
+        List<ValidationCasePO> cases = validationCaseDAO.findBySubjectId(subjectId).stream()
+            .filter(po -> po.getEnabled() == null || Boolean.TRUE.equals(po.getEnabled()) || po.getEnabled())
+            .toList();
+        long start = System.currentTimeMillis();
+        int pass = 0;
+        int fail = 0;
+        int error = 0;
+        List<BatchRunFailure> failures = new java.util.ArrayList<>();
+        for (ValidationCasePO po : cases) {
+            ValidationCase result;
+            try {
+                result = runCase(po.getId());
+            } catch (Exception e) {
+                error++;
+                failures.add(new BatchRunFailure(po.getId(), po.getName(), "ERROR", e.getMessage()));
+                continue;
+            }
+            String status = result.getLastStatus() == null ? "ERROR" : result.getLastStatus();
+            if ("PASS".equals(status)) {
+                pass++;
+            } else if ("FAIL".equals(status)) {
+                fail++;
+                failures.add(new BatchRunFailure(po.getId(), po.getName(), status, result.getLastMessage()));
+            } else {
+                error++;
+                failures.add(new BatchRunFailure(po.getId(), po.getName(), status, result.getLastMessage()));
+            }
+        }
+        return new BatchRunSummary(cases.size(), pass, fail, error,
+            System.currentTimeMillis() - start, failures);
+    }
+
+    public record BatchRunSummary(int total, int pass, int fail, int error, long totalDurationMs,
+                                  List<BatchRunFailure> failures) {
+    }
+
+    public record BatchRunFailure(String caseId, String caseName, String status, String message) {
+    }
+
     public void deleteCase(String id) {
         ValidationCasePO po = requireCase(id);
         SubjectPO subject = requireSubject(po.getSubjectId());

@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,7 +30,8 @@ class ToolResultCacheTest {
 
     private static final Map<String, Object> SQL_ARGS = Map.of("data_source_id", "ds1", "sql", "select 1");
 
-    private final ToolResultCache cache = new ToolResultCache();
+    private final AtomicLong now = new AtomicLong();
+    private final ToolResultCache cache = new ToolResultCache(now::get, Runnable::run);
 
     @Test
     @DisplayName("Cache key is independent of argument ordering")
@@ -200,6 +202,77 @@ class ToolResultCacheTest {
             assertSame(data, run("svc", "u1", McpToolType.QUERY_METRIC, args, counting(calls, data)));
             assertEquals(1, calls.get(), end);
         }
+    }
+
+    @Test
+    @DisplayName("A hit past 80% of its TTL is served stale and refreshed in the background")
+    void staleHitRefreshes() {
+        AtomicInteger calls = new AtomicInteger();
+        ToolTestData old = select(1);
+        ToolTestData fresh = select(2);
+        run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, old));
+
+        advanceSeconds(60);
+        assertSame(old, run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, fresh)));
+        assertEquals(1, calls.get());
+
+        advanceSeconds(15);
+        assertSame(old, run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, fresh)));
+        assertEquals(2, calls.get());
+        assertSame(fresh, run("svc", "u1", McpToolType.EXECUTE_SQL, SQL_ARGS, counting(calls, fresh)));
+        assertEquals(2, calls.get());
+    }
+
+    @Test
+    @DisplayName("A background refresh does not restore an entry cleared by a write")
+    void refreshDoesNotResurrectClearedEntry() {
+        AtomicInteger calls = new AtomicInteger();
+        java.util.List<Runnable> queued = new java.util.ArrayList<>();
+        ToolResultCache deferred = new ToolResultCache(now::get, queued::add);
+        deferred.getOrExecute("svc", 1, "u1", McpToolType.EXECUTE_SQL, "execute_sql", SQL_ARGS, () -> select(1));
+        advanceSeconds(80);
+        deferred.getOrExecute("svc", 1, "u1", McpToolType.EXECUTE_SQL, "execute_sql", SQL_ARGS, () -> select(9));
+        assertEquals(1, queued.size());
+
+        deferred.getOrExecute("svc", 1, "u1", McpToolType.EXECUTE_SQL, "execute_sql", Map.of("sql", "update t"),
+            () -> new SqlExecution("update", List.of(StatementResult.write(1)), null));
+        queued.getFirst().run();
+
+        ToolTestData fresh = select(2);
+        assertSame(fresh, deferred.getOrExecute("svc", 1, "u1", McpToolType.EXECUTE_SQL, "execute_sql", SQL_ARGS,
+            counting(calls, fresh)));
+        assertEquals(1, calls.get());
+    }
+
+    @Test
+    @DisplayName("A background refresh runs with the caller's request user")
+    void refreshCarriesRequestUser() {
+        com.dati.auth.authentication.User user = new com.dati.auth.authentication.User();
+        user.setId("u1");
+        java.util.concurrent.atomic.AtomicReference<String> seen = new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.List<Runnable> queued = new java.util.ArrayList<>();
+        ToolResultCache deferred = new ToolResultCache(now::get, queued::add);
+        Supplier<ToolTestData> loader = () -> {
+            seen.set(com.dati.base.RequestContext.currentUserId());
+            return select(1);
+        };
+        com.dati.base.RequestContext.setUser(user);
+        try {
+            deferred.getOrExecute("svc", 1, "u1", McpToolType.EXECUTE_SQL, "execute_sql", SQL_ARGS, loader);
+            advanceSeconds(80);
+            deferred.getOrExecute("svc", 1, "u1", McpToolType.EXECUTE_SQL, "execute_sql", SQL_ARGS, loader);
+        } finally {
+            com.dati.base.RequestContext.clear();
+        }
+        seen.set(null);
+        Thread worker = new Thread(queued.getFirst());
+        worker.start();
+        assertDoesNotThrow(() -> worker.join(5_000));
+        assertEquals("u1", seen.get());
+    }
+
+    private void advanceSeconds(long seconds) {
+        now.addAndGet(TimeUnit.SECONDS.toNanos(seconds));
     }
 
     private ToolTestData run(String serviceId, String userId, McpToolType type,
