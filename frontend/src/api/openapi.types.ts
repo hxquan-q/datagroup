@@ -852,6 +852,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/dashboard/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1548,6 +1564,21 @@ export interface components {
             principal_name?: string;
             permission?: string;
             created_by?: string;
+        };
+        DashboardOverviewVO: {
+            data_sources?: components["schemas"]["ResourceOverviewVO"];
+            subjects?: components["schemas"]["ResourceOverviewVO"];
+            mcp_services?: components["schemas"]["ResourceOverviewVO"];
+        };
+        ResourceOverviewVO: {
+            /** Format: int64 */
+            total?: number;
+            daily_created?: components["schemas"]["DailyCountVO"][];
+        };
+        DailyCountVO: {
+            date?: string;
+            /** Format: int64 */
+            count?: number;
         };
     };
     responses: never;
@@ -3379,6 +3410,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IdResponse"];
+                };
+            };
+        };
+    };
+    getOverview: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DashboardOverviewVO"];
                 };
             };
         };
