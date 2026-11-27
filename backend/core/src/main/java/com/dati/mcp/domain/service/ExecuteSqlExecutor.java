@@ -77,7 +77,7 @@ public class ExecuteSqlExecutor implements ToolExecutor {
             List<Object> params = args.params() != null ? args.params() : List.of();
             String validationSql = params.isEmpty() ? sql : inlineBindValues(sql, params);
             enforceTimeWindows(validationSql, analysis, dsId);
-            enforcePlanGuardrail(conn, validationSql, analysis, config, dataSource.getType());
+            enforcePlanGuardrail(conn, sql, params, analysis, config, dataSource.getType());
             if (!params.isEmpty()) {
                 if (analysis.type() == SqlOperationType.MULTI) {
                     throw new ToolExecuteException(ToolError.SQL_EXECUTION_ERROR,
@@ -121,6 +121,7 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         boolean inDouble = false;
         boolean inBacktick = false;
         boolean inLineComment = false;
+        boolean inBlockComment = false;
         for (int i = 0; i < sql.length(); i++) {
             char c = sql.charAt(i);
             if (inLineComment) {
@@ -149,6 +150,20 @@ public class ExecuteSqlExecutor implements ToolExecutor {
                 if (c == '`') {
                     inBacktick = false;
                 }
+                continue;
+            }
+            if (inBlockComment) {
+                out.append(c);
+                if (c == '*' && i + 1 < sql.length() && sql.charAt(i + 1) == '/') {
+                    out.append('/');
+                    i++;
+                    inBlockComment = false;
+                }
+                continue;
+            }
+            if (c == '/' && i + 1 < sql.length() && sql.charAt(i + 1) == '*') {
+                inBlockComment = true;
+                out.append(c);
                 continue;
             }
             if (c == '-' && i + 1 < sql.length() && sql.charAt(i + 1) == '-') {
@@ -270,14 +285,15 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         }
     }
 
-    private void enforcePlanGuardrail(Connection conn, String sql, SqlAnalysisResult analysis,
+    private void enforcePlanGuardrail(Connection conn, String sql, java.util.List<Object> params,
+                                      SqlAnalysisResult analysis,
                                       ExecuteSqlConfig config, com.dati.db.DbType dbType) {
         if (config.getMaxExplainRows() <= 0 || !ExplainGuardrail.supports(dbType)) {
             return;
         }
         try {
             if (analysis.type() == SqlOperationType.SELECT) {
-                runExplain(conn, sql, config);
+                runExplain(conn, sql, params, config);
             } else if (analysis.type() == SqlOperationType.MULTI) {
                 explainSelectStatements(conn, sql, config);
             }
@@ -298,15 +314,18 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         }
         for (net.sf.jsqlparser.statement.Statement statement : statements.getStatements()) {
             if (statement instanceof net.sf.jsqlparser.statement.select.Select) {
-                runExplain(conn, statement.toString(), config);
+                runExplain(conn, statement.toString(), java.util.List.of(), config);
             }
         }
     }
 
-    private void runExplain(Connection conn, String sql, ExecuteSqlConfig config) throws SQLException {
-        try (Statement explain = conn.createStatement()) {
+    private void runExplain(Connection conn, String sql, java.util.List<Object> params, ExecuteSqlConfig config) throws SQLException {
+        try (PreparedStatement explain = conn.prepareStatement("EXPLAIN FORMAT=JSON " + sql)) {
             explain.setQueryTimeout(Math.max(1, config.getTimeout()));
-            try (java.sql.ResultSet rs = explain.executeQuery("EXPLAIN FORMAT=JSON " + sql)) {
+            for (int i = 0; i < params.size(); i++) {
+                explain.setObject(i + 1, params.get(i));
+            }
+            try (java.sql.ResultSet rs = explain.executeQuery()) {
             if (rs == null || !rs.next()) {
                 return;
             }
