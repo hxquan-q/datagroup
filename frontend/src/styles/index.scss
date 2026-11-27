@@ -199,7 +199,8 @@ code {
   white-space: nowrap;
 }
 
-.semantic-chip-row .el-tag {
+.semantic-chip-row .el-tag,
+.semantic-chip-row .ep-tag {
   max-width: 112px;
   min-width: 0;
   flex: 0 1 auto;
@@ -210,6 +211,17 @@ code {
 
 .semantic-chip-row .semantic-entity-tag {
   max-width: 224px;
+}
+
+
+.semantic-overflow-button {
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: var(--ep-fill-color-light);
+  color: var(--ep-text-color-regular);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .semantic-chip-row .semantic-overflow-tag {

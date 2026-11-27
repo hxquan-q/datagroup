@@ -283,9 +283,32 @@ onMounted(() => {
               >
                 {{ alias }}
               </el-tag>
-              <el-tag v-if="row.aliases.length > 3" size="small" type="info" class="semantic-alias-tag semantic-overflow-tag">
-                +{{ row.aliases.length - 3 }}
-              </el-tag>
+              <el-popover v-if="row.aliases.length > 3" trigger="click" placement="bottom" :width="300">
+                <template #reference>
+                  <el-button size="small" class="semantic-overflow-button">
+                    +{{ row.aliases.length - 3 }}
+                  </el-button>
+                </template>
+                <div class="chip-detail-card">
+                  <div class="chip-detail-header">
+                    <div>
+                      <div class="chip-detail-title">{{ t("common.aliases") }}</div>
+                      <div class="chip-detail-meta">{{ row.name }} · {{ row.aliases.length }}</div>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="alias in row.aliases"
+                      :key="alias"
+                      size="small"
+                      type="info"
+                      class="semantic-alias-tag"
+                    >
+                      {{ alias }}
+                    </el-tag>
+                  </div>
+                </div>
+              </el-popover>
               </div>
 
             </template>

@@ -681,9 +681,9 @@ onMounted(() => {
               </el-tag>
               <el-popover v-if="row.aliases.length > 3" trigger="click" placement="bottom" :width="300">
                 <template #reference>
-                  <el-tag size="small" type="info" class="semantic-alias-tag semantic-overflow-tag cursor-pointer">
+                  <el-button size="small" class="semantic-overflow-button">
                     +{{ row.aliases.length - 3 }}
-                  </el-tag>
+                  </el-button>
                 </template>
                 <div class="chip-detail-card">
                   <div class="chip-detail-header">
