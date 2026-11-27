@@ -135,6 +135,7 @@ watch(
       });
     }
   },
+  { immediate: true },
 );
 
 const scanning = ref(false);

@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, defineAsyncComponent } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
@@ -21,17 +21,15 @@ import {
 } from "~/api/mcp-service";
 import { notifyError } from "~/api/http";
 import { listPrompts } from "~/api/mcp-prompt";
-import DataScopeTab from "~/components/mcp-service/DataScopeTab.vue";
-import DebugPublishTab from "~/components/mcp-service/DebugPublishTab.vue";
 import DiffSummaryList from "~/components/mcp-service/DiffSummaryList.vue";
 import McpAccessConfigCard from "~/components/mcp-service/McpAccessConfigCard.vue";
-import PromptsTab from "~/components/mcp-service/PromptsTab.vue";
-import ToolsTab from "~/components/mcp-service/ToolsTab.vue";
 import { formatDateTime } from "~/composables";
 
-const UsageStatsTab = defineAsyncComponent(() =>
-  import("~/components/mcp-service/UsageStatsTab.vue"),
-);
+const DataScopeTab = defineAsyncComponent(() => import("~/components/mcp-service/DataScopeTab.vue"));
+const DebugPublishTab = defineAsyncComponent(() => import("~/components/mcp-service/DebugPublishTab.vue"));
+const PromptsTab = defineAsyncComponent(() => import("~/components/mcp-service/PromptsTab.vue"));
+const ToolsTab = defineAsyncComponent(() => import("~/components/mcp-service/ToolsTab.vue"));
+const UsageStatsTab = defineAsyncComponent(() => import("~/components/mcp-service/UsageStatsTab.vue"));
 
 const { t } = useI18n();
 const route = useRoute("/mcp-services/[id]/");

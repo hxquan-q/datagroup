@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, defineAsyncComponent, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { Plus, Search, SquarePen as Edit, Trash2 as Delete } from "@lucide/vue";
 import type { McpPromptVO } from "~/api/mcp-prompt";
 import { notifyError } from "~/api/http";
 import { updatePrompt, deletePrompt } from "~/api/mcp-prompt";
-import PromptDialog from "./PromptDialog.vue";
+
+const PromptDialog = defineAsyncComponent(() => import("./PromptDialog.vue"));
 
 const { t } = useI18n();
 const props = defineProps<{ prompts: McpPromptVO[]; serviceId: string }>();
@@ -14,6 +15,7 @@ const emit = defineEmits<{ (e: "refresh"): void }>();
 
 const searchQuery = ref("");
 const dialogVisible = ref(false);
+const dialogActivated = ref(false);
 const editingPrompt = ref<McpPromptVO | null>(null);
 
 const filteredPrompts = computed(() => {
@@ -36,8 +38,8 @@ const handleToggle = async (prompt: McpPromptVO) => {
   }
 };
 
-const handleCreate = () => { editingPrompt.value = null; dialogVisible.value = true; };
-const handleEdit = (prompt: McpPromptVO) => { editingPrompt.value = { ...prompt }; dialogVisible.value = true; };
+const handleCreate = () => { editingPrompt.value = null; dialogActivated.value = true; dialogVisible.value = true; };
+const handleEdit = (prompt: McpPromptVO) => { editingPrompt.value = { ...prompt }; dialogActivated.value = true; dialogVisible.value = true; };
 
 const handleDelete = async (prompt: McpPromptVO) => {
   try {
@@ -82,7 +84,7 @@ const handleDialogSaved = () => { dialogVisible.value = false; emit("refresh"); 
       </div>
     </div>
 
-    <PromptDialog v-model="dialogVisible" :service-id="props.serviceId" :prompt="editingPrompt" @saved="handleDialogSaved" />
+    <PromptDialog v-if="dialogActivated" v-model="dialogVisible" :service-id="props.serviceId" :prompt="editingPrompt" @saved="handleDialogSaved" />
   </div>
 </template>
 

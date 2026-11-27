@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, nextTick } from "vue";
+import { computed, defineAsyncComponent, nextTick, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
@@ -13,6 +13,12 @@ import { getSubject, updateSubject } from "~/api/subject";
 import { notifyError } from "~/api/http";
 import { formatDateTime } from "~/composables";
 import AuthDialog from "~/components/common/AuthDialog.vue";
+
+const MetricList = defineAsyncComponent(() => import("~/components/subject/MetricList.vue"));
+const SubjectTableList = defineAsyncComponent(() => import("~/components/subject/SubjectTableList.vue"));
+const TableRelationList = defineAsyncComponent(() => import("~/components/subject/TableRelationList.vue"));
+const TermManager = defineAsyncComponent(() => import("~/components/subject/TermManager.vue"));
+const ValidationCaseList = defineAsyncComponent(() => import("~/components/subject/ValidationCaseList.vue"));
 
 const { t } = useI18n();
 const route = useRoute("/subjects/[id]");

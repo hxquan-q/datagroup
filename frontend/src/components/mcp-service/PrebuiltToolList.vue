@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { defineAsyncComponent, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { Play, Settings } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import type { McpToolVO } from "~/api/mcp-tool";
 import { notifyError } from "~/api/http";
 import { updateTool } from "~/api/mcp-tool";
-import ExecuteSqlConfigDialog from "./ExecuteSqlConfigDialog.vue";
-import ToolTestDialog from "./ToolTestDialog.vue";
+
+const ExecuteSqlConfigDialog = defineAsyncComponent(() => import("./ExecuteSqlConfigDialog.vue"));
+const ToolTestDialog = defineAsyncComponent(() => import("./ToolTestDialog.vue"));
 
 const { t } = useI18n();
 
