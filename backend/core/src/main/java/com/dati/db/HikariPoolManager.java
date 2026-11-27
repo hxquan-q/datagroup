@@ -39,9 +39,6 @@ public class HikariPoolManager {
         cfg.setConnectionTimeout(10_000);
         cfg.setIdleTimeout(60000);
         cfg.setMaxLifetime(1800000);
-        if (jdbcConnector.jdbcUrl() != null && jdbcConnector.jdbcUrl().startsWith("jdbc:mysql:")) {
-            cfg.setConnectionInitSql("SET SESSION max_execution_time = 30000");
-        }
         return cfg;
     }
 

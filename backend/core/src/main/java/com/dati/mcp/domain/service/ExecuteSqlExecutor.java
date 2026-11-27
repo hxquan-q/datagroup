@@ -351,7 +351,11 @@ public class ExecuteSqlExecutor implements ToolExecutor {
             return sql;
         }
         int ms = timeoutSeconds * 1000;
-        return sql.replaceFirst("(?is)^(\s*(?:/\\*.*?\\*/\s*)*select)\s", "$1 /*+ MAX_EXECUTION_TIME(" + ms + ") */ ");
+        java.util.regex.Matcher leadingHint = java.util.regex.Pattern.compile("(?is)^\\s*/\\*\\+\\s*").matcher(sql);
+        if (leadingHint.find()) {
+            return leadingHint.replaceFirst(java.util.regex.Matcher.quoteReplacement(leadingHint.group() + "MAX_EXECUTION_TIME(" + ms + ") "));
+        }
+        return sql.replaceFirst("(?is)^(\\s*(?:/\\*.*?\\*/\\s*)*select)\\s", "$1 /*+ MAX_EXECUTION_TIME(" + ms + ") */ ");
     }
 
     private void registerCreatedTables(String dsId, SqlAnalysisResult analysis,
