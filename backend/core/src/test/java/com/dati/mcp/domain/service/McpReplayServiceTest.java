@@ -28,6 +28,8 @@ class McpReplayServiceTest {
         assertThat(McpReplayService.isReadOnlySql("select 1; update t set a = 1")).isFalse();
         assertThat(McpReplayService.isReadOnlySql("WITH x AS (DELETE FROM t) SELECT 1")).isFalse();
         assertThat(McpReplayService.isReadOnlySql("-- c\nwith d as (select 1) delete from t")).isFalse();
+        assertThat(McpReplayService.isReadOnlySql("WITH x AS (DELETE/*c*/FROM t) SELECT 1")).isFalse();
+        assertThat(McpReplayService.isReadOnlySql("WITH x AS (DELETE--x\nFROM t) SELECT 1")).isFalse();
     }
 
     @Test

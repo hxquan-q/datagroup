@@ -162,9 +162,11 @@ public class McpReplayService {
             if (c == '-' && i + 1 < n && sql.charAt(i + 1) == '-') {
                 int newline = sql.indexOf('\n', i);
                 i = newline < 0 ? n : newline + 1;
+                out.append(' ');
             } else if (c == '/' && i + 1 < n && sql.charAt(i + 1) == '*') {
                 int end = sql.indexOf("*/", i + 2);
                 i = end < 0 ? n : end + 2;
+                out.append(' ');
             } else if (c == '\'' || c == '"' || c == '`') {
                 char quote = c;
                 i++;
