@@ -90,6 +90,13 @@ public class ParameterizedSqlExecutor implements ToolExecutor {
             for (int i = 0; i < bindings.size(); i++) {
                 var b = bindings.get(i);
                 Object value = b.value();
+                if ("Number".equals(typeMap.get(b.name())) && value instanceof String s) {
+                    try {
+                        value = new java.math.BigDecimal(s.trim());
+                    } catch (NumberFormatException e) {
+                        throw new ToolExecuteException(ToolError.PARAM_INVALID, "Invalid numeric value for parameter '" + b.name() + "': " + s);
+                    }
+                }
                 if ("DateTime".equals(typeMap.get(b.name())) && value instanceof String s) {
                     try {
                         value = DateTimeUtils.parseDateTime(s);

@@ -310,7 +310,9 @@ watch(() => props.subjectId, () => {
   loadMetrics();
   loadCases();
 });
-watch(() => form.value.metric_id, onMetricChanged);
+watch(() => form.value.metric_id, () => {
+  if (!editingCase.value) onMetricChanged();
+});
 watch(structuredArguments, syncArgumentsJson, { deep: true });
 
 onMounted(() => {
