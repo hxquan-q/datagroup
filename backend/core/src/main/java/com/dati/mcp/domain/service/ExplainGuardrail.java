@@ -59,6 +59,9 @@ public final class ExplainGuardrail {
                 visit(entry.getValue(), maxExplainRows, offenders);
             }
         });
+        if (table != null && table.isObject()) {
+            table.fields().forEachRemaining(entry -> visit(entry.getValue(), maxExplainRows, offenders));
+        }
     }
 
     private static void inspectTable(JsonNode table, long maxExplainRows, List<Offender> offenders) {

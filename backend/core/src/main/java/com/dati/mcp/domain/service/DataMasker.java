@@ -14,11 +14,11 @@ public final class DataMasker {
     }
 
     private static final List<Rule> RULES = List.of(
+        new Rule(Pattern.compile("(?i).*(password|passwd|pwd|secret|token|apikey|api_key).*"), MaskType.SECRET),
         new Rule(Pattern.compile("(?i).*(phone|mobile|tel).*", 0), MaskType.PHONE),
         new Rule(Pattern.compile("(?i).*mail.*"), MaskType.EMAIL),
         new Rule(Pattern.compile("(?i).*(idcard|id_card|identity).*"), MaskType.IDCARD),
         new Rule(Pattern.compile("(?i).*(bankcard|bank_card|card_no).*"), MaskType.BANKCARD),
-        new Rule(Pattern.compile("(?i).*(password|passwd|pwd|secret|token|apikey|api_key).*"), MaskType.SECRET),
         new Rule(Pattern.compile("(?i).*(name|contact).*"), MaskType.PARTIAL)
     );
 
@@ -52,13 +52,14 @@ public final class DataMasker {
 
     private static String apply(MaskType type, String text) {
         return switch (type) {
-            case PHONE -> text.length() >= 7
-                ? text.substring(0, 3) + "****" + text.substring(text.length() - 4) : "****";
+            case PHONE -> text.length() >= 11
+                ? text.substring(0, 3) + "****" + text.substring(text.length() - 4)
+                : text.length() >= 5 ? text.substring(0, 2) + "****" : "****";
             case EMAIL -> {
                 int at = text.indexOf('@');
                 yield at > 0 ? text.charAt(0) + "***" + text.substring(at) : "***";
             }
-            case IDCARD -> text.length() > 6
+            case IDCARD -> text.length() >= 11
                 ? text.substring(0, 3) + "***********" + text.substring(text.length() - 4) : "******";
             case BANKCARD -> text.length() > 4 ? "************" + text.substring(text.length() - 4) : "******";
             case SECRET -> "******";

@@ -25,4 +25,19 @@ class DataMaskerTest {
         assertThat(DataMasker.isSensitive("station_output")).isFalse();
         assertThat(DataMasker.isSensitive("mobile_no")).isTrue();
     }
+
+    @Test
+    @DisplayName("secret columns take precedence over phone-shaped names")
+    void secretTakesPrecedence() {
+        Object masked = DataMasker.mask("secret_phone", "13812345678");
+        org.assertj.core.api.Assertions.assertThat(masked).isEqualTo("******");
+    }
+
+    @Test
+    @DisplayName("short phone or identity values never leak all characters")
+    void shortValuesAreRedacted() {
+        org.assertj.core.api.Assertions.assertThat(DataMasker.mask("phone", "1234567")).isEqualTo("12****");
+        org.assertj.core.api.Assertions.assertThat(DataMasker.mask("idcard", "1234567")).isEqualTo("******");
+        org.assertj.core.api.Assertions.assertThat(DataMasker.mask("phone", "13812345678")).isEqualTo("138****5678");
+    }
 }

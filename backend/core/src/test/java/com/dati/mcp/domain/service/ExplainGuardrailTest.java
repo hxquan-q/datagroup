@@ -85,4 +85,18 @@ class ExplainGuardrailTest {
     void toleratesInvalidJson() {
         assertThat(ExplainGuardrail.inspectMySqlPlan("not json", 5_000_000)).isEmpty();
     }
+
+    @Test
+    @DisplayName("detects oversized scans hidden in materialized subqueries")
+    void materializedSubquery() {
+        String plan = """
+            {"query_block": {"select_id": 1, "table": {"table_name": "<subquery2>", "access_type": "ALL",
+              "rows_examined_per_scan": 1,
+              "materialized_from_subquery": {"query_block": {"table": {
+                "table_name": "big_table", "access_type": "ALL", "rows_examined_per_scan": 9000000}}}}}}
+            """;
+        var offenders = ExplainGuardrail.inspectMySqlPlan(plan, 5000000);
+        org.assertj.core.api.Assertions.assertThat(offenders).hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(offenders.get(0).table()).isEqualTo("big_table");
+    }
 }

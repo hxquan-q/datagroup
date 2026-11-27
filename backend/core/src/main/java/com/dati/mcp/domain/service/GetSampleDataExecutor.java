@@ -64,9 +64,14 @@ public class GetSampleDataExecutor implements ToolExecutor {
         scopeValidator.validate(ctx.scopeItems(), args.dataSourceId(),
             Set.of(new TableRef(schema, table)), Set.of(), dataSource.getDefaultSchema());
 
+        boolean mysqlFamily = dataSource.getType() == com.dati.db.DbType.MYSQL
+            || dataSource.getType() == com.dati.db.DbType.MARIADB
+            || dataSource.getType() == com.dati.db.DbType.DORIS;
+        String quote = mysqlFamily ? "`" : "\"";
+        java.util.function.Function<String, String> q = id -> quote + id + quote;
         String columnSql = columns.isEmpty() ? "*"
-            : String.join(", ", columns.stream().map(String::trim).toList());
-        String tableSql = schema != null ? schema + "." + table : table;
+            : columns.stream().map(String::trim).map(q).collect(java.util.stream.Collectors.joining(", "));
+        String tableSql = schema != null ? q.apply(schema) + "." + q.apply(table) : q.apply(table);
         String sql = "SELECT " + columnSql + " FROM " + tableSql + " LIMIT " + args.limit();
 
         List<String> resultColumns = new ArrayList<>();

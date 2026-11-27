@@ -57,7 +57,7 @@ public class McpToolAssembler {
         return switch (type) {
             case SEARCH_METADATA -> JsonUtils.fromJson(configJson, ToolConfig.SearchMetadataConfig.class);
             case GET_TABLE_INFO  -> JsonUtils.fromJson(configJson, ToolConfig.GetTableInfoConfig.class);
-            case EXECUTE_SQL     -> JsonUtils.fromJson(configJson, ToolConfig.ExecuteSqlConfig.class);
+            case EXECUTE_SQL, EXECUTE_QUERY_BATCH -> JsonUtils.fromJson(configJson, ToolConfig.ExecuteSqlConfig.class);
             default -> type.getDefaultConfig();
         };
     }

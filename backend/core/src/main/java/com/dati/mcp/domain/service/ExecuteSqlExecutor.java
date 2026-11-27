@@ -88,11 +88,12 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         if (config.getMaxExplainRows() <= 0 || !ExplainGuardrail.supports(dbType)) {
             return;
         }
-        if (analysis.type() != SqlOperationType.SELECT) {
-            return;
-        }
         try {
-            runExplain(conn, sql, config);
+            if (analysis.type() == SqlOperationType.SELECT) {
+                runExplain(conn, sql, config);
+            } else if (analysis.type() == SqlOperationType.MULTI) {
+                explainSelectStatements(conn, sql, config);
+            }
         } catch (ToolExecuteException e) {
             throw e;
         } catch (Exception e) {
@@ -100,9 +101,25 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         }
     }
 
+    private void explainSelectStatements(Connection conn, String sql, ExecuteSqlConfig config) throws SQLException {
+        net.sf.jsqlparser.statement.Statements statements;
+        try {
+            statements = net.sf.jsqlparser.parser.CCJSqlParserUtil.parseStatements(sql);
+        } catch (net.sf.jsqlparser.JSQLParserException e) {
+            log.debug("EXPLAIN guardrail skipped unparseable multi-statement: {}", e.getMessage());
+            return;
+        }
+        for (net.sf.jsqlparser.statement.Statement statement : statements.getStatements()) {
+            if (statement instanceof net.sf.jsqlparser.statement.select.Select) {
+                runExplain(conn, statement.toString(), config);
+            }
+        }
+    }
+
     private void runExplain(Connection conn, String sql, ExecuteSqlConfig config) throws SQLException {
-        try (Statement explain = conn.createStatement();
-             java.sql.ResultSet rs = explain.executeQuery("EXPLAIN FORMAT=JSON " + sql)) {
+        try (Statement explain = conn.createStatement()) {
+            explain.setQueryTimeout(Math.max(1, config.getTimeout()));
+            try (java.sql.ResultSet rs = explain.executeQuery("EXPLAIN FORMAT=JSON " + sql)) {
             if (rs == null || !rs.next()) {
                 return;
             }
@@ -115,6 +132,7 @@ public class ExecuteSqlExecutor implements ToolExecutor {
             if (!offenders.isEmpty()) {
                 throw new ToolExecuteException(ToolError.SCAN_LIMIT_EXCEEDED,
                     ExplainGuardrail.rejectionMessage(offenders, config.getMaxExplainRows()));
+            }
             }
         }
     }
