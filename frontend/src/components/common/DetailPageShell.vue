@@ -85,8 +85,8 @@ defineProps<{
 .detail-shell-title-row h1 {
   margin: 0;
   color: var(--ep-text-color-primary);
-  font-size: 26px;
-  font-weight: 750;
+  font-size: 24px;
+  font-weight: 720;
   letter-spacing: -0.03em;
   line-height: 1.25;
 }
@@ -118,7 +118,7 @@ defineProps<{
 @media (max-width: 768px) {
   .detail-shell {
     flex-direction: column;
-    padding: 14px;
+    padding: 2px 2px 0;
   }
 
   .detail-shell-actions {

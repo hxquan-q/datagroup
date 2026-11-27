@@ -328,26 +328,6 @@ onMounted(async () => {
       </template>
     </DetailPageShell>
 
-    <div class="toolbar">
-      <div class="toolbar-fields">
-        <el-input
-          v-model="searchKeyword"
-          :placeholder="t('datasource.searchPlaceholder')"
-          clearable
-          class="toolbar-search"
-          @keyup.enter="handleSearch"
-          @clear="handleClearSearch"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-button type="primary" plain :icon="Search" @click="handleSearch">
-          {{ t("common.search") }}
-        </el-button>
-      </div>
-    </div>
-
     <DataTableShell
       :loading="loading"
       :total="total"
@@ -356,6 +336,27 @@ onMounted(async () => {
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
     >
+      <template #toolbar>
+      <div class="toolbar toolbar--compact">
+        <div class="toolbar-fields">
+          <el-input
+            v-model="searchKeyword"
+            :placeholder="t('datasource.searchPlaceholder')"
+            clearable
+            class="toolbar-search"
+            @keyup.enter="handleSearch"
+            @clear="handleClearSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-button type="primary" plain :icon="Search" @click="handleSearch">
+            {{ t("common.search") }}
+          </el-button>
+        </div>
+      </div>
+      </template>
       <el-table :data="tableList" stripe style="width: 100%">
         <el-table-column
           prop="name"
@@ -387,18 +388,10 @@ onMounted(async () => {
         </el-table-column>
         <el-table-column
           :label="t('common.aliases')"
-          min-width="180"
+          min-width="260"
         >
           <template #default="{ row }">
-            <el-tag
-              v-for="alias in row.aliases"
-              :key="alias"
-              size="small"
-              class="mr-1"
-            >
-              {{ alias }}
-            </el-tag>
-            <span v-if="!row.aliases?.length" class="text-[var(--ep-text-color-placeholder)]">-</span>
+            <AliasOverflowCell :aliases="row.aliases" :owner-name="row.name" />
           </template>
         </el-table-column>
         <el-table-column

@@ -268,7 +268,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <el-table v-loading="loading" :data="cases" border stripe class="w-full">
+    <el-table v-loading="loading" :data="cases" stripe class="w-full">
       <el-table-column prop="name" :label="t('common.name')" min-width="170" show-overflow-tooltip />
       <el-table-column prop="question" :label="t('validation.question')" min-width="240" show-overflow-tooltip />
       <el-table-column :label="t('validation.metric')" min-width="180" show-overflow-tooltip>

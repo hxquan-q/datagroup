@@ -35,6 +35,10 @@ const emit = defineEmits<{
     class="data-table-shell"
     :class="{ 'data-table-shell--compact': props.compact }"
   >
+    <div v-if="$slots.toolbar" class="data-table-toolbar">
+      <slot name="toolbar" />
+    </div>
+
     <div class="data-table-body">
       <slot />
     </div>
@@ -67,8 +71,14 @@ const emit = defineEmits<{
   overflow: hidden;
   border: 1px solid var(--xiaoai-surface-border);
   border-radius: var(--xiaoai-surface-radius);
-  background: color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
+  background: var(--ep-bg-color);
   box-shadow: var(--xiaoai-surface-shadow);
+}
+
+.data-table-toolbar {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ep-border-color-lighter);
+  flex-shrink: 0;
 }
 
 .data-table-body {

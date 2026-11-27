@@ -268,7 +268,7 @@ onMounted(() => {
   padding: 18px;
   border: 1px solid var(--xiaoai-surface-border);
   border-radius: var(--xiaoai-surface-radius);
-  background: color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
+  background: var(--ep-bg-color);
   box-shadow: var(--xiaoai-surface-shadow);
 }
 

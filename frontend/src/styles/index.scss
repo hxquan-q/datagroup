@@ -157,15 +157,19 @@ code {
   --el-table-header-bg-color: var(--ep-fill-color-light);
   --ep-table-header-bg-color: var(--ep-fill-color-light);
   --el-table-tr-bg-color: var(--ep-bg-color);
+  --ep-table-tr-bg-color: var(--ep-bg-color);
   --el-table-row-hover-bg-color: var(--ep-fill-color);
+  --ep-table-row-hover-bg-color: var(--ep-fill-color);
   --el-table-border-color: var(--ep-border-color-lighter);
+  --ep-table-border-color: var(--ep-border-color-lighter);
 }
 
-.ep-table .el-table__inner-wrapper::before,
+.ep-table .ep-table__inner-wrapper::before,
 .el-table .el-table__inner-wrapper::before {
   display: none;
 }
 
+.ep-tag,
 .el-tag {
   border-color: transparent;
   border-radius: 6px;
@@ -174,12 +178,14 @@ code {
   font-weight: 500;
 }
 
+.ep-tag.semantic-alias-tag,
 .el-tag.semantic-alias-tag {
   border-color: var(--ep-border-color-lighter);
   background: var(--ep-fill-color-light);
   color: var(--ep-text-color-regular);
 }
 
+.ep-tag.semantic-entity-tag,
 .el-tag.semantic-entity-tag {
   border-color: var(--ep-color-primary-light-8);
   background: var(--ep-color-primary-light-9);
@@ -328,13 +334,10 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px 22px;
-  border: 1px solid var(--xiaoai-surface-border);
-  border-radius: var(--xiaoai-surface-radius);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--ep-color-primary) 7%, transparent), transparent 46%),
-    color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
-  box-shadow: var(--xiaoai-surface-shadow);
+  padding: 2px 2px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .page-heading h1 {
@@ -367,6 +370,7 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
   gap: 8px;
   white-space: nowrap;
 
+  .ep-button,
   .el-button {
     flex-shrink: 0;
   }
@@ -424,6 +428,18 @@ html.dark .ep-popper.is-dark:not(.ep-popover) {
 .ep-table .ep-table__cell,
 .el-table .el-table__cell {
   border-bottom-color: var(--ep-border-color-lighter);
+}
+
+.ep-table .ep-table__row--striped .ep-table__cell,
+.ep-table .el-table__row--striped .el-table__cell,
+.el-table .ep-table__row--striped .ep-table__cell,
+.el-table .el-table__row--striped .el-table__cell {
+  background: var(--ep-bg-color);
+}
+
+.ep-table .ep-table__cell,
+.el-table .el-table__cell {
+  font-size: 13px;
 }
 
 

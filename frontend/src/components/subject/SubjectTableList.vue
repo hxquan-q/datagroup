@@ -270,52 +270,9 @@ onMounted(() => {
           :label="t('common.schema')"
           min-width="120"
         />
-        <el-table-column :label="t('common.aliases')" min-width="320">
+        <el-table-column :label="t('common.aliases')" min-width="280">
           <template #default="{ row }">
-            <template v-if="row.aliases && row.aliases.length > 0">
-              <div class="semantic-chip-row">
-              <el-tag
-                v-for="alias in row.aliases.slice(0, 3)"
-                :key="alias"
-                size="small"
-                type="info"
-                class="semantic-alias-tag mr-1"
-                :title="alias"
-              >
-                {{ alias }}
-              </el-tag>
-              <el-popover v-if="row.aliases.length > 3" trigger="click" placement="bottom" :width="300">
-                <template #reference>
-                  <el-button size="small" class="semantic-overflow-button">
-                    +{{ row.aliases.length - 3 }}
-                  </el-button>
-                </template>
-                <div class="chip-detail-card">
-                  <div class="chip-detail-header">
-                    <div>
-                      <div class="chip-detail-title">{{ t("common.aliases") }}</div>
-                      <div class="chip-detail-meta">{{ row.name }} · {{ row.aliases.length }}</div>
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap gap-1">
-                    <el-tag
-                      v-for="alias in row.aliases"
-                      :key="alias"
-                      size="small"
-                      type="info"
-                      class="semantic-alias-tag"
-                    >
-                      {{ alias }}
-                    </el-tag>
-                  </div>
-                </div>
-              </el-popover>
-              </div>
-
-            </template>
-            <span v-else class="text-[var(--ep-text-color-placeholder)]"
-              >-</span
-            >
+            <AliasOverflowCell :aliases="row.aliases" :owner-name="row.name" />
           </template>
         </el-table-column>
         <el-table-column

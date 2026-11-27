@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AliasOverflowCell: typeof import('./components/common/AliasOverflowCell.vue')['default']
     AuthDialog: typeof import('./components/common/AuthDialog.vue')['default']
     AuthShell: typeof import('./components/common/AuthShell.vue')['default']
     BaseChart: typeof import('./components/common/BaseChart.vue')['default']

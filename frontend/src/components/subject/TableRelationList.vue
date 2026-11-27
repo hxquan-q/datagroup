@@ -258,7 +258,7 @@ onMounted(() => { loadTables(); loadRelations(); loadGraphRelations(); loadRecom
       @batch-confirm="confirmGraphBatch"
     />
 
-    <el-table v-show="viewMode === 'table'" v-loading="loading" :data="relations" border stripe class="w-full">
+    <el-table v-show="viewMode === 'table'" v-loading="loading" :data="relations" stripe class="w-full">
       <el-table-column :label="t('relation.factTable')" min-width="170">
         <template #default="{ row }">{{ row.fact_table_name || row.fact_table_id }}</template>
       </el-table-column>
@@ -297,7 +297,7 @@ onMounted(() => { loadTables(); loadRelations(); loadGraphRelations(); loadRecom
           {{ t("relation.batchConfirm", { count: selectedRecommendations.length }) }}
         </el-button>
       </div>
-      <el-table v-loading="recommending" :data="recommendations" border stripe max-height="520" class="w-full" @selection-change="selectedRecommendations = $event">
+      <el-table v-loading="recommending" :data="recommendations" stripe max-height="520" class="w-full" @selection-change="selectedRecommendations = $event">
         <el-table-column type="selection" width="42" />
         <el-table-column :label="t('relation.factTable')" min-width="170">
           <template #default="{ row }">

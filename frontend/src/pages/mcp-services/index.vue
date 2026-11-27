@@ -148,44 +148,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="toolbar">
-      <div class="toolbar-fields">
-        <el-input
-          v-model="searchKeyword"
-          :placeholder="t('mcpService.searchPlaceholder')"
-          clearable
-          class="toolbar-search"
-          @keyup.enter="handleSearch"
-          @clear="handleClearSearch"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-select
-          v-model="statusFilter"
-          :placeholder="t('mcpService.status.all')"
-          clearable
-          class="toolbar-status"
-          @change="handleSearch"
-          @clear="handleSearch"
-        >
-          <el-option
-            v-for="opt in statusOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
-        <el-button type="primary" plain :icon="Search" @click="handleSearch">
-          {{ t("common.search") }}
-        </el-button>
-        <el-button v-if="activeFilters > 0" link @click="handleClearSearch">
-          {{ t("common.clear") }}
-        </el-button>
-      </div>
-    </div>
-
     <DataTableShell
       :loading="loading"
       :total="total"
@@ -194,6 +156,45 @@ onMounted(() => {
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
     >
+      <template #toolbar>
+      <div class="toolbar toolbar--compact">
+        <div class="toolbar-fields">
+          <el-input
+            v-model="searchKeyword"
+            :placeholder="t('mcpService.searchPlaceholder')"
+            clearable
+            class="toolbar-search"
+            @keyup.enter="handleSearch"
+            @clear="handleClearSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-select
+            v-model="statusFilter"
+            :placeholder="t('mcpService.status.all')"
+            clearable
+            class="toolbar-status"
+            @change="handleSearch"
+            @clear="handleSearch"
+          >
+            <el-option
+              v-for="opt in statusOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+          <el-button type="primary" plain :icon="Search" @click="handleSearch">
+            {{ t("common.search") }}
+          </el-button>
+          <el-button v-if="activeFilters > 0" link @click="handleClearSearch">
+            {{ t("common.clear") }}
+          </el-button>
+        </div>
+      </div>
+      </template>
       <McpServiceTable
         :data="serviceList"
         :has-filter="activeFilters > 0"
