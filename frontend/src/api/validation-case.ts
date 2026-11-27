@@ -61,6 +61,10 @@ export function runValidationCase(id: string, signal?: AbortSignal): Promise<Val
   return post<ValidationCaseVO>(`/v1/validation-cases/${encodeURIComponent(id)}/run`, undefined, signal);
 }
 
+export function listPublishBlockingMessages(subjectIds: string[], signal?: AbortSignal): Promise<string[]> {
+  return post<string[], string[]>("/v1/validation-cases/publish-blocking", subjectIds, signal);
+}
+
 export function deleteValidationCase(id: string, signal?: AbortSignal): Promise<IdResponse> {
   return del<IdResponse>(`/v1/validation-cases/${encodeURIComponent(id)}`, undefined, signal);
 }

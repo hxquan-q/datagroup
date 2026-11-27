@@ -16,4 +16,6 @@ public class TemplatePreviewRequest {
 
     @NotNull
     private Map<String, Object> values;
+
+    private Map<String, String> parameterTypes;
 }

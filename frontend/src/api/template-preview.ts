@@ -4,6 +4,7 @@ export interface TemplatePreviewRequest {
   mode: "TEXT" | "SQL";
   template: string;
   values: Record<string, any>;
+  parameterTypes?: Record<string, string>;
 }
 
 export interface TemplatePreviewResponse {

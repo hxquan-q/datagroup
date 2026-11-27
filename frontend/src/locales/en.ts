@@ -845,6 +845,7 @@ export default {
       timeWindowsPass: "Governed metrics declare time fields where needed.",
       timeWindowsWarn: "{count} metrics have no time field; large fact tables may scan broad ranges.",
       validation: "Validation status",
+      validationBlocked: "{count} validation cases block publishing. First blocker: {message}",
       validationPass: "Enabled validation cases are passing.",
       validationFailed: "{count} enabled validation cases are failing or errored.",
       validationStale: "{count} validation cases are stale after metric changes.",

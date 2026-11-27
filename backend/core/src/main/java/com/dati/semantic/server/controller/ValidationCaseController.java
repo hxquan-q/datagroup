@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 public class ValidationCaseController {
@@ -74,6 +76,11 @@ public class ValidationCaseController {
     @PostMapping("/v1/validation-cases/{id}/run")
     public ValidationCaseVO run(@PathVariable String id) {
         return assembler.toVO(service.runCase(id));
+    }
+
+    @PostMapping("/v1/validation-cases/publish-blocking")
+    public List<String> publishBlocking(@RequestBody List<String> subjectIds) {
+        return service.publishBlockingMessages(subjectIds);
     }
 
     @PostMapping("/v1/subjects/{subjectId}/validation-cases/run")
