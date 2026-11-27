@@ -393,6 +393,10 @@ public class ValidationCaseService {
         if (subjectIds == null || subjectIds.isEmpty()) {
             return List.of();
         }
+        subjectIds.stream().distinct().forEach(subjectId -> {
+            SubjectPO subject = requireSubject(subjectId);
+            permissionService.requireCurrentUser(ResourceType.SUBJECT, subjectId, Permission.VIEW, subject.getCreatedBy());
+        });
         return validationCaseDAO.findBySubjectIdIn(subjectIds).stream()
             .filter(item -> Boolean.TRUE.equals(item.getEnabled()))
             .map(this::publishBlockingMessage)
