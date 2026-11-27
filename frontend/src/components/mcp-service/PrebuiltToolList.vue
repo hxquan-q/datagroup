@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { defineAsyncComponent, ref } from "vue";
-import { ElMessage } from "element-plus";
+import { computed, defineAsyncComponent, ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { Play, Settings } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import type { McpToolVO } from "~/api/mcp-tool";
@@ -18,6 +18,25 @@ const emit = defineEmits<{ (e: "refresh"): void }>();
 const sqlConfigVisible = ref(false);
 const testVisible = ref(false);
 const testingTool = ref<McpToolVO | null>(null);
+const WRITE_TOOL_TYPES = new Set(["UPDATE_TABLE_INFO", "UPDATE_COLUMN_INFO", "UPSERT_TERM"]);
+const GROUP_ORDER = [
+  { key: "semantic", types: ["SEARCH_METADATA", "SEARCH_SEMANTICS", "GET_TABLE_INFO", "LIST_TABLES"] },
+  { key: "metric", types: ["QUERY_METRIC", "INSPECT_METRIC"] },
+  { key: "sql", types: ["EXECUTE_SQL", "EXECUTE_QUERY_BATCH", "GET_SAMPLE_DATA"] },
+  { key: "write", types: ["UPDATE_TABLE_INFO", "UPDATE_COLUMN_INFO", "UPSERT_TERM"] },
+];
+
+const groupedTools = computed(() => GROUP_ORDER.map((group) => ({
+  key: group.key,
+  tools: props.tools.filter((tool) => group.types.includes(tool.tool_type)),
+})).filter((group) => group.tools.length));
+
+const writeToolCount = computed(() => props.tools.filter((tool) => isWriteTool(tool) && tool.enabled).length);
+
+function isWriteTool(tool: McpToolVO) {
+  return WRITE_TOOL_TYPES.has(tool.tool_type);
+}
+
 const openTest = (tool: McpToolVO) => {
   testingTool.value = tool;
   testVisible.value = true;
@@ -25,12 +44,41 @@ const openTest = (tool: McpToolVO) => {
 
 const handleToggle = async (tool: McpToolVO) => {
   try {
+    if (!tool.enabled && isWriteTool(tool)) {
+      await ElMessageBox.confirm(
+        t("mcpService.tool.writeEnableConfirm", { name: toolTypeLabel(tool.tool_type) }),
+        t("mcpService.tool.writeRiskTitle"),
+        { type: "warning", confirmButtonText: t("common.confirm"), cancelButtonText: t("common.cancel") },
+      );
+    }
     await updateTool(props.serviceId, tool.id, { tool_type: tool.tool_type, enabled: !tool.enabled });
     tool.enabled = !tool.enabled;
     ElMessage.success(t("common.saveSuccess"));
     emit("refresh");
   } catch (e: any) {
-    notifyError(e, t("common.operationFailed"));
+    if (e !== "cancel") notifyError(e, t("common.operationFailed"));
+  }
+};
+
+const applyReadOnlyPreset = async () => {
+  const targets = props.tools.filter((tool) => isWriteTool(tool) && tool.enabled);
+  if (!targets.length) {
+    ElMessage.info(t("mcpService.tool.readOnlyAlready"));
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(
+      t("mcpService.tool.readOnlyPresetConfirm", { count: targets.length }),
+      t("mcpService.tool.readOnlyPreset"),
+      { type: "warning", confirmButtonText: t("common.confirm"), cancelButtonText: t("common.cancel") },
+    );
+    for (const tool of targets) {
+      await updateTool(props.serviceId, tool.id, { tool_type: tool.tool_type, enabled: false });
+    }
+    ElMessage.success(t("mcpService.tool.readOnlyPresetDone"));
+    emit("refresh");
+  } catch (e: any) {
+    if (e !== "cancel") notifyError(e, t("common.operationFailed"));
   }
 };
 
@@ -44,6 +92,11 @@ const toolTypeLabel = (status: string) => {
     case "SEARCH_METADATA": return t("mcpService.tool.type.SEARCH_METADATA");
     case "GET_TABLE_INFO": return t("mcpService.tool.type.GET_TABLE_INFO");
     case "LIST_TABLES": return t("mcpService.tool.type.LIST_TABLES");
+    case "SEARCH_SEMANTICS": return t("mcpService.tool.type.SEARCH_SEMANTICS");
+    case "QUERY_METRIC": return t("mcpService.tool.type.QUERY_METRIC");
+    case "INSPECT_METRIC": return t("mcpService.tool.type.INSPECT_METRIC");
+    case "GET_SAMPLE_DATA": return t("mcpService.tool.type.GET_SAMPLE_DATA");
+    case "EXECUTE_QUERY_BATCH": return t("mcpService.tool.type.EXECUTE_QUERY_BATCH");
     case "EXECUTE_SQL": return t("mcpService.tool.type.EXECUTE_SQL");
     case "UPDATE_TABLE_INFO": return t("mcpService.tool.type.UPDATE_TABLE_INFO");
     case "UPDATE_COLUMN_INFO": return t("mcpService.tool.type.UPDATE_COLUMN_INFO");
@@ -54,16 +107,27 @@ const toolTypeLabel = (status: string) => {
 </script>
 
 <template>
-  <div class="prebuilt-section">
-    <div
-      v-for="tool in tools"
-      :key="tool.id"
-      class="prebuilt-card flex items-start gap-4 px-[18px] py-4"
-    >
+  <div class="prebuilt-toolbar">
+      <div>
+        <div class="prebuilt-toolbar-title">{{ t("mcpService.tool.prebuiltTitle") }}</div>
+        <div class="prebuilt-toolbar-subtitle">{{ t("mcpService.tool.writeEnabledCount", { count: writeToolCount }) }}</div>
+      </div>
+      <el-button @click="applyReadOnlyPreset">{{ t("mcpService.tool.readOnlyPreset") }}</el-button>
+    </div>
+
+    <div class="prebuilt-section">
+    <section v-for="group in groupedTools" :key="group.key" class="prebuilt-group">
+      <div class="prebuilt-group-title">{{ t(`mcpService.tool.groups.${group.key}`) }}</div>
+      <div
+        v-for="tool in group.tools"
+        :key="tool.id"
+        class="prebuilt-card flex items-start gap-4 px-[18px] py-4"
+      >
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">
           <span class="card-title">{{ toolTypeLabel(tool.tool_type) }}</span>
           <code class="card-name">{{ tool.name }}</code>
+          <el-tag v-if="isWriteTool(tool)" type="danger" size="small" effect="dark" class="write-badge">WRITE</el-tag>
         </div>
         <p class="card-desc">{{ tool.description }}</p>
 
@@ -119,7 +183,8 @@ const toolTypeLabel = (status: string) => {
           @change="handleToggle(tool)"
         />
       </div>
-    </div>
+      </div>
+    </section>
 
     <ExecuteSqlConfigDialog
       v-if="sqlConfigVisible"
@@ -139,6 +204,45 @@ const toolTypeLabel = (status: string) => {
 </template>
 
 <style scoped>
+.prebuilt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.prebuilt-toolbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ep-text-color-primary);
+}
+
+.prebuilt-toolbar-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ep-text-color-secondary);
+}
+
+.prebuilt-group + .prebuilt-group {
+  border-top: 1px solid var(--ep-border-color-lighter);
+}
+
+.prebuilt-group-title {
+  padding: 10px 18px 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ep-text-color-secondary);
+}
+
+.write-badge {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
 .prebuilt-section {
   border: 1px solid var(--ep-border-color-lighter);
   border-radius: 12px;

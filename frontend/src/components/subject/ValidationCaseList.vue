@@ -16,16 +16,15 @@ import {
 } from "~/api/validation-case";
 import { notifyError } from "~/api/http";
 import { formatDateTime } from "~/composables";
+import ParameterInput from "~/components/mcp-service/ParameterInput.vue";
 
 const props = defineProps<{ subjectId: string }>();
 const { t } = useI18n();
 
 const loading = ref(false);
 const runningId = ref("");
-const cases = ref<ValidationCaseVO[]>([]);
 const healthCases = ref<ValidationCaseVO[]>([]);
 const metrics = ref<MetricVO[]>([]);
-const total = ref(0);
 const page = ref(1);
 const size = ref(20);
 const dialogVisible = ref(false);
@@ -33,14 +32,21 @@ const saving = ref(false);
 const editingCase = ref<ValidationCaseVO | null>(null);
 const detailCase = ref<ValidationCaseVO | null>(null);
 const detailVisible = ref(false);
+const statusFilter = ref<"ALL" | "PASS" | "ISSUES">("ALL");
+const batchRunning = ref(false);
+const batchDone = ref(0);
+const batchTotal = ref(0);
+const advancedArguments = ref(false);
+const structuredArguments = ref<Record<string, any>>({});
 
-const emptyForm = (): ValidationCasePayload & { argumentsJson: string; dimensionsText: string } => ({
+const emptyForm = (): ValidationCasePayload & { argumentsJson: string; dimensionsText: string; dimensions: string[] } => ({
   name: "",
   description: "",
   metric_id: "",
   question: "",
   argumentsJson: "{}",
   dimensionsText: "",
+  dimensions: [],
   assertion_type: "EXECUTION_SUCCESS",
   expected_value: "",
   owner: "",
@@ -58,6 +64,17 @@ const healthScore = computed(() => {
   return completed ? Math.round((passCount.value / completed) * 100) : null;
 });
 const metricOptions = computed(() => metrics.value.map((metric) => ({ label: `${metric.name} (${metric.code})`, value: metric.id })));
+const selectedMetric = computed(() => metrics.value.find((metric) => metric.id === form.value.metric_id) || null);
+const metricParameters = computed(() => selectedMetric.value?.parameters || []);
+const dimensionOptions = computed(() => selectedMetric.value?.allowed_dimensions || []);
+const filteredCases = computed(() => healthCases.value.filter((item) => {
+  if (statusFilter.value === "PASS") return item.last_status === "PASS";
+  if (statusFilter.value === "ISSUES") return item.last_status === "FAIL" || item.last_status === "ERROR";
+  return true;
+}));
+const filteredTotal = computed(() => filteredCases.value.length);
+const pagedCases = computed(() => filteredCases.value.slice((page.value - 1) * size.value, page.value * size.value));
+const batchProgress = computed(() => (batchTotal.value ? Math.round((batchDone.value / batchTotal.value) * 100) : 0));
 
 async function fetchAllPages<T>(fetchPage: (page: number, size: number) => Promise<{ data: T[]; total: number }>) {
   const pageSize = 100;
@@ -76,13 +93,7 @@ async function fetchAllPages<T>(fetchPage: (page: number, size: number) => Promi
 async function loadCases() {
   loading.value = true;
   try {
-    const [resp, allCases] = await Promise.all([
-      listValidationCases(props.subjectId, page.value, size.value),
-      fetchAllPages((nextPage, nextSize) => listValidationCases(props.subjectId, nextPage, nextSize)),
-    ]);
-    cases.value = resp.data;
-    total.value = resp.total;
-    healthCases.value = allCases;
+    healthCases.value = await fetchAllPages((nextPage, nextSize) => listValidationCases(props.subjectId, nextPage, nextSize));
   } catch (error) {
     notifyError(error, t("common.loadFailed"));
   } finally {
@@ -98,9 +109,49 @@ async function loadMetrics() {
   }
 }
 
+function syncArgumentsJson() {
+  form.value.argumentsJson = JSON.stringify(structuredArguments.value || {}, null, 2);
+}
+
+function initializeArguments(existing?: Record<string, unknown>) {
+  const source = { ...(existing || {}) } as Record<string, any>;
+  for (const parameter of metricParameters.value) {
+    if (source[parameter.name] === undefined && parameter.default_value !== undefined) {
+      source[parameter.name] = parameter.default_value;
+    }
+  }
+  structuredArguments.value = source;
+  syncArgumentsJson();
+}
+
+function onMetricChanged() {
+  const current = { ...structuredArguments.value };
+  const allowed = new Set(metricParameters.value.map((parameter) => parameter.name));
+  if (metricParameters.value.length) {
+    for (const key of Object.keys(current)) {
+      if (!allowed.has(key)) delete current[key];
+    }
+  }
+  initializeArguments(current);
+}
+
+function toggleAdvancedArguments() {
+  if (advancedArguments.value) {
+    const parsed = parseJsonObject(form.value.argumentsJson || "{}");
+    if (!parsed) return;
+    structuredArguments.value = { ...parsed };
+    advancedArguments.value = false;
+  } else {
+    syncArgumentsJson();
+    advancedArguments.value = true;
+  }
+}
+
 function openCreate() {
   editingCase.value = null;
   form.value = emptyForm();
+  structuredArguments.value = {};
+  advancedArguments.value = false;
   dialogVisible.value = true;
 }
 
@@ -114,11 +165,14 @@ function openEdit(item: ValidationCaseVO) {
     question: item.question || "",
     argumentsJson: JSON.stringify(item.arguments || {}, null, 2),
     dimensionsText: (item.dimensions || []).join(", "),
+    dimensions: [...(item.dimensions || [])],
     assertion_type: item.assertion_type || "EXECUTION_SUCCESS",
     expected_value: item.expected_value || "",
     owner: item.owner || "",
     enabled: item.enabled !== false,
   };
+  advancedArguments.value = false;
+  initializeArguments(item.arguments || {});
   dialogVisible.value = true;
 }
 
@@ -134,7 +188,9 @@ function parseJsonObject(raw: string): Record<string, unknown> | null {
 }
 
 async function saveCase() {
-  const args = parseJsonObject(form.value.argumentsJson || "{}");
+  const args = advancedArguments.value
+    ? parseJsonObject(form.value.argumentsJson || "{}")
+    : { ...structuredArguments.value };
   if (!args) return;
   if (!form.value.name.trim() || !form.value.metric_id || !(form.value.question || "").trim()) {
     ElMessage.warning(t("validation.requiredFields"));
@@ -148,7 +204,7 @@ async function saveCase() {
       metric_id: form.value.metric_id,
       question: form.value.question,
       arguments: args,
-      dimensions: (form.value.dimensionsText || "").split(",").map((item) => item.trim()).filter(Boolean),
+      dimensions: Array.isArray(form.value.dimensions) ? form.value.dimensions : (form.value.dimensionsText || "").split(",").map((item) => item.trim()).filter(Boolean),
       assertion_type: form.value.assertion_type,
       expected_value: form.value.expected_value || "",
       owner: form.value.owner || "",
@@ -184,6 +240,39 @@ async function runCase(item: ValidationCaseVO) {
   } finally {
     runningId.value = "";
   }
+}
+
+async function runAllEnabledCases() {
+  const items = enabledCases.value;
+  if (!items.length || batchRunning.value) return;
+  batchRunning.value = true;
+  batchDone.value = 0;
+  batchTotal.value = items.length;
+  try {
+    for (const item of items) {
+      try {
+        await runValidationCase(item.id);
+      } catch (error) {
+        notifyError(error, item.name || t("validation.runFailed"));
+      } finally {
+        batchDone.value += 1;
+      }
+    }
+    ElMessage.success(t("validation.batchFinished", { done: batchDone.value, total: batchTotal.value }));
+    await loadCases();
+  } finally {
+    batchRunning.value = false;
+  }
+}
+
+function setStatusFilter(value: "ALL" | "PASS" | "ISSUES") {
+  statusFilter.value = value;
+  page.value = 1;
+}
+
+function isMetricStale(item: ValidationCaseVO) {
+  const metric = metrics.value.find((entry) => entry.id === item.metric_id);
+  return Boolean(item.last_metric_revision && metric?.revision && item.last_metric_revision < metric.revision);
 }
 
 async function removeCase(item: ValidationCaseVO) {
@@ -224,9 +313,12 @@ function formatJson(value: unknown) {
 
 watch(() => props.subjectId, () => {
   page.value = 1;
+  statusFilter.value = "ALL";
   loadMetrics();
   loadCases();
 });
+watch(() => form.value.metric_id, onMetricChanged);
+watch(structuredArguments, syncArgumentsJson, { deep: true });
 
 onMounted(() => {
   loadMetrics();
@@ -243,32 +335,38 @@ onMounted(() => {
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <el-button :icon="Refresh" @click="loadCases">{{ t("common.refresh") }}</el-button>
+        <el-button :loading="batchRunning" :disabled="!enabledCases.length" @click="runAllEnabledCases">{{ t("validation.runAll") }}</el-button>
         <el-button type="primary" :icon="Plus" @click="openCreate">{{ t("validation.createButton") }}</el-button>
       </div>
     </div>
 
+    <div v-if="batchRunning" class="batch-progress" aria-live="polite">
+      <span>{{ t("validation.batchProgress", { done: batchDone, total: batchTotal }) }}</span>
+      <div class="batch-progress-track"><div class="batch-progress-bar" :style="{ width: `${batchProgress}%` }"></div></div>
+    </div>
+
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <div class="rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] p-4">
+      <button type="button" class="kpi-card" :class="{ 'kpi-card-active': statusFilter === 'ALL' }" @click="setStatusFilter('ALL')">
         <div class="text-xs text-[var(--ep-text-color-secondary)]">{{ t("validation.healthScore") }}</div>
         <div class="mt-2 text-2xl font-bold" :class="healthScore === 100 ? 'text-[var(--ep-color-success)]' : healthScore === null ? 'text-[var(--ep-text-color-secondary)]' : 'text-[var(--ep-color-warning)]'">
           {{ healthScore === null ? "-" : `${healthScore}%` }}
         </div>
-      </div>
-      <div class="rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] p-4">
+      </button>
+      <button type="button" class="kpi-card" :class="{ 'kpi-card-active': statusFilter === 'ALL' }" @click="setStatusFilter('ALL')">
         <div class="text-xs text-[var(--ep-text-color-secondary)]">{{ t("validation.totalCases") }}</div>
         <div class="mt-2 text-2xl font-bold">{{ enabledCases.length }}</div>
-      </div>
-      <div class="rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] p-4">
+      </button>
+      <button type="button" class="kpi-card" :class="{ 'kpi-card-active': statusFilter === 'PASS' }" @click="setStatusFilter('PASS')">
         <div class="text-xs text-[var(--ep-text-color-secondary)]">{{ t("validation.passCount") }}</div>
         <div class="mt-2 text-2xl font-bold text-[var(--ep-color-success)]">{{ passCount }}</div>
-      </div>
-      <div class="rounded-xl border border-[var(--ep-border-color-lighter)] bg-[var(--ep-bg-color)] p-4">
+      </button>
+      <button type="button" class="kpi-card" :class="{ 'kpi-card-active': statusFilter === 'ISSUES' }" @click="setStatusFilter('ISSUES')">
         <div class="text-xs text-[var(--ep-text-color-secondary)]">{{ t("validation.issueCount") }}</div>
         <div class="mt-2 text-2xl font-bold text-[var(--ep-color-danger)]">{{ failCount + errorCount }}</div>
-      </div>
+      </button>
     </div>
 
-    <el-table v-loading="loading" :data="cases" stripe class="w-full">
+    <el-table v-loading="loading" :data="pagedCases" stripe class="w-full">
       <el-table-column prop="name" :label="t('common.name')" min-width="170" show-overflow-tooltip />
       <el-table-column prop="question" :label="t('validation.question')" min-width="240" show-overflow-tooltip />
       <el-table-column :label="t('validation.metric')" min-width="180" show-overflow-tooltip>
@@ -276,7 +374,12 @@ onMounted(() => {
       </el-table-column>
       <el-table-column :label="t('validation.status')" width="110" align="center">
         <template #default="{ row }">
-          <el-tag :type="statusType(row.last_status)" size="small">{{ row.last_status || t("validation.notRun") }}</el-tag>
+          <div class="flex flex-col items-center gap-1">
+            <el-tag :type="statusType(row.last_status)" size="small">{{ row.last_status || t("validation.notRun") }}</el-tag>
+            <el-tooltip v-if="isMetricStale(row)" :content="t('validation.staleHint')" placement="top">
+              <span class="stale-warning">{{ t("validation.stale") }}</span>
+            </el-tooltip>
+          </div>
         </template>
       </el-table-column>
       <el-table-column :label="t('validation.lastRunAt')" width="165">
@@ -302,12 +405,11 @@ onMounted(() => {
       <el-pagination
         v-model:current-page="page"
         v-model:page-size="size"
-        :total="total"
+        :total="filteredTotal"
         :page-sizes="[10, 20, 50]"
         layout="total, sizes, prev, pager, next"
         background
-        @current-change="loadCases"
-        @size-change="page = 1; loadCases()"
+        @size-change="page = 1"
       />
     </div>
 
@@ -326,9 +428,26 @@ onMounted(() => {
         <el-form-item :label="t('validation.question')" required>
           <el-input v-model="form.question" type="textarea" :rows="2" />
         </el-form-item>
-        <el-form-item :label="t('validation.argumentsJson')">
-          <el-input v-model="form.argumentsJson" type="textarea" :rows="7" class="font-mono" />
-        </el-form-item>
+        <div class="arguments-editor">
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <span class="text-sm font-medium">{{ t("validation.arguments") }}</span>
+            <el-button link type="primary" @click="toggleAdvancedArguments">
+              {{ advancedArguments ? t("validation.structuredMode") : t("validation.advancedMode") }}
+            </el-button>
+          </div>
+          <template v-if="!advancedArguments">
+            <div v-if="metricParameters.length" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <el-form-item v-for="parameter in metricParameters" :key="parameter.name" :label="parameter.name" :required="parameter.required">
+                <ParameterInput v-model="structuredArguments[parameter.name]" :parameter="parameter" />
+                <div v-if="parameter.description" class="mt-1 text-xs text-[var(--ep-text-color-secondary)]">{{ parameter.description }}</div>
+              </el-form-item>
+            </div>
+            <el-alert v-else type="info" :closable="false" :title="t('validation.noMetricParameters')" />
+          </template>
+          <el-form-item v-else :label="t('validation.argumentsJson')">
+            <el-input v-model="form.argumentsJson" type="textarea" :rows="7" class="font-mono" />
+          </el-form-item>
+        </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <el-form-item :label="t('validation.assertionType')">
             <el-select v-model="form.assertion_type" class="w-full">
@@ -346,7 +465,17 @@ onMounted(() => {
         </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <el-form-item :label="t('validation.dimensions')">
-            <el-input v-model="form.dimensionsText" placeholder="org_id, workshop_id" />
+            <el-select
+              v-model="form.dimensions"
+              multiple
+              filterable
+              allow-create
+              default-first-option
+              class="w-full"
+              :placeholder="t('validation.dimensionsPlaceholder')"
+            >
+              <el-option v-for="dimension in dimensionOptions" :key="dimension" :label="dimension" :value="dimension" />
+            </el-select>
           </el-form-item>
           <el-form-item :label="t('validation.enabled')">
             <el-switch v-model="form.enabled" />
@@ -405,5 +534,49 @@ onMounted(() => {
     row-gap: 8px;
     max-width: 100%;
   }
+}
+.kpi-card {
+  border: 1px solid var(--ep-border-color-lighter);
+  border-radius: 12px;
+  background: var(--ep-bg-color);
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.kpi-card:hover,
+.kpi-card-active {
+  border-color: var(--ep-color-primary);
+  box-shadow: 0 0 0 1px var(--ep-color-primary-light-7);
+}
+
+.batch-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ep-text-color-secondary);
+  font-size: 12px;
+}
+
+.batch-progress-track {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ep-fill-color);
+}
+
+.batch-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ep-color-primary);
+  transition: width 0.2s;
+}
+
+.stale-warning {
+  color: var(--ep-color-warning);
+  font-size: 11px;
+  line-height: 1;
 }
 </style>
