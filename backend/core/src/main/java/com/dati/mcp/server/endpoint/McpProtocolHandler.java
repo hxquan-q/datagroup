@@ -140,19 +140,14 @@ public class McpProtocolHandler {
         }
         Map<String, Object> arguments = callReq.arguments() == null ? Map.of() : callReq.arguments();
         String cacheKey = resultCache.key(versionNumber, name, arguments);
-        Object cached = resultCache.get(tool.toolType(), arguments, cacheKey);
-        if (cached != null) {
-            return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult((ToolTestData) cached));
-        }
         ToolExecutionContext ctx = new ToolExecutionContext(
             serviceId, tool.toolType(), tool.config(),
             parameterBinder.bind(tool.toolType().getParameterType(), arguments),
             snapshotToolResolver.buildScopeItems(serviceId, content),
             content.getMetrics() == null ? List.of() : content.getMetrics(),
             content.getRelations() == null ? List.of() : content.getRelations());
-        var data = executor.execute(ctx);
-        resultCache.store(tool.toolType(), arguments, cacheKey, data);
-        return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult(data));
+        var data = resultCache.getOrLoad(tool.toolType(), arguments, cacheKey, () -> executor.execute(ctx));
+        return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult((ToolTestData) data));
     }
 
     private McpSchema.JSONRPCResponse handlePromptsList(McpServiceSnapshot.SnapshotContent content,

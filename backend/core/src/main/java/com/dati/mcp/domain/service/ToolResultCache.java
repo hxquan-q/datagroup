@@ -16,6 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
 /**
  * Three-tier in-process result cache for MCP tool executions.
@@ -30,6 +34,11 @@ import java.util.TreeMap;
  *
  * L3 free SQL / parameterized tools: 90-second TTL, small result sets only
  * (fewer than 500 rows), absorbing repeated probe queries from agents.
+ *
+ * Concurrent identical calls are coalesced through Caffeine's atomic per-key
+ * loading: only the first caller hits the database, the rest share its result.
+ * Entries past 80% of their TTL are served stale while a background thread
+ * refreshes them, so TTL expiry never stampedes the database.
  */
 @Slf4j
 @Component
@@ -44,14 +53,30 @@ public class ToolResultCache {
     private static final Set<McpToolType> SQL_TOOLS = Set.of(
         McpToolType.EXECUTE_SQL, McpToolType.EXECUTE_QUERY_BATCH, McpToolType.PARAMETERIZED_SQL);
 
-    private final Cache<String, Object> metadataCache = Caffeine.newBuilder()
-        .maximumSize(2_000).expireAfterWrite(Duration.ofMinutes(15)).build();
-    private final Cache<String, Object> metricHotCache = Caffeine.newBuilder()
-        .maximumSize(2_000).expireAfterWrite(Duration.ofMinutes(5)).build();
-    private final Cache<String, Object> metricColdCache = Caffeine.newBuilder()
-        .maximumSize(5_000).expireAfterWrite(Duration.ofHours(6)).build();
-    private final Cache<String, Object> sqlCache = Caffeine.newBuilder()
-        .maximumSize(2_000).expireAfterWrite(Duration.ofSeconds(90)).build();
+    private static final Duration METADATA_TTL = Duration.ofMinutes(15);
+    private static final Duration METRIC_HOT_TTL = Duration.ofMinutes(5);
+    private static final Duration METRIC_COLD_TTL = Duration.ofHours(6);
+    private static final Duration SQL_TTL = Duration.ofSeconds(90);
+    private static final double REFRESH_AFTER_FRACTION = 0.8;
+
+    private final Cache<String, Object> metadataCache = buildCache(2_000, METADATA_TTL);
+    private final Cache<String, Object> metricHotCache = buildCache(2_000, METRIC_HOT_TTL);
+    private final Cache<String, Object> metricColdCache = buildCache(5_000, METRIC_COLD_TTL);
+    private final Cache<String, Object> sqlCache = buildCache(2_000, SQL_TTL);
+
+    private final Map<String, Long> writeTimes = new ConcurrentHashMap<>();
+    private final Set<String> refreshing = ConcurrentHashMap.newKeySet();
+    private final ExecutorService refreshExecutor = Executors.newFixedThreadPool(2, runnable -> {
+        Thread thread = new Thread(runnable, "mcp-cache-refresh");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    private Cache<String, Object> buildCache(long maxSize, Duration ttl) {
+        return Caffeine.newBuilder().maximumSize(maxSize).expireAfterWrite(ttl)
+            .removalListener((key, value, cause) -> writeTimes.remove(key))
+            .build();
+    }
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -66,6 +91,62 @@ public class ToolResultCache {
             return sqlCache;
         }
         return null;
+    }
+
+    private Duration ttlFor(McpToolType type, Map<String, Object> arguments) {
+        if (METADATA_TOOLS.contains(type)) {
+            return METADATA_TTL;
+        }
+        if (type == McpToolType.QUERY_METRIC) {
+            return isHistorical(arguments) ? METRIC_COLD_TTL : METRIC_HOT_TTL;
+        }
+        if (SQL_TOOLS.contains(type)) {
+            return SQL_TTL;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the cached value or loads it atomically: concurrent callers for the
+     * same key wait on a single database execution instead of stampeding it.
+     * Loader exceptions propagate without caching. Stale-while-revalidate: a hit
+     * older than 80% of the tier TTL is served immediately and refreshed in the
+     * background. SQL results at or above the row cap are evicted right after the
+     * coalesced load completes so they never serve a second caller.
+     */
+    public Object getOrLoad(McpToolType type, Map<String, Object> arguments, String key, Supplier<Object> loader) {
+        Cache<String, Object> cache = cacheFor(type, arguments);
+        if (cache == null || key == null) {
+            return loader.get();
+        }
+        Object value = cache.get(key, k -> {
+            Object loaded = loader.get();
+            writeTimes.put(k, System.currentTimeMillis());
+            return loaded;
+        });
+        if (SQL_TOOLS.contains(type) && type != McpToolType.PARAMETERIZED_SQL && countRows(value) >= SQL_CACHE_ROW_CAP) {
+            cache.invalidate(key);
+            writeTimes.remove(key);
+            return value;
+        }
+        Duration ttl = ttlFor(type, arguments);
+        Long written = writeTimes.get(key);
+        if (ttl != null && written != null
+            && System.currentTimeMillis() - written > ttl.toMillis() * REFRESH_AFTER_FRACTION
+            && refreshing.add(key)) {
+            refreshExecutor.submit(() -> {
+                try {
+                    Object refreshed = loader.get();
+                    cache.put(key, refreshed);
+                    writeTimes.put(key, System.currentTimeMillis());
+                } catch (Exception e) {
+                    log.debug("Background cache refresh failed for {}: {}", key, e.getMessage());
+                } finally {
+                    refreshing.remove(key);
+                }
+            });
+        }
+        return value;
     }
 
     /** Keyed by snapshot version: publishing naturally invalidates all entries. */
