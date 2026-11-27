@@ -47,7 +47,9 @@ defineEmits<Emits>()
     </el-table-column>
     <el-table-column :label="t('common.aliases')" min-width="260">
       <template #default="{ row }">
-        <AliasOverflowCell :aliases="row.aliases" :owner-name="row.name" editable @edit="$emit('edit', row)" />
+        <div @click.stop>
+          <AliasOverflowCell :aliases="row.aliases" :owner-name="row.name" editable @edit="$emit('edit', row)" />
+        </div>
       </template>
     </el-table-column>
     <el-table-column :label="t('subject.datasource')" min-width="140">

@@ -169,8 +169,8 @@ Module cards are clickable, keyboard-focusable, and navigate on Enter.
 - Alias chips use `.semantic-alias-tag`: neutral gray fill, neutral border, non-monospace text.
 - Linked-entity chips use `.semantic-entity-tag`: pale blue fill, blue text, monospace only for technical entity references.
 - Table cells use `.semantic-chip-row` with fixed column proportions. Chips truncate instead of stretching columns or rows.
-- Show a small representative set (normally three aliases or one linked entity), then collapse overflow into a keyboard-accessible `+N` control.
-- Overflow must open a detail card that exposes every item and the supported edit/remove/add actions. Never hide information behind a bare count.
+- Show a small representative set (normally three aliases or one linked entity), then collapse count overflow into a keyboard-accessible `+N` control. When there is no count overflow, keep a compact detail control so clipped text remains keyboard/touch accessible.
+- Overflow/detail controls open a detail card that exposes every item and the supported edit/remove/add actions. Never hide information behind a bare count.
 - Prefer the shared `AliasOverflowCell` for alias columns; use feature-specific detail cards only when the cell needs custom entity actions.
 
 ## 7. Icons
