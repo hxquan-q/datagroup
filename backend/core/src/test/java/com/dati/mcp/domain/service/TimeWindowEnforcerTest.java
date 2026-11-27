@@ -99,6 +99,33 @@ class TimeWindowEnforcerTest {
     }
 
     @Test
+    @DisplayName("inline bind values substitute placeholders outside literals")
+    void inlineBindValues() {
+        String inlined = ExecuteSqlExecutor.inlineBindValues(
+            "SELECT * FROM t WHERE a >= ? AND b < ? AND c = '?not-param'",
+            java.util.List.of("2025-09-01", 5));
+        org.assertj.core.api.Assertions.assertThat(inlined)
+            .isEqualTo("SELECT * FROM t WHERE a >= '2025-09-01' AND b < 5 AND c = '?not-param'");
+    }
+
+    @Test
+    @DisplayName("rejects wide ranges even when bounds arrive as inlined parameters")
+    void rejectsWideInlinedRange() {
+        String sql = ExecuteSqlExecutor.inlineBindValues(
+            "SELECT * FROM t_barcode WHERE FCreateTime >= ? AND FCreateTime < ?",
+            java.util.List.of("2025-01-01", "2025-12-01"));
+        assertThat(TimeWindowEnforcer.check(sql, RULES)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("escapes single quotes in inlined string parameters")
+    void escapesQuotes() {
+        String inlined = ExecuteSqlExecutor.inlineBindValues("SELECT * FROM t WHERE a = ?",
+            java.util.List.of("x'; DROP TABLE u; --"));
+        org.assertj.core.api.Assertions.assertThat(inlined).contains("'x''; DROP TABLE u; --'");
+    }
+
+    @Test
     @DisplayName("passes queries when no rules configured")
     void passesWithoutRules() {
         assertThat(TimeWindowEnforcer.check("SELECT * FROM t_barcode", Map.of())).isEmpty();

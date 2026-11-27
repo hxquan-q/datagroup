@@ -75,8 +75,9 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         List<StatementResult> results;
         try (Connection conn = HikariPoolManager.getConnection(connector)) {
             List<Object> params = args.params() != null ? args.params() : List.of();
-            enforceTimeWindows(sql, analysis, dsId);
-            enforcePlanGuardrail(conn, sql, analysis, config, dataSource.getType());
+            String validationSql = params.isEmpty() ? sql : inlineBindValues(sql, params);
+            enforceTimeWindows(validationSql, analysis, dsId);
+            enforcePlanGuardrail(conn, validationSql, analysis, config, dataSource.getType());
             if (!params.isEmpty()) {
                 if (analysis.type() == SqlOperationType.MULTI) {
                     throw new ToolExecuteException(ToolError.SQL_EXECUTION_ERROR,
@@ -108,6 +109,87 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         return new SqlExecution(sql, results, null);
     }
 
+    /**
+     * Replaces {@code ?} placeholders outside string literals and comments with their escaped
+     * bind values, producing SQL used only for validation (plan and time-window checks);
+     * execution always uses the PreparedStatement with real binding.
+     */
+    static String inlineBindValues(String sql, List<Object> params) {
+        StringBuilder out = new StringBuilder(sql.length() + 16 * params.size());
+        int paramIndex = 0;
+        boolean inSingle = false;
+        boolean inDouble = false;
+        boolean inBacktick = false;
+        boolean inLineComment = false;
+        for (int i = 0; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            if (inLineComment) {
+                out.append(c);
+                if (c == '\n') {
+                    inLineComment = false;
+                }
+                continue;
+            }
+            if (inSingle) {
+                out.append(c);
+                if (c == '\'' ) {
+                    inSingle = false;
+                }
+                continue;
+            }
+            if (inDouble) {
+                out.append(c);
+                if (c == '"') {
+                    inDouble = false;
+                }
+                continue;
+            }
+            if (inBacktick) {
+                out.append(c);
+                if (c == '`') {
+                    inBacktick = false;
+                }
+                continue;
+            }
+            if (c == '-' && i + 1 < sql.length() && sql.charAt(i + 1) == '-') {
+                inLineComment = true;
+                out.append(c);
+                continue;
+            }
+            if (c == '\'') {
+                inSingle = true;
+                out.append(c);
+                continue;
+            }
+            if (c == '"') {
+                inDouble = true;
+                out.append(c);
+                continue;
+            }
+            if (c == '`') {
+                inBacktick = true;
+                out.append(c);
+                continue;
+            }
+            if (c == '?' && paramIndex < params.size()) {
+                out.append(literalOf(params.get(paramIndex++)));
+                continue;
+            }
+            out.append(c);
+        }
+        return out.toString();
+    }
+
+    private static String literalOf(Object value) {
+        if (value == null) {
+            return "NULL";
+        }
+        if (value instanceof Number || value instanceof Boolean) {
+            return value.toString();
+        }
+        return "'" + value.toString().replace("'", "''") + "'";
+    }
+
     /** Rejects free SQL on tables closed to it; they are reachable only through parameterized tools. */
     private void enforceBlockedTables(SqlAnalysisResult analysis, String dsId) {
         if (analysis.referencedTables().isEmpty()) {
@@ -115,19 +197,30 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         }
         java.util.List<com.dati.datasource.repository.po.TableInfoPO> registered =
             tableInfoDAO.findByDataSourceId(dsId);
-        java.util.Set<String> blocked = new java.util.HashSet<>();
+        java.util.List<com.dati.datasource.repository.po.TableInfoPO> blockedTables = new java.util.ArrayList<>();
         for (com.dati.datasource.repository.po.TableInfoPO po : registered) {
             if (po.isSqlBlocked()) {
-                blocked.add(po.getName().toLowerCase(java.util.Locale.ROOT));
+                blockedTables.add(po);
             }
         }
-        if (blocked.isEmpty()) {
+        if (blockedTables.isEmpty()) {
             return;
         }
         java.util.List<String> hits = new java.util.ArrayList<>();
         for (com.dati.db.analysis.TableRef ref : analysis.referencedTables()) {
-            if (ref.name() != null && blocked.contains(ref.name().toLowerCase(java.util.Locale.ROOT))) {
+            if (ref.name() == null) {
+                continue;
+            }
+            for (com.dati.datasource.repository.po.TableInfoPO po : blockedTables) {
+                if (!po.getName().equalsIgnoreCase(ref.name())) {
+                    continue;
+                }
+                if (ref.schema() != null && po.getSchema() != null
+                        && !po.getSchema().equalsIgnoreCase(ref.schema())) {
+                    continue;
+                }
                 hits.add(ref.name());
+                break;
             }
         }
         if (!hits.isEmpty()) {

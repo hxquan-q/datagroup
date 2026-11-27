@@ -39,6 +39,7 @@ public class TableInfoPO extends BaseResourcePO {
     private String timeColumn;
 
     @Column(nullable = false)
+    @org.hibernate.annotations.ColumnDefault("false")
     private boolean timeWindowRequired = false;
 
     /** Maximum allowed span in days for the required time filter; null means unbounded width. */
@@ -46,6 +47,7 @@ public class TableInfoPO extends BaseResourcePO {
 
     /** Huge tables closed to free SQL; reachable only through parameterized tools. */
     @Column(nullable = false)
+    @org.hibernate.annotations.ColumnDefault("false")
     private boolean sqlBlocked = false;
 
 }
