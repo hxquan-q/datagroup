@@ -111,7 +111,7 @@ class ExecuteSqlExecutorSchemaScopeIntegrationTest {
         TableAutoRegistrationService autoRegistrationService = new TableAutoRegistrationService(
                 tableInfoDAO, columnInfoDAO, jdbcMetaService, semanticIndexService);
         ScopeValidator scopeValidator = new ScopeValidator(subjectDAO);
-        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, autoRegistrationService);
+        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, autoRegistrationService, tableInfoDAO);
     }
 
     @AfterEach

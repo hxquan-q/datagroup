@@ -39,6 +39,8 @@ class ExecuteSqlExecutorTest {
 
     @Mock
     private ScopeValidator scopeValidator;
+    @Mock
+    private com.dati.datasource.repository.dao.TableInfoDAO tableInfoDAO;
 
     @Mock
     private DataSourceService dataSourceService;
@@ -50,7 +52,7 @@ class ExecuteSqlExecutorTest {
 
     @BeforeEach
     void setUp() {
-        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, tableAutoRegistrationService);
+        executor = new ExecuteSqlExecutor(scopeValidator, dataSourceService, tableAutoRegistrationService, tableInfoDAO);
     }
 
     private Statement mockSuccessfulStatement() throws SQLException {

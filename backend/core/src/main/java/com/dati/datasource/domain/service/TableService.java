@@ -267,6 +267,15 @@ public class TableService {
 
         existingPO.setAliases(tableInfo.getAliases());
         existingPO.setDescription(tableInfo.getDescription());
+        if (tableInfo.getTimeColumn() != null) {
+            existingPO.setTimeColumn(tableInfo.getTimeColumn());
+        }
+        if (tableInfo.getTimeWindowRequired() != null) {
+            existingPO.setTimeWindowRequired(tableInfo.getTimeWindowRequired());
+        }
+        if (tableInfo.getMaxRangeDays() != null) {
+            existingPO.setMaxRangeDays(tableInfo.getMaxRangeDays());
+        }
         if (tableInfo.getUpdatedBy() != null) {
             existingPO.setUpdatedBy(tableInfo.getUpdatedBy());
         }

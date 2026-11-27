@@ -34,4 +34,14 @@ public class TableInfoPO extends BaseResourcePO {
     @Column(columnDefinition = "json")
     private List<String> aliases = new ArrayList<>();
 
+    /** Time column queries must filter on when {@link #timeWindowRequired} is set. */
+    @Column(length = 128)
+    private String timeColumn;
+
+    @Column(nullable = false)
+    private boolean timeWindowRequired = false;
+
+    /** Maximum allowed span in days for the required time filter; null means unbounded width. */
+    private Integer maxRangeDays;
+
 }

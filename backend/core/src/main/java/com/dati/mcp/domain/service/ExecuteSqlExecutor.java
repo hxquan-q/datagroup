@@ -30,13 +30,16 @@ public class ExecuteSqlExecutor implements ToolExecutor {
     private final ScopeValidator scopeValidator;
     private final DataSourceService dataSourceService;
     private final TableAutoRegistrationService tableAutoRegistrationService;
+    private final com.dati.datasource.repository.dao.TableInfoDAO tableInfoDAO;
 
     public ExecuteSqlExecutor(ScopeValidator scopeValidator,
                               DataSourceService dataSourceService,
-                              TableAutoRegistrationService tableAutoRegistrationService) {
+                              TableAutoRegistrationService tableAutoRegistrationService,
+                              com.dati.datasource.repository.dao.TableInfoDAO tableInfoDAO) {
         this.scopeValidator = scopeValidator;
         this.dataSourceService = dataSourceService;
         this.tableAutoRegistrationService = tableAutoRegistrationService;
+        this.tableInfoDAO = tableInfoDAO;
     }
 
     @Override
@@ -70,6 +73,7 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         try (Connection conn = HikariPoolManager.getConnection(connector);
              Statement stmt = conn.createStatement()) {
             stmt.setQueryTimeout(config.getTimeout());
+            enforceTimeWindows(sql, analysis, dsId);
             enforcePlanGuardrail(conn, sql, analysis, config, dataSource.getType());
             stmt.setMaxRows(SqlExecutorHelper.probeRowLimit(config.getMaxRows()));
             stmt.execute(sql);
@@ -81,6 +85,39 @@ public class ExecuteSqlExecutor implements ToolExecutor {
         registerCreatedTables(dsId, analysis, dataSource.getDefaultSchema(), ctx.serviceId());
 
         return new SqlExecution(sql, results, null);
+    }
+
+    /**
+     * Rejects queries on tables marked as requiring a time window when the SQL
+     * lacks a bounded filter on the table's configured time column.
+     */
+    private void enforceTimeWindows(String sql, SqlAnalysisResult analysis, String dsId) {
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (com.dati.db.analysis.TableRef ref : analysis.referencedTables()) {
+            if (ref.name() != null) {
+                names.add(ref.name());
+            }
+        }
+        if (names.isEmpty()) {
+            return;
+        }
+        java.util.List<com.dati.datasource.repository.po.TableInfoPO> registered =
+            tableInfoDAO.findByDataSourceIdAndNameIn(dsId, names);
+        java.util.Map<String, TimeWindowEnforcer.Rule> rules = new java.util.HashMap<>();
+        for (com.dati.datasource.repository.po.TableInfoPO po : registered) {
+            if (po.isTimeWindowRequired() && po.getTimeColumn() != null && !po.getTimeColumn().isBlank()) {
+                rules.put(po.getName().toLowerCase(java.util.Locale.ROOT),
+                    new TimeWindowEnforcer.Rule(po.getName(), po.getTimeColumn(), po.getMaxRangeDays()));
+            }
+        }
+        if (rules.isEmpty()) {
+            return;
+        }
+        java.util.List<TimeWindowEnforcer.Violation> violations = TimeWindowEnforcer.check(sql, rules);
+        if (!violations.isEmpty()) {
+            throw new ToolExecuteException(ToolError.SQL_EXECUTION_ERROR,
+                TimeWindowEnforcer.rejectionMessage(violations));
+        }
     }
 
     private void enforcePlanGuardrail(Connection conn, String sql, SqlAnalysisResult analysis,
