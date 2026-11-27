@@ -68,32 +68,26 @@ onMounted(loadMetrics);
 <template>
   <div class="metric-list flex flex-col gap-4">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div>
-        <div class="text-base font-semibold text-[var(--ep-text-color-primary)]">{{ t("metric.title") }}</div>
-        <div class="mt-1 text-xs text-[var(--ep-text-color-secondary)]">{{ t("metric.subtitle") }}</div>
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <el-input
-          v-model="keyword"
-          :placeholder="t('metric.searchPlaceholder')"
-          clearable
-          class="w-64"
-          :prefix-icon="Search"
-          @keyup.enter="page = 1; loadMetrics()"
-          @clear="page = 1; loadMetrics()"
-        />
-        <el-button type="primary" :icon="Plus" @click="openCreate">{{ t("metric.createButton") }}</el-button>
-      </div>
+      <el-input
+        v-model="keyword"
+        :placeholder="t('metric.searchPlaceholder')"
+        clearable
+        class="metric-search"
+        :prefix-icon="Search"
+        @keyup.enter="page = 1; loadMetrics()"
+        @clear="page = 1; loadMetrics()"
+      />
+      <el-button type="primary" :icon="Plus" @click="openCreate">{{ t("metric.createButton") }}</el-button>
     </div>
 
-    <el-table v-loading="loading" :data="metrics" border stripe class="w-full">
+    <el-table v-loading="loading" :data="metrics" class="w-full">
       <el-table-column prop="code" :label="t('metric.code')" min-width="170">
         <template #default="{ row }">
           <code class="rounded bg-[var(--ep-fill-color)] px-1.5 py-0.5 text-xs">{{ row.code }}</code>
         </template>
       </el-table-column>
       <el-table-column prop="name" :label="t('common.name')" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="owner" :label="t('metric.owner')" width="120" show-overflow-tooltip>
+      <el-table-column prop="owner" :label="t('metric.owner')" width="110" show-overflow-tooltip>
         <template #default="{ row }">{{ row.owner || "-" }}</template>
       </el-table-column>
       <el-table-column prop="grain" :label="t('metric.grain')" width="130" show-overflow-tooltip>
@@ -105,10 +99,10 @@ onMounted(loadMetrics);
       <el-table-column :label="t('metric.revision')" width="90" align="center">
         <template #default="{ row }">v{{ row.revision || 1 }}</template>
       </el-table-column>
-      <el-table-column :label="t('common.updatedAt')" width="170">
+      <el-table-column :label="t('common.updatedAt')" width="190">
         <template #default="{ row }">{{ row.updated_at ? formatDateTime(row.updated_at) : "-" }}</template>
       </el-table-column>
-      <el-table-column :label="t('common.actions')" width="150" fixed="right">
+      <el-table-column :label="t('common.actions')" width="130" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link @click="openEdit(row)">{{ t("common.edit") }}</el-button>
           <el-button type="danger" link @click="removeMetric(row)">{{ t("common.delete") }}</el-button>
@@ -135,3 +129,10 @@ onMounted(loadMetrics);
     <MetricWizard v-model:visible="wizardVisible" :subject-id="subjectId" :metric="editingMetric" @saved="handleSaved" />
   </div>
 </template>
+
+
+<style scoped>
+.metric-search {
+  width: min(320px, 100%);
+}
+</style>

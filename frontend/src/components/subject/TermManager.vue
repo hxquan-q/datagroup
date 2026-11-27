@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { MoreHorizontal as MoreFilled, Plus, Search } from "@lucide/vue";
+import { Link2, MoreHorizontal as MoreFilled, Plus, Search } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import type {
   CreateTermRequest,
@@ -160,7 +160,7 @@ const getTermRelations = (term?: TermVO) => {
 };
 
 const getTermDisplayRelations = (term: TermVO) => {
-  return getTermRelations(term).slice(0, 2);
+  return getTermRelations(term).slice(0, 1);
 };
 
 const getRelationDisplayText = (relation: TermRelationVO) => {
@@ -660,23 +660,55 @@ onMounted(() => {
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
     >
-      <el-table :data="termList" stripe>
+      <el-table :data="termList">
         <el-table-column
           prop="name"
           :label="t('common.name')"
-          min-width="150"
+          width="170"
         />
-        <el-table-column :label="t('common.aliases')" min-width="180">
+        <el-table-column :label="t('common.aliases')" width="260">
           <template #default="{ row }">
             <template v-if="row.aliases && row.aliases.length > 0">
+              <div class="semantic-chip-row">
               <el-tag
-                v-for="alias in row.aliases"
+                v-for="alias in row.aliases.slice(0, 3)"
                 :key="alias"
                 size="small"
-                class="mr-1"
+                type="info"
+                class="semantic-alias-tag mr-1"
               >
                 {{ alias }}
               </el-tag>
+              <el-popover v-if="row.aliases.length > 3" trigger="click" placement="bottom" :width="300">
+                <template #reference>
+                  <el-tag size="small" type="info" class="semantic-alias-tag semantic-overflow-tag cursor-pointer">
+                    +{{ row.aliases.length - 3 }}
+                  </el-tag>
+                </template>
+                <div class="chip-detail-card">
+                  <div class="chip-detail-header">
+                    <div>
+                      <div class="chip-detail-title">{{ t("common.aliases") }}</div>
+                      <div class="chip-detail-meta">{{ row.name }} · {{ row.aliases.length }}</div>
+                    </div>
+                    <el-button link type="primary" size="small" @click="handleOpenTermDialog(row)">
+                      {{ t("common.edit") }}
+                    </el-button>
+                  </div>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="alias in row.aliases"
+                      :key="alias"
+                      size="small"
+                      type="info"
+                      class="semantic-alias-tag"
+                    >
+                      {{ alias }}
+                    </el-tag>
+                  </div>
+                </div>
+              </el-popover>
+              </div>
             </template>
             <span v-else class="text-sm text-[var(--ep-text-color-placeholder)]"
               >-</span
@@ -689,28 +721,40 @@ onMounted(() => {
           min-width="220"
           show-overflow-tooltip
         />
-        <el-table-column :label="t('subject.linkedEntities')" min-width="260">
+        <el-table-column :label="t('subject.linkedEntities')" width="300">
           <template #default="{ row }">
             <template v-if="getTermRelations(row).length > 0">
-              <div class="flex flex-wrap gap-1 items-center">
+              <div class="semantic-chip-row">
                 <el-tag
                   v-for="rel in getTermDisplayRelations(row)"
                   :key="rel.id"
-                  :type="rel.entity_type === 'TABLE' ? 'info' : 'warning'"
+                  type="primary"
                   size="small"
+                  class="semantic-entity-tag"
                   closable
                   @close="handleRemoveRelation(row.id, rel)"
                 >
-                  {{ getRelationDisplayText(rel) }}
+                  <Link2 class="semantic-entity-link-icon" :size="11" />
+                  <span class="truncate">{{ getRelationDisplayText(rel) }}</span>
                 </el-tag>
 
-                <template v-if="getTermRelations(row).length > 2">
+                <template v-if="getTermRelations(row).length > 1">
                   <el-popover trigger="click" placement="bottom" :width="340">
                     <template #reference>
                       <el-button link type="primary" size="small">
-                        +{{ getTermRelations(row).length - 2 }}
+                        +{{ getTermRelations(row).length - 1 }}
                       </el-button>
                     </template>
+                    <div class="chip-detail-card">
+                      <div class="chip-detail-header">
+                        <div>
+                          <div class="chip-detail-title">{{ t("subject.linkedEntities") }}</div>
+                          <div class="chip-detail-meta">{{ row.name }} · {{ getTermRelations(row).length }}</div>
+                        </div>
+                        <el-button link type="primary" size="small" @click="handleOpenAddRelationDialog(row)">
+                          {{ t("subject.addRelation") }}
+                        </el-button>
+                      </div>
                     <div class="space-y-1 max-h-60 overflow-y-auto">
                       <div
                         v-for="rel in getTermRelations(row)"
@@ -745,6 +789,7 @@ onMounted(() => {
                           {{ t("common.remove") }}
                         </el-button>
                       </div>
+                    </div>
                     </div>
                   </el-popover>
                 </template>

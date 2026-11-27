@@ -121,7 +121,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-loading="loading" class="subject-detail-page flex flex-col flex-1 min-h-0 gap-5 p-6 overflow-hidden">
+  <div v-loading="loading" class="subject-detail-page flex flex-col flex-1 min-h-0 gap-6 p-6 overflow-hidden">
     <!-- Top Navigation Header -->
     <DetailPageShell
       :breadcrumbs="breadcrumbs"

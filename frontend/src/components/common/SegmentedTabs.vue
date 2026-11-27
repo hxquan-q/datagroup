@@ -51,14 +51,14 @@ function handleKeydown(event: KeyboardEvent, index: number) {
 <style scoped>
 .segmented-tabs {
   display: flex;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   flex-wrap: nowrap;
   gap: 2px;
   overflow-x: auto;
   padding: 4px;
-  border-radius: 999px;
-  background: var(--ep-fill-color-light);
+  border-radius: 10px;
+  background: var(--ep-fill-color);
   scrollbar-width: none;
 }
 
@@ -74,7 +74,7 @@ function handleKeydown(event: KeyboardEvent, index: number) {
   min-height: 32px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ep-text-color-secondary);
   cursor: pointer;

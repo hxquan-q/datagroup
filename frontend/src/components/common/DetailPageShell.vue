@@ -48,20 +48,17 @@ defineProps<{
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px 22px;
-  border: 1px solid var(--xiaoai-surface-border);
-  border-radius: var(--xiaoai-surface-radius);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--ep-color-primary) 7%, transparent), transparent 46%),
-    color-mix(in srgb, var(--ep-bg-color) 94%, transparent);
-  box-shadow: var(--xiaoai-surface-shadow);
+  padding: 2px 2px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .detail-shell-main {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 9px;
 }
 
 .detail-shell-breadcrumb {
@@ -88,8 +85,8 @@ defineProps<{
 .detail-shell-title-row h1 {
   margin: 0;
   color: var(--ep-text-color-primary);
-  font-size: 24px;
-  font-weight: 720;
+  font-size: 26px;
+  font-weight: 750;
   letter-spacing: -0.03em;
   line-height: 1.25;
 }

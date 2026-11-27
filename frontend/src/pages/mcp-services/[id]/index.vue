@@ -251,7 +251,7 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-5 px-5 py-6 md:px-8 md:py-7 overflow-hidden">
+  <div v-loading="loading" class="mcp-detail-page flex flex-col flex-1 min-h-0 gap-6 px-5 py-6 md:px-8 md:py-7 overflow-hidden">
     <DetailPageShell
       :breadcrumbs="breadcrumbs"
       :title="service?.name || serviceId"
