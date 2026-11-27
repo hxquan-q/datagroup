@@ -1,5 +1,6 @@
 package com.dati.mcp.server.endpoint;
 
+import com.dati.base.RequestContext;
 import com.dati.mcp.domain.model.McpServiceSnapshot;
 import com.dati.mcp.domain.model.McpToolType;
 import com.dati.mcp.domain.service.ToolExecuteException;
@@ -139,19 +140,13 @@ public class McpProtocolHandler {
                 new McpSchema.JSONRPCResponse.JSONRPCError(McpSchema.ErrorCodes.INTERNAL_ERROR, "No executor for tool type: " + tool.toolType(), null));
         }
         Map<String, Object> arguments = callReq.arguments() == null ? Map.of() : callReq.arguments();
-        String cacheKey = resultCache.key(versionNumber, name, arguments);
-        Object cached = resultCache.get(tool.toolType(), arguments, cacheKey);
-        if (cached != null) {
-            return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult((ToolTestData) cached));
-        }
-        ToolExecutionContext ctx = new ToolExecutionContext(
-            serviceId, tool.toolType(), tool.config(),
-            parameterBinder.bind(tool.toolType().getParameterType(), arguments),
-            snapshotToolResolver.buildScopeItems(serviceId, content),
-            content.getMetrics() == null ? List.of() : content.getMetrics(),
-            content.getRelations() == null ? List.of() : content.getRelations());
-        var data = executor.execute(ctx);
-        resultCache.store(tool.toolType(), arguments, cacheKey, data);
+        ToolTestData data = resultCache.getOrExecute(serviceId, versionNumber, RequestContext.currentUserId(),
+            tool.toolType(), name, arguments, () -> executor.execute(new ToolExecutionContext(
+                serviceId, tool.toolType(), tool.config(),
+                parameterBinder.bind(tool.toolType().getParameterType(), arguments),
+                snapshotToolResolver.buildScopeItems(serviceId, content),
+                content.getMetrics() == null ? List.of() : content.getMetrics(),
+                content.getRelations() == null ? List.of() : content.getRelations())));
         return McpSchema.JSONRPCResponse.result(request.id(), toolResultConverter.toResult(data));
     }
 
