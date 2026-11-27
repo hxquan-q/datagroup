@@ -13,4 +13,12 @@ public class TableInfoVO extends BaseResourceVO {
     private String schema;
     private String datasourceId;
     private List<String> aliases = new ArrayList<>();
+
+    private String timeColumn;
+
+    private boolean timeWindowRequired;
+
+    private Integer maxRangeDays;
+
+    private boolean sqlBlocked;
 }

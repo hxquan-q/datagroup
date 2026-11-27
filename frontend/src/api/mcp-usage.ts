@@ -37,6 +37,10 @@ export interface McpInvocationLogVO {
   success: boolean;
   duration_ms: number;
   error_message?: string;
+  request_params?: string;
+  executed_sql?: string;
+  metric_code?: string;
+  row_count?: number;
   stat_date: string;
   created_at: string;
 }

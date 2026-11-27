@@ -5,6 +5,8 @@ import com.dati.mcp.repository.dao.McpUsageDailyStatDAO;
 import com.dati.mcp.repository.po.McpInvocationLogPO;
 import com.dati.mcp.repository.po.McpUsageDailyStatPO;
 import com.dati.mcp.server.pojo.McpUsageStatsVO;
+import com.dati.permission.domain.service.PermissionService;
+import com.dati.permission.domain.model.Permission;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -29,13 +31,16 @@ public class McpUsageService {
     private final McpInvocationLogDAO logDAO;
     private final McpUsageDailyStatDAO dailyStatDAO;
     private final int retentionDays;
+    private final PermissionService permissionService;
 
     public McpUsageService(McpInvocationLogDAO logDAO,
                            McpUsageDailyStatDAO dailyStatDAO,
-                           @Value("${dati.mcp.stats.retention-days:15}") int retentionDays) {
+                           @Value("${dati.mcp.stats.retention-days:15}") int retentionDays,
+                           PermissionService permissionService) {
         this.logDAO = logDAO;
         this.dailyStatDAO = dailyStatDAO;
         this.retentionDays = retentionDays > 0 ? retentionDays : 15;
+        this.permissionService = permissionService;
     }
 
     /**
@@ -127,6 +132,7 @@ public class McpUsageService {
      * List invocation logs with pagination and optional filtering.
      */
     public Page<McpInvocationLogPO> listLogs(String serviceId, String toolName, Boolean success, Pageable pageable) {
+        permissionService.requireMcpService(serviceId, Permission.VIEW);
         return logDAO.findLogs(serviceId, toolName, success, pageable);
     }
 

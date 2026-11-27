@@ -24,6 +24,10 @@ public class McpUsageAssembler {
         vo.setErrorMessage(po.getErrorMessage());
         vo.setStatDate(po.getStatDate());
         vo.setCreatedAt(po.getCreatedAt());
+        vo.setRequestParams(po.getRequestParams());
+        vo.setExecutedSql(po.getExecutedSql());
+        vo.setMetricCode(po.getMetricCode());
+        vo.setRowCount(po.getRowCount());
         return vo;
     }
 }

@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,7 +35,7 @@ public class QueryMetricExecutor implements ToolExecutor {
     @Override
     public ToolTestData execute(ToolExecutionContext ctx) {
         QueryMetricArgs args = ctx.args(QueryMetricArgs.class);
-        McpServiceSnapshot.MetricDraft metric = resolveMetric(ctx.metrics(), args.metric());
+        McpServiceSnapshot.MetricDraft metric = PublishedMetricResolver.resolve(ctx.metrics(), args.metric());
         validateDimensions(metric, args.dimensions());
         if (args.arguments().containsKey("dimensions")) {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,
@@ -80,33 +79,6 @@ public class QueryMetricExecutor implements ToolExecutor {
         return new MetricExecution(info, parameters, args.dimensions(), execution);
     }
 
-    private McpServiceSnapshot.MetricDraft resolveMetric(List<McpServiceSnapshot.MetricDraft> metrics, String key) {
-        List<McpServiceSnapshot.MetricDraft> exact = metrics.stream()
-            .filter(metric -> key.equals(metric.metricId()) || key.equals(metric.code()))
-            .toList();
-        if (exact.size() == 1) {
-            return exact.getFirst();
-        }
-        if (exact.size() > 1) {
-            throw new ToolExecuteException(ToolError.PARAM_INVALID,
-                "Metric reference is ambiguous: " + key + "; use the metric ID");
-        }
-        String normalized = key.toLowerCase(Locale.ROOT);
-        List<McpServiceSnapshot.MetricDraft> matches = metrics.stream()
-            .filter(metric -> normalized.equals(lower(metric.name()))
-                || metric.aliases().stream().anyMatch(alias -> normalized.equals(lower(alias))))
-            .toList();
-        if (matches.size() == 1) {
-            return matches.getFirst();
-        }
-        if (matches.size() > 1) {
-            throw new ToolExecuteException(ToolError.PARAM_INVALID,
-                "Metric reference is ambiguous: " + key + "; use the stable metric code");
-        }
-        throw new ToolExecuteException(ToolError.PARAM_INVALID,
-            "Metric not found in published semantic catalog: " + key);
-    }
-
     private void validateDimensions(McpServiceSnapshot.MetricDraft metric, List<String> dimensions) {
         if (dimensions.isEmpty()) {
             return;
@@ -137,10 +109,6 @@ public class QueryMetricExecutor implements ToolExecutor {
             }
         }
         return false;
-    }
-
-    private String lower(String value) {
-        return value == null ? null : value.toLowerCase(Locale.ROOT);
     }
 
     private ToolParameter toToolParameter(MetricParameter parameter) {

@@ -56,4 +56,16 @@ public class McpInvocationLogPO extends BasePO {
 
     @Column(name = "stat_date", length = 10, nullable = false)
     private String statDate;
+
+    @Column(name = "request_params", columnDefinition = "TEXT")
+    private String requestParams;
+
+    @Column(name = "executed_sql", columnDefinition = "TEXT")
+    private String executedSql;
+
+    @Column(name = "metric_code", length = 128)
+    private String metricCode;
+
+    @Column(name = "row_count")
+    private Integer rowCount;
 }

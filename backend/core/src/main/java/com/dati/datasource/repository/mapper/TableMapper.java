@@ -12,6 +12,10 @@ public class TableMapper {
         tableInfo.setDatasourceId(tableInfoPO.getDataSourceId());
         tableInfo.setSchema(tableInfoPO.getSchema());
         tableInfo.setAliases(tableInfoPO.getAliases());
+        tableInfo.setTimeColumn(tableInfoPO.getTimeColumn());
+        tableInfo.setTimeWindowRequired(tableInfoPO.isTimeWindowRequired());
+        tableInfo.setMaxRangeDays(tableInfoPO.getMaxRangeDays());
+        tableInfo.setSqlBlocked(tableInfoPO.isSqlBlocked());
         return tableInfo;
     }
 
@@ -21,6 +25,10 @@ public class TableMapper {
         tableInfoPO.setDataSourceId(tableInfo.getDatasourceId());
         tableInfoPO.setSchema(tableInfo.getSchema());
         tableInfoPO.setAliases(tableInfo.getAliases());
+        tableInfoPO.setTimeColumn(tableInfo.getTimeColumn());
+        tableInfoPO.setTimeWindowRequired(Boolean.TRUE.equals(tableInfo.getTimeWindowRequired()));
+        tableInfoPO.setMaxRangeDays(tableInfo.getMaxRangeDays());
+        tableInfoPO.setSqlBlocked(Boolean.TRUE.equals(tableInfo.getSqlBlocked()));
         return tableInfoPO;
     }
 

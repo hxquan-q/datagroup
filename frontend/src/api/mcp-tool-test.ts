@@ -28,7 +28,10 @@ export type ToolTestData =
   | MetadataUpdateData
   | TableListData
   | SemanticCatalog
-  | MetricExecution;
+  | MetricExecution
+  | MetricInspection
+  | SampleData
+  | BatchExecution;
 
 export interface SemanticCatalog {
   type: "SEMANTIC_CATALOG";
@@ -48,6 +51,44 @@ export interface SemanticMetric {
   time_zone?: string;
   allowed_dimensions?: string[];
   revision?: number;
+}
+
+export interface SampleData {
+  type: "SAMPLE_DATA";
+  table: string;
+  columns: string[];
+  rows: any[][];
+  masked_columns?: string[];
+}
+
+export interface BatchExecution {
+  type: "BATCH_EXECUTION";
+  steps: { sql: string; success: boolean; execution?: SqlExecution; error?: string }[];
+}
+
+export interface MetricInspection {
+  type: "METRIC_INSPECTION";
+  metric: {
+    metric_id: string;
+    subject_id: string;
+    code: string;
+    name: string;
+    description?: string;
+    aliases?: string[];
+    owner?: string;
+    grain?: string;
+    time_field?: string;
+    time_zone?: string;
+    structured: boolean;
+    measure_expression?: string;
+    fact_schema?: string;
+    fact_table_name?: string;
+    revision?: number;
+  };
+  dimensions: { name: string; schema?: string; table_name?: string; column?: string; description?: string }[];
+  parameters: { name: string; type?: string; required: boolean; default_value?: string; description?: string }[];
+  join_paths: { fact_schema?: string; fact_table: string; fact_column: string; dimension_schema?: string; dimension_table: string; dimension_column: string; cardinality?: string }[];
+  example: { tool: string; arguments: Record<string, any> };
 }
 
 export interface MetricExecution {

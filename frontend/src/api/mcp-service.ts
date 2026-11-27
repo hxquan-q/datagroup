@@ -209,3 +209,22 @@ export function rollbackMcpService(
     { target_version_number: number; release_note?: string }
   >(`/v1/mcp-services/${encodeURIComponent(id)}/rollback`, body, signal);
 }
+
+export interface McpReplayResultVO {
+  log_id: string;
+  tool_name: string;
+  original_success?: boolean;
+  original_row_count?: number;
+  original_duration_ms?: number;
+  replay_success?: boolean;
+  replay_row_count?: number;
+  replay_duration_ms?: number;
+  replay_error?: string;
+  replay_executed_sql?: string;
+  row_count_match?: boolean;
+  sql_changed?: boolean;
+}
+
+export function replayInvocationLog(serviceId: string, logId: string, signal?: AbortSignal) {
+  return post<McpReplayResultVO, void>(`/v1/mcp-services/${serviceId}/invocation-logs/${logId}/replay`, undefined, signal);
+}

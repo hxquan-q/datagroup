@@ -1,7 +1,10 @@
 package com.dati.mcp.domain.model;
 
 import com.dati.mcp.domain.model.param.ExecuteSqlArgs;
+import com.dati.mcp.domain.model.param.ExecuteQueryBatchArgs;
 import com.dati.mcp.domain.model.param.GetTableInfoArgs;
+import com.dati.mcp.domain.model.param.GetSampleDataArgs;
+import com.dati.mcp.domain.model.param.InspectMetricArgs;
 import com.dati.mcp.domain.model.param.ListTablesArgs;
 import com.dati.mcp.domain.model.param.SearchMetadataArgs;
 import com.dati.mcp.domain.model.param.SearchSemanticsArgs;
@@ -50,6 +53,30 @@ public enum McpToolType {
         "Query Metric",
         "Execute a published governed metric by metric ID, stable code, business name, or alias. Use search_semantics first; pass the metric-specific parameters in arguments.",
         QueryMetricArgs.class,
+        "{\"readOnlyHint\":true}",
+        true
+    ),
+    EXECUTE_QUERY_BATCH(
+        "execute_query_batch",
+        "Execute Query Batch",
+        "Run up to 10 ordered read-only SELECT statements in one call. Use for multi-step attribution analysis: each statement is validated and executed independently with the same policy, scope, and execution-plan guardrails as execute_sql; per-step errors do not abort the batch.",
+        ExecuteQueryBatchArgs.class,
+        "{\"readOnlyHint\":true}",
+        true
+    ),
+    GET_SAMPLE_DATA(
+        "get_sample_data",
+        "Get Sample Data",
+        "Preview a small sample of table rows with sensitive columns masked. Use this to inspect value formats before writing queries instead of running unfiltered SELECTs on large tables.",
+        GetSampleDataArgs.class,
+        "{\"readOnlyHint\":true}",
+        true
+    ),
+    INSPECT_METRIC(
+        "inspect_metric",
+        "Inspect Metric",
+        "Inspect a published governed metric before querying: measure expression, fact table, allowed dimensions with table/column mappings, time field, confirmed join paths, parameters, and a copyable query_metric example. Use this after search_semantics when unsure about metric parameters or dimensions.",
+        InspectMetricArgs.class,
         "{\"readOnlyHint\":true}",
         true
     ),
@@ -118,6 +145,9 @@ public enum McpToolType {
             case LIST_TABLES -> new ToolConfig.ListTablesConfig();
             case SEARCH_SEMANTICS -> new ToolConfig.SearchSemanticsConfig();
             case QUERY_METRIC -> new ToolConfig.QueryMetricConfig();
+            case INSPECT_METRIC -> new ToolConfig.QueryMetricConfig();
+            case GET_SAMPLE_DATA -> new ToolConfig.QueryMetricConfig();
+            case EXECUTE_QUERY_BATCH -> new ToolConfig.ExecuteSqlConfig();
             case EXECUTE_SQL -> new ToolConfig.ExecuteSqlConfig();
             case UPDATE_TABLE_INFO, UPDATE_COLUMN_INFO, UPSERT_TERM -> new ToolConfig.UpdateMetadataConfig();
             case PARAMETERIZED_SQL -> new ToolConfig.ParamSqlConfig();

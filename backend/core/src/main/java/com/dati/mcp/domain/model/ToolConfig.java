@@ -49,6 +49,7 @@ public interface ToolConfig {
         private SqlPolicy sqlPolicy = new SqlPolicy();
         private int timeout = 30;
         private int maxRows = 1000;
+        private long maxExplainRows = 5_000_000;
     }
 
     @Data

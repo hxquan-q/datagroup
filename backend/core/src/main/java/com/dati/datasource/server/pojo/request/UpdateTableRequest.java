@@ -14,4 +14,13 @@ public class UpdateTableRequest {
 
     private List<String> aliases = new ArrayList<>();
 
+    @Size(max = 128)
+    private String timeColumn;
+
+    private Boolean timeWindowRequired;
+
+    private Integer maxRangeDays;
+
+    private Boolean sqlBlocked;
+
 }

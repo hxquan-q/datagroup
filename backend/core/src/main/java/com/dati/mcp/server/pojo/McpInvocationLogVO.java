@@ -30,4 +30,12 @@ public class McpInvocationLogVO {
     private String statDate;
 
     private Instant createdAt;
+
+    private String requestParams;
+
+    private String executedSql;
+
+    private String metricCode;
+
+    private Integer rowCount;
 }

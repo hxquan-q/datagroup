@@ -31,6 +31,7 @@ public class McpUsageCollector {
 
     private static final int MAX_QUEUE_CAPACITY = 10000;
     private static final int MAX_ERROR_LENGTH = 500;
+    private static final int MAX_EVIDENCE_LENGTH = 60000;
 
     private final McpInvocationLogDAO logDAO;
     private final McpUsageDailyStatDAO dailyStatDAO;
@@ -87,6 +88,13 @@ public class McpUsageCollector {
     public record DeltaSnapshot(long total, long success, long failed, long duration, long maxDuration) {
     }
 
+    private static String truncate(String value, int max) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() > max ? value.substring(0, max) : value;
+    }
+
     public McpUsageCollector(McpInvocationLogDAO logDAO,
                              McpUsageDailyStatDAO dailyStatDAO,
                              @Value("${dati.mcp.stats.enabled:true}") boolean enabled,
@@ -100,6 +108,14 @@ public class McpUsageCollector {
     public void record(String serviceId, String method, String toolName,
                        String callerId, String callerName, String clientIp,
                        boolean success, long durationMs, String errorMessage) {
+        record(serviceId, method, toolName, callerId, callerName, clientIp,
+            success, durationMs, errorMessage, null, null, null, null);
+    }
+
+    public void record(String serviceId, String method, String toolName,
+                       String callerId, String callerName, String clientIp,
+                       boolean success, long durationMs, String errorMessage,
+                       String requestParams, String executedSql, String metricCode, Integer rowCount) {
         if (!enabled || serviceId == null) {
             return;
         }
@@ -129,6 +145,10 @@ public class McpUsageCollector {
                         ? errorMessage.substring(0, MAX_ERROR_LENGTH)
                         : errorMessage);
                 }
+                po.setRequestParams(truncate(requestParams, MAX_EVIDENCE_LENGTH));
+                po.setExecutedSql(truncate(executedSql, MAX_EVIDENCE_LENGTH));
+                po.setMetricCode(truncate(metricCode, 128));
+                po.setRowCount(rowCount);
                 logQueue.offer(po);
             } else {
                 log.warn("MCP usage log queue is full, dropping detailed log for service {}", serviceId);
