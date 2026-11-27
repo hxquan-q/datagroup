@@ -43,8 +43,14 @@ public class QueryMetricExecutor implements ToolExecutor {
         }
         String sqlTemplate = metric.sqlTemplate();
         boolean structured = StructuredMetricSqlBuilder.isStructured(metric);
+        Map<String, Object> argumentsWithDefaults = new HashMap<>(args.arguments());
+        metric.parameters().forEach(parameter -> {
+            if (parameter.getDefaultValue() != null && argumentsWithDefaults.get(parameter.getName()) == null) {
+                argumentsWithDefaults.put(parameter.getName(), parameter.getDefaultValue());
+            }
+        });
         if (structured) {
-            sqlTemplate = StructuredMetricSqlBuilder.build(metric, args.dimensions(), ctx.relations(), args.arguments());
+            sqlTemplate = StructuredMetricSqlBuilder.build(metric, args.dimensions(), ctx.relations(), argumentsWithDefaults);
         }
         if (containsRawPlaceholder(sqlTemplate)) {
             throw new ToolExecuteException(ToolError.PARAM_INVALID,

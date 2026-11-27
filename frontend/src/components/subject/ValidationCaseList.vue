@@ -121,6 +121,10 @@ function initializeArguments(existing?: Record<string, unknown>) {
 
 function onMetricChanged() {
   const current = { ...structuredArguments.value };
+  const allowed = new Set(metricParameters.value.map((parameter) => parameter.name));
+  for (const key of Object.keys(current)) {
+    if (!allowed.has(key) && key !== "start_time" && key !== "end_time") delete current[key];
+  }
   initializeArguments(current);
 }
 

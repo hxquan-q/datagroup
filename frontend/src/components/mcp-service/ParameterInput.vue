@@ -22,7 +22,7 @@ defineEmits<{ (e: "update:modelValue", v: any): void }>();
     v-else-if="parameter.type === 'Number'"
     type="number"
     :model-value="modelValue"
-    @update:model-value="$emit('update:modelValue', $event === '' ? undefined : Number.isSafeInteger(Number($event)) ? Number($event) : $event)"
+    @update:model-value="$emit('update:modelValue', $event === '' ? undefined : Number.isFinite(Number($event)) && Math.abs(Number($event)) <= Number.MAX_SAFE_INTEGER ? Number($event) : $event)"
     :size="size"
     class="w-full"
   >
