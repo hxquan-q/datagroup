@@ -92,8 +92,8 @@ public class ParameterizedSqlExecutor implements ToolExecutor {
                 Object value = b.value();
                 if ("Number".equals(typeMap.get(b.name())) && value instanceof String s) {
                     try {
-                        value = new java.math.BigDecimal(s.trim());
-                    } catch (NumberFormatException e) {
+                        value = toNumericBinding(s.trim());
+                    } catch (NumberFormatException | ArithmeticException e) {
                         throw new ToolExecuteException(ToolError.PARAM_INVALID, "Invalid numeric value for parameter '" + b.name() + "': " + s);
                     }
                 }
@@ -114,6 +114,18 @@ public class ParameterizedSqlExecutor implements ToolExecutor {
 
         return new SqlExecution(sql, results, prepared.bindings().stream()
             .map(ParamBinding::value).toList());
+    }
+
+    private Object toNumericBinding(String raw) {
+        java.math.BigDecimal decimal = new java.math.BigDecimal(raw);
+        if (decimal.stripTrailingZeros().scale() <= 0) {
+            try {
+                return decimal.longValueExact();
+            } catch (ArithmeticException ignored) {
+                return decimal.toBigIntegerExact();
+            }
+        }
+        return decimal;
     }
 
     /**

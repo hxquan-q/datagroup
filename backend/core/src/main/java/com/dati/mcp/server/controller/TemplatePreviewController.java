@@ -97,7 +97,7 @@ public class TemplatePreviewController {
     private String formatValue(Object value) {
         if (value == null) return "NULL";
         if (value instanceof String s) {
-            if (s.matches("-?\\d+(\\.\\d+)?")) return s;
+            if (s.matches("-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?")) return s;
             return "'" + s.replace("'", "''") + "'";
         }
         return value.toString();
