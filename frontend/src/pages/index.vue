@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from "vue";
-import type { EChartsCoreOption } from "echarts/core";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useQuery } from "@tanstack/vue-query";
@@ -19,9 +18,6 @@ import { getDashboardOverview, type DashboardDailyCount } from "~/api/dashboard"
 import { listMcpServices } from "~/api/mcp-service";
 import { dashboardKeys, mcpServiceKeys } from "~/api/query-keys";
 import { useChartColors } from "~/composables";
-import { escapeHtml } from "~/utils/html";
-
-const BaseChart = defineAsyncComponent(() => import("~/components/common/BaseChart.vue"));
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -46,42 +42,8 @@ const subjectCount = computed(() => overview.value?.subjects?.total ?? 0);
 const mcpServiceCount = computed(() => overview.value?.mcp_services?.total ?? 0);
 const featuredService = computed(() => featuredPage.value?.data?.[0] || null);
 
-function sparklineOption(points: DashboardDailyCount[], color: string): EChartsCoreOption {
-  const colors = chartColors.value;
-  return {
-    animationDuration: 250,
-    grid: { left: 0, right: 0, top: 5, bottom: 1 },
-    tooltip: {
-      trigger: "axis",
-      confine: true,
-      backgroundColor: colors.background,
-      borderColor: colors.border,
-      textStyle: { color: colors.textPrimary, fontSize: 11 },
-      formatter: (params: any) => {
-        const item = Array.isArray(params) ? params[0] : params;
-        if (!item) return "";
-        return `${escapeHtml(String(item.axisValue || ""))}: ${item.value}`;
-      },
-    },
-    xAxis: {
-      type: "category",
-      show: false,
-      boundaryGap: false,
-      data: points.map((item) => item.date),
-    },
-    yAxis: { type: "value", show: false, min: 0, minInterval: 1 },
-    series: [
-      {
-        type: "line",
-        data: points.map((item) => item.count),
-        smooth: true,
-        symbol: "none",
-        lineStyle: { width: 2, color },
-        itemStyle: { color },
-        areaStyle: { color, opacity: 0.14 },
-      },
-    ],
-  };
+function sparkPoints(points: DashboardDailyCount[]) {
+  return points.map((item) => ({ label: item.date ?? "", value: item.count ?? 0 }));
 }
 
 const onboardingSteps = computed(() => [
@@ -268,7 +230,7 @@ function go(path: string) {
               role="img"
               :aria-label="`${module.statLabel}: ${t('home.stats.creationTrend')}`"
             >
-              <BaseChart :option="sparklineOption(module.trend, module.color)" height="42px" />
+              <SparklineChart :points="sparkPoints(module.trend)" :color="module.color" :height="42" />
             </div>
             <div @click.stop @keydown.enter.stop @keydown.space.stop>
               <el-popover placement="bottom-end" :width="230" trigger="click">
