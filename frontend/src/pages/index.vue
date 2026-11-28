@@ -219,7 +219,7 @@ function go(path: string) {
             <div class="service-icon"><Zap :size="17" /></div>
             <div class="signal-service-copy">
               <strong>{{ featuredService.name }}</strong>
-              <small>{{ featuredService.endpoint_path }}</small>
+              <small :title="featuredService.endpoint_path">{{ featuredService.endpoint_path }}</small>
             </div>
             <em>{{ featuredService.status }}</em>
           </div>
@@ -526,7 +526,7 @@ function go(path: string) {
 }
 
 .signal-service strong { font-size: 14px; }
-.signal-service small { margin-top: 3px; color: var(--xiaoai-ink-muted); font-family: ui-monospace, monospace; font-size: 11px; overflow-wrap: anywhere; word-break: break-word; }
+.signal-service small { margin-top: 3px; color: var(--xiaoai-ink-muted); font-family: ui-monospace, monospace; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .signal-service em { padding: 4px 7px; border-radius: 999px; background: rgba(16, 185, 129, 0.13); color: var(--xiaoai-success-soft); font-size: 10px; font-style: normal; font-weight: 800; white-space: nowrap; }
 
 .signal-empty {
