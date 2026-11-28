@@ -5,8 +5,8 @@ FROM node:22-alpine AS frontend-builder
 
 WORKDIR /build
 
-# Enable pnpm 9 to match lockfile
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+# Enable the pnpm version pinned in frontend/package.json
+RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 
 # Copy package files for dependency caching
 COPY frontend/package.json frontend/pnpm-lock.yaml ./frontend/
