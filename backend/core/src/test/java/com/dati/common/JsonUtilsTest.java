@@ -1,6 +1,7 @@
 package com.dati.common;
 
 import com.dati.base.exception.DatiException;
+import com.dati.base.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,9 @@ class JsonUtilsTest {
     @Test
     void invalidJsonThrowsDatiException() {
         assertThatThrownBy(() -> JsonUtils.fromJson("{not json", Object.class))
-            .isInstanceOf(DatiException.class);
+            .isInstanceOf(DatiException.class)
+            .extracting(e -> ((DatiException) e).getCode())
+            .isEqualTo(ErrorCode.JSON_CONVERSION_FAILED);
         assertThatThrownBy(() -> JsonUtils.parseJson("{not json"))
             .isInstanceOf(DatiException.class);
         assertThatThrownBy(() -> JsonUtils.toMap("{not json"))
