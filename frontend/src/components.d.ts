@@ -102,6 +102,7 @@ declare module 'vue' {
     SearchMetadataParams: typeof import('./components/mcp-service/tool-test/params/SearchMetadataParams.vue')['default']
     SegmentedTabs: typeof import('./components/common/SegmentedTabs.vue')['default']
     SemanticCatalogResult: typeof import('./components/mcp-service/tool-test/results/SemanticCatalogResult.vue')['default']
+    SparklineChart: typeof import('./components/common/SparklineChart.vue')['default']
     SqlEditor: typeof import('./components/common/editors/SqlEditor.vue')['default']
     SqlExecutionResult: typeof import('./components/mcp-service/tool-test/results/SqlExecutionResult.vue')['default']
     SqlSecurityConfig: typeof import('./components/mcp-service/SqlSecurityConfig.vue')['default']
