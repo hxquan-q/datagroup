@@ -54,7 +54,7 @@ class McpToolTypeTest {
         assertThat(type.getToolName()).isEqualTo("execute_sql");
         assertThat(type.getTitle()).isEqualTo("Execute SQL");
         assertThat(type.getDescription()).isEqualTo(
-            "Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task."
+            "Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. For single statements, prefer binding filter values with ? placeholders and the params field over inline literals (params are not supported in multi-statement SQL). Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates."
         );
         assertThat(type.isPrebuilt()).isTrue();
         assertThat(type.isDefaultEnabled()).isTrue();
