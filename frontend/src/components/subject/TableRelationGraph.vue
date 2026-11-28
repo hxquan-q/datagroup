@@ -156,7 +156,7 @@ function portId(type: "source" | "target", tableId: string, column: string) { re
 function nodeData(data: unknown) { return data as TableNodeData; }
 function hasPort(data: unknown, column: string, type: "sourcePorts" | "targetPorts") { return (nodeData(data)[type] || []).includes(column); }
 function edgeColor(edge: GraphEdge) { return edge.kind === "confirmed" ? "var(--ep-color-primary)" : edge.kind === "physical" ? "var(--ep-color-success)" : "var(--ep-color-warning)"; }
-function tableAccent(index: number) { return ["#2563eb", "#0891b2", "#7c3aed", "#059669", "#d97706", "#dc2626"][index % 6]; }
+function tableAccent(index: number) { return `var(--xiaoai-graph-accent-${(index % 6) + 1})`; }
 function isPrimaryLike(name: string) { const x = name.toLowerCase(); return x === "id" || x === "f_id" || (x.endsWith("id") && x.length <= 5); }
 function evidenceLabel(code: string) { return t(`relation.evidenceLabels.${code}`); }
 

@@ -34,7 +34,7 @@ const hiddenCount = computed(() => Math.max(props.aliases.length - props.maxVisi
       {{ alias }}
     </el-tag>
 
-    <el-popover trigger="click" placement="bottom" :width="300">
+    <el-popover v-if="hiddenCount > 0" trigger="click" placement="bottom" :width="300">
       <template #reference>
         <el-button size="small" class="semantic-overflow-button">
           {{ hiddenCount > 0 ? `+${hiddenCount}` : t("common.detail") }}

@@ -102,6 +102,7 @@ defineProps<{
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  min-width: 0;
   gap: 8px 14px;
   color: var(--ep-text-color-secondary);
   font-size: 12px;
@@ -119,6 +120,10 @@ defineProps<{
   .detail-shell {
     flex-direction: column;
     padding: 2px 2px 0;
+  }
+
+  .detail-shell-main {
+    width: 100%;
   }
 
   .detail-shell-actions {

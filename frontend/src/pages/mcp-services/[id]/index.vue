@@ -300,8 +300,8 @@ const handleSave = async () => {
       </template>
 
       <template #meta>
-        <span v-if="service?.endpoint_path">
-          {{ t("mcpService.endpointPath") }}: <code class="font-mono">{{ service.endpoint_path }}</code>
+        <span v-if="service?.endpoint_path" class="endpoint-meta">
+          {{ t("mcpService.endpointPath") }}: <code class="font-mono" :title="service.endpoint_path">{{ service.endpoint_path }}</code>
         </span>
         <span>ID: {{ serviceId }}</span>
       </template>
@@ -512,6 +512,14 @@ const handleSave = async () => {
 .mcp-detail-page {
   width: min(var(--xiaoai-page-max), 100%);
   margin: 0 auto;
+}
+
+.endpoint-meta {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .panel,
