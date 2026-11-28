@@ -113,7 +113,7 @@ class ToolParameterBinderTest {
     void typeErrorFails() {
         assertThatThrownBy(() -> binder.bind(SearchMetadataArgs.class, Map.of("keywords", 123)))
             .isInstanceOf(ToolExecuteException.class)
-            .hasMessageContaining("Parse JSON failed");
+            .hasMessageContaining("JSON conversion failed");
     }
 
     @Test
