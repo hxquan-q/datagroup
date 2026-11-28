@@ -254,7 +254,7 @@ class ExecuteSqlExecutorTest {
 
             SqlExecution exec = (SqlExecution) executor.execute(ctx(args));
 
-            assertThat(exec.executedSql()).isEqualTo("SELECT 1");
+            assertThat(exec.executedSql()).isEqualTo("SELECT /*+ MAX_EXECUTION_TIME(30000) */ 1");
             assertThat(exec.results()).isEmpty();
         }
     }

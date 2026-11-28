@@ -78,7 +78,7 @@ class McpParameterSchemaGeneratorTest {
         assertThat(schema.get("type")).isEqualTo("object");
         assertThat(schema.get("additionalProperties")).isEqualTo(false);
         assertThat(schema.get("required")).isEqualTo(List.of("data_source_id", "sql"));
-        assertThat(map(schema.get("properties")).keySet()).containsExactly("data_source_id", "sql");
+        assertThat(map(schema.get("properties")).keySet()).containsExactly("data_source_id", "params", "sql");
         assertThat(map(map(schema.get("properties")).get("data_source_id")).get("type")).isEqualTo("string");
         assertThat(map(map(schema.get("properties")).get("sql")).get("type")).isEqualTo("string");
     }

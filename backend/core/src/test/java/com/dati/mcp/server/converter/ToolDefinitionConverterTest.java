@@ -232,7 +232,7 @@ class ToolDefinitionConverterTest {
             TestFixtures.createTestPrebuiltToolDraft(McpToolType.EXECUTE_SQL, true, new ToolConfig.ExecuteSqlConfig())));
         List<McpSchema.Tool> tools = converter.convert(content);
         assertEquals(1, tools.size());
-        assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. Allowed operations: SELECT. Max rows: 1000",
+        assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. For single statements, prefer binding filter values with ? placeholders and the params field over inline literals (params are not supported in multi-statement SQL). Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates. Allowed operations: SELECT. Max rows: 1000",
                 tools.getFirst().description());
     }
 
@@ -253,7 +253,7 @@ class ToolDefinitionConverterTest {
             TestFixtures.createTestPrebuiltToolDraft(McpToolType.EXECUTE_SQL, true, cfg)));
         List<McpSchema.Tool> tools = converter.convert(content);
         assertEquals(1, tools.size());
-        assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. Allowed operations: SELECT, INSERT, UPDATE (multi-statement supported). Max rows: 500",
+        assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. For single statements, prefer binding filter values with ? placeholders and the params field over inline literals (params are not supported in multi-statement SQL). Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates. Allowed operations: SELECT, INSERT, UPDATE (multi-statement supported). Max rows: 500",
                 tools.getFirst().description());
     }
 
@@ -277,7 +277,7 @@ class ToolDefinitionConverterTest {
             TestFixtures.createTestPrebuiltToolDraft(McpToolType.EXECUTE_SQL, true, cfg)));
         List<McpSchema.Tool> tools = converter.convert(content);
         assertEquals(1, tools.size());
-        assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. Allowed operations: ALL. Max rows: 1000",
+        assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. For single statements, prefer binding filter values with ? placeholders and the params field over inline literals (params are not supported in multi-statement SQL). Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates. Allowed operations: ALL. Max rows: 1000",
                 tools.getFirst().description());
     }
 
@@ -295,7 +295,7 @@ class ToolDefinitionConverterTest {
                 TestFixtures.createTestPrebuiltToolDraft(McpToolType.EXECUTE_SQL, true, new ToolConfig.ExecuteSqlConfig())));
             List<McpSchema.Tool> tools = converter.convert(content);
             assertEquals(1, tools.size());
-            assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. Allowed operations: SELECT. Max rows: 1000. Context: current user name: alice, user id: u-123",
+            assertEquals("Execute an SQL query or statement against a data source and return result rows. Use this tool only when no specialized or custom analysis tool is available for your task. For single statements, prefer binding filter values with ? placeholders and the params field over inline literals (params are not supported in multi-statement SQL). Join discipline: never aggregate across an unaggregated one-to-many join (rows multiply and sums/counts inflate). Pre-aggregate the many-side in a CTE at the join grain first, then join the aggregates. Allowed operations: SELECT. Max rows: 1000. Context: current user name: alice, user id: u-123",
                 tools.getFirst().description());
         } finally {
             com.dati.base.RequestContext.clear();
