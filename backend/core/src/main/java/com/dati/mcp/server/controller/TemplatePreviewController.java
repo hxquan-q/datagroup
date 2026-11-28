@@ -67,7 +67,8 @@ public class TemplatePreviewController {
             response.setRendered(textRenderer.render(compiled, values));
         } else {
             try {
-                response.setRendered(sqlRenderer.renderDisplay(compiled, values, this::formatValue));
+                response.setRendered(sqlRenderer.renderDisplay(compiled, values,
+                    (name, value) -> formatValue(value, request.getParameterTypes() == null ? null : request.getParameterTypes().get(name))));
             } catch (TemplateRenderException e) {
                 throw new DatiException(ErrorCode.INVALID_PARAMETER, e.getMessage());
             }
@@ -94,9 +95,10 @@ public class TemplatePreviewController {
      * Numeric strings are left bare; other strings are quoted and single quotes
      * are escaped per the SQL standard.
      */
-    private String formatValue(Object value) {
+    private String formatValue(Object value, String parameterType) {
         if (value == null) return "NULL";
         if (value instanceof String s) {
+            if ("String".equals(parameterType)) return "'" + s.replace("'", "''") + "'";
             if (s.matches("-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?")) return s;
             return "'" + s.replace("'", "''") + "'";
         }

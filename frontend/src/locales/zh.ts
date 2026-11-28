@@ -846,6 +846,7 @@ export default {
       timeWindowsPass: "治理指标已按需声明时间字段。",
       timeWindowsWarn: "{count} 个指标未配置时间字段，大事实表可能扫描过宽范围。",
       validation: "验证状态",
+      validationBlocked: "{count} 个验证样例会阻止发布。首个阻塞：{message}",
       validationPass: "启用的验证样例当前通过。",
       validationFailed: "{count} 个启用验证样例失败或异常。",
       validationStale: "{count} 个验证样例在指标变更后需要重跑。",

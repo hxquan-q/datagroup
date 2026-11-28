@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
 @Component
@@ -42,6 +43,11 @@ public class SqlRenderer {
      */
     public String renderDisplay(CompiledTemplate compiled, Map<String, Object> params,
                                 UnaryOperator<Object> formatter) {
+        return renderDisplay(compiled, params, (name, value) -> formatter.apply(value));
+    }
+
+    public String renderDisplay(CompiledTemplate compiled, Map<String, Object> params,
+                                BiFunction<String, Object, Object> formatter) {
         RenderedSql rendered = renderInternal(compiled, params);
         StringBuilder display = new StringBuilder(rendered.text().length());
         int bindingIndex = 0;
@@ -54,7 +60,8 @@ public class SqlRenderer {
             if (bindingIndex >= rendered.bindings().size()) {
                 throw new TemplateRenderException("Placeholder count does not match binding count");
             }
-            display.append(formatter.apply(rendered.bindings().get(bindingIndex++).value()));
+            ParamBinding binding = rendered.bindings().get(bindingIndex++);
+            display.append(formatter.apply(binding.name(), binding.value()));
         }
         assertPlaceholderCount(bindingIndex, rendered.bindings().size());
         return display.toString();

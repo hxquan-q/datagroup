@@ -55,7 +55,8 @@ const doPreview = async () => {
 
   loading.value = true;
   try {
-    const resp = await previewTemplate({ mode: props.mode, template: props.template, values: parsed });
+    const parameterTypes = Object.fromEntries(props.parameters.filter((p) => p.name && p.type).map((p) => [p.name, p.type!]));
+    const resp = await previewTemplate({ mode: props.mode, template: props.template, values: parsed, parameterTypes });
     result.value = resp.rendered;
     await nextTick();
     resultRef.value?.scrollIntoView({ behavior: "smooth", block: "start" });

@@ -118,11 +118,15 @@ public class ParameterizedSqlExecutor implements ToolExecutor {
 
     private Object toNumericBinding(String raw) {
         java.math.BigDecimal decimal = new java.math.BigDecimal(raw);
-        if (decimal.stripTrailingZeros().scale() <= 0) {
-            try {
-                return decimal.longValueExact();
-            } catch (ArithmeticException ignored) {
-                return decimal.toBigIntegerExact();
+        if (!raw.contains(".")) {
+            java.math.BigDecimal normalized = decimal.stripTrailingZeros();
+            int integerDigits = normalized.precision() - normalized.scale();
+            if (integerDigits <= 19) {
+                try {
+                    return decimal.longValueExact();
+                } catch (ArithmeticException ignored) {
+                    return decimal;
+                }
             }
         }
         return decimal;
