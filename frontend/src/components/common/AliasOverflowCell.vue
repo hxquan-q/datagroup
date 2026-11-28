@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 const props = withDefaults(defineProps<{
@@ -19,10 +19,24 @@ const { t } = useI18n();
 
 const visibleAliases = computed(() => props.aliases.slice(0, props.maxVisible));
 const hiddenCount = computed(() => Math.max(props.aliases.length - props.maxVisible, 0));
+
+const rowRef = ref<HTMLElement>();
+const anyTruncated = ref(false);
+
+async function measureTruncation() {
+  await nextTick();
+  const tags = rowRef.value?.querySelectorAll(".semantic-alias-tag") ?? [];
+  anyTruncated.value = [...tags].some((el) => el.scrollWidth > el.clientWidth + 1);
+}
+
+onMounted(measureTruncation);
+watch(visibleAliases, measureTruncation);
+
+const showDetail = computed(() => hiddenCount.value > 0 || anyTruncated.value);
 </script>
 
 <template>
-  <div v-if="aliases.length" class="semantic-chip-row">
+  <div v-if="aliases.length" ref="rowRef" class="semantic-chip-row">
     <el-tag
       v-for="alias in visibleAliases"
       :key="alias"
@@ -34,7 +48,7 @@ const hiddenCount = computed(() => Math.max(props.aliases.length - props.maxVisi
       {{ alias }}
     </el-tag>
 
-    <el-popover v-if="hiddenCount > 0" trigger="click" placement="bottom" :width="300">
+    <el-popover v-if="showDetail" trigger="click" placement="bottom" :width="300">
       <template #reference>
         <el-button size="small" class="semantic-overflow-button">
           {{ hiddenCount > 0 ? `+${hiddenCount}` : t("common.detail") }}
