@@ -1,5 +1,7 @@
 package com.dati.common;
 
+import com.dati.base.exception.DatiException;
+import com.dati.base.exception.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,7 +27,7 @@ public class JsonUtils {
             return objectMapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             log.error("Convert object to JSON failed", e);
-            throw new RuntimeException("Convert to JSON failed", e);
+            throw new DatiException(ErrorCode.JSON_CONVERSION_FAILED);
         }
     }
 
@@ -34,7 +36,7 @@ public class JsonUtils {
             return objectMapper.readValue(json, clazz);
         } catch (JsonProcessingException e) {
             log.error("Parse JSON to object failed", e);
-            throw new RuntimeException("Parse JSON failed", e);
+            throw new DatiException(ErrorCode.JSON_CONVERSION_FAILED);
         }
     }
 
@@ -43,7 +45,7 @@ public class JsonUtils {
             return objectMapper.readValue(json, typeReference);
         } catch (JsonProcessingException e) {
             log.error("Parse JSON to object failed", e);
-            throw new RuntimeException("Parse JSON failed", e);
+            throw new DatiException(ErrorCode.JSON_CONVERSION_FAILED);
         }
     }
 
@@ -52,7 +54,7 @@ public class JsonUtils {
             return objectMapper.readTree(json);
         } catch (JsonProcessingException e) {
             log.error("Parse JSON string failed", e);
-            throw new RuntimeException("Parse JSON failed", e);
+            throw new DatiException(ErrorCode.JSON_CONVERSION_FAILED);
         }
     }
 
@@ -62,7 +64,7 @@ public class JsonUtils {
             });
         } catch (JsonProcessingException e) {
             log.error("Convert JSON to Map failed", e);
-            throw new RuntimeException("Convert to Map failed", e);
+            throw new DatiException(ErrorCode.JSON_CONVERSION_FAILED);
         }
     }
 
@@ -71,7 +73,7 @@ public class JsonUtils {
             return objectMapper.readValue(json, objectMapper.getTypeFactory().constructCollectionType(List.class, clazz));
         } catch (JsonProcessingException e) {
             log.error("Convert JSON to List failed", e);
-            throw new RuntimeException("Convert to List failed", e);
+            throw new DatiException(ErrorCode.JSON_CONVERSION_FAILED);
         }
     }
 

@@ -147,7 +147,7 @@ class McpProtocolHandlerTest {
         McpSchema.CallToolResult result = (McpSchema.CallToolResult) resp.result();
         assertTrue(result.isError());
         String text = ((McpSchema.TextContent) result.content().getFirst()).text();
-        assertTrue(text.contains("Parse JSON failed"));
+        assertTrue(text.contains("JSON conversion failed"));
     }
 
     @Test
